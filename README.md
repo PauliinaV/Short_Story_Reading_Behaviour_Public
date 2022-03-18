@@ -21,6 +21,8 @@ FIX: it could be better to stick to one naming convention
 
 This folder includes:
 
+FIX: need to add information on how the very raw data was wrangled.
+
 ### Analysis
 
 This folder includes:
