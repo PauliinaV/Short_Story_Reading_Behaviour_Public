@@ -1,0 +1,80 @@
+---
+title: "Prep_TrackingDataWrangling"
+author: "Pauliina Vuorinen"
+date: "18/03/2022"
+output: html_document
+---
+
+## Introduction
+
+The purpose of this script is to clean the raw reading behaviour tracking data for our analysis.
+
+## Setup
+
+Load libraries, set working directory
+
+```{r, setup}
+library(psych)
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+getwd()
+```
+
+## Load data and check variable types
+
+Load raw data from Data -folder and change variable types. See documents in Info -folder for information on different tracking events.
+
+```{r, load data}
+# load data
+raw_tracking_data <-
+    read.csv("Data_RawData.csv", header = TRUE, sep = ";", dec = ",")
+
+# change variable types
+str(raw_tracking_data)
+rename(raw_tracking_data, StoryId = BookId)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn user and story indicators into factors
+raw_tracking_data[, c(
+    "UserId",
+    "StoryId"
+)] <- convert.magic(raw_tracking_data[, c(
+    "UserId",
+    "StoryId"
+)])
+## turn reading block number (page view) into an ordered variable
+raw_tracking_data$ReadingBlockNumber <-
+    as.ordered(raw_tracking_data$ReadingBlockNumber)
+```
+
+## Missing and erroneous data values
+
+Fix unrealistic and misleading data values in the tracking data. These errors arise from accidental miscoding in the collection of the tracking data, or changes in data formatting.
+
+In the below code:
+1. Change navigation block numbers (continuous navigation in one direction) recorded as zero into NA values. A navigation block number is only recorded as zero if the participant is not navigating the document. This is misleading, and so zeros are turned to NAs.
+2. Similarly to navigation block numbers, reading block numbers (page views) are recorded as zero when the participant is not viewing a page. This is misleading, and so zeros are turned to NAs.
+3. Inactive timeout events are erroneously coded as 'engagements' in the raw data. The inactive timeout indicates that the page view has been masked due to > 5mins of inactivity, and therefore, these event types should be coded as 'disengagements'.
+
+
+```{r, erroneous values}
+# point (1) above
+raw_tracking_data[, "NavigationBlockNumber"][raw_tracking_data[, "NavigationBlockNumber"] == 0] <- NA
+
+# point (2) above
+raw_tracking_data[, "ReadingBlockNumber"][raw_tracking_data[, "ReadingBlockNumber"] == 0] <- NA
+
+# point (3) above
+raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "Disengagement"
+# FIX: inactiveTimeout has wrong naming convention
+```
+
+## Exclusion criteria
+
+Three participants who did not finish the study are excluded.
+
+```{r, exclusion}
+
+```
