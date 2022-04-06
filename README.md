@@ -13,9 +13,8 @@ There are five main folders:
 4. Functions: Custom functions used in the Prep or Analysis. Functions not created by the authors, see comments for credit.
 5. Info: Document with information on the reading behaviour tracking system.
 
-File naming system: Folder_IntentionForUse.filetype, e.g., Analysis_ReadingSpeedModel.Rmd = R markdown file for analysis of reading speed by modelling.
-Data files are named in lowercase and underscores (snake case), e.g. raw_tracking_data, continuous variables and covariates are named with Pascal Case, e.g. UserId, whereas binary test variables are named in Camel Case, e.g. isEngagedReading.
-FIX: it could be better to stick to one naming convention
+File naming system: Folder_IntentedUsage.filetype, e.g., Analysis_ReadingSpeedModel.Rmd: R markdown file for analysis of reading speed by modelling.
+Data files are named in lowercase and underscores (snake case), e.g. raw_tracking_data, variables are named with Pascal Case, e.g. UserId
 
 ### Prep
 
