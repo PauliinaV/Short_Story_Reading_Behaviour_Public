@@ -86,7 +86,7 @@ raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "
 
 ### Adjustments to event and navigation durations
 
-Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is calculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or not.
+Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
 
 ```{r, find the last event in reading session}
 raw_tracking_data$IsLastEventInReadingSession <- (
@@ -103,13 +103,13 @@ table(
 
 **Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document ___), the duration should be recorded as 0. A disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so it's duration is arbitrary.
 
-**Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing. Similarly, a disengagement event would have followed the engagement if the participant had become inactive: the e-reader system automatically masks the text after 5 minutes of inactivity which is recorded as a disengagement event of type 'blur'.
+**Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing. Similarly, an engagement event that has a duration of >5min in the middle of a reading session is indicative of a missing event: the e-reader system automatically masks the text after 5 minutes of inactivity (event type 'blur'), if an engagement event lasts for longer than 5 minutes, the text mask event may have not been recorded in the tracking data.
 
-Missing events may occur when the e-reader system is abruptly closed, or when network connection fails*, and the system does not have the time to record an event. Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
+Missing events occur when the system doesn't have the time to record an event, for example when the e-reader system is abruptly closed or when network connection fails*. Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
 
 **Note: the e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures.*
 
-```{r, adjustments to excessive durations}
+```{r, find excessive engagement durations}
 
 excessive_engagement_durations_subdata <- filter(
     raw_tracking_data,
@@ -117,7 +117,36 @@ excessive_engagement_durations_subdata <- filter(
         (DurationMinutes > 5.1)
 )
 
-length(excessive_engagement_durations_subdata) # 7 excessive engagement durations
+table(excessive_engagement_durations_subdata$IsLastEventInReadingSession)
+# 7 excessive engagement durations: X in the middle of session, Y at the end
 ```
 
+The raw data is not edited, but instead the excessive durations are adjusted by creating new variables. 
 
+* 'AdjustedEventDuration' shows the suggested new event duration
+* 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
+
+
+```{r, adjustments to excessive durations}
+raw_tracking_data$AdjustedEventDuration <- ifelse(
+    ((raw_tracking_data$Engagement == "Engagement") &
+        raw_tracking_data$DurationMinutes > 5.1),
+    5,
+    ifelse(
+        ((raw_tracking_data$IsLastEventInReadingSession &
+            raw_tracking_data$Engagement != "Engagement")),
+        0
+    )
+)
+
+raw_tracking_data$AdjustedNavigationBlockDuration <- ifelse(
+    raw_tracking_data$AdjustedEventDuration != NA &
+        raw_tracking_data$Engagement == "Engagement",
+    (raw_tracking_data$NavigationBlockDuration - (raw_tracking_data$DurationMinutes - 5)),
+    ifelse(
+        raw_tracking_data$AdjustedEventDuration != NA &
+            raw_tracking_data$Engagement != "Engagement",
+        (raw_tracking_data$NavigationBlockDuration - raw_tracking_data$DurationMinutes)
+    )
+)
+```
