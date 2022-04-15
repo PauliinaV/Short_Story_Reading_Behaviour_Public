@@ -1,8 +1,9 @@
 ---
 title: "Prep_TrackingDataWrangling"
 author: "Pauliina Vuorinen"
-date: "18/03/2022"
+date: "18/03/2022-"
 output: html_document
+library: "S1_code_library.bib"
 ---
 
 ## Introduction
@@ -84,7 +85,7 @@ raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "
 # FIX: inactiveTimeout has wrong naming convention
 ```
 
-### Adjustments to event and navigation durations
+### Adjustments to event and navigation block durations
 
 Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
 
@@ -95,6 +96,8 @@ raw_tracking_data$IsLastEventInReadingSession <- (
         (raw_tracking_data$UserId !=
             lead(raw_tracking_data$UserId, 1))
 )
+raw_tracking_data$IsLastEventInReadingSession <- # last event in df
+    replace_na(raw_tracking_data$IsLastEventInReadingSession, TRUE)
 table(
     raw_tracking_data$Engagement,
     raw_tracking_data$IsLastEventInReadingSession
@@ -124,13 +127,14 @@ table(excessive_engagement_durations_subdata$IsLastEventInReadingSession)
 The raw data is not edited, but instead the excessive durations are adjusted by creating new variables. 
 
 * 'AdjustedEventDuration' shows the suggested new event duration
+    * Set to 5 minutes for engagement events and to 0 for non-engagement events.
 * 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
-
+    * Excessive engagement events' duration that exceeds 5 minutes is deducted from the navigation block duration, whereas excessive non-engagement events' entire duration is deducted from the navigation block duration.
 
 ```{r, adjustments to excessive durations}
 raw_tracking_data$AdjustedEventDuration <- ifelse(
     ((raw_tracking_data$Engagement == "Engagement") &
-        raw_tracking_data$DurationMinutes > 5.1),
+        (raw_tracking_data$DurationMinutes > 5.1)),
     5,
     ifelse(
         ((raw_tracking_data$IsLastEventInReadingSession &
@@ -140,13 +144,146 @@ raw_tracking_data$AdjustedEventDuration <- ifelse(
 )
 
 raw_tracking_data$AdjustedNavigationBlockDuration <- ifelse(
-    raw_tracking_data$AdjustedEventDuration != NA &
-        raw_tracking_data$Engagement == "Engagement",
-    (raw_tracking_data$NavigationBlockDuration - (raw_tracking_data$DurationMinutes - 5)),
+    ((raw_tracking_data$AdjustedEventDuration != NA) &
+        (raw_tracking_data$Engagement == "Engagement")),
+    (raw_tracking_data$NavigationBlockDuration -
+        (raw_tracking_data$DurationMinutes - 5)),
     ifelse(
-        raw_tracking_data$AdjustedEventDuration != NA &
-            raw_tracking_data$Engagement != "Engagement",
-        (raw_tracking_data$NavigationBlockDuration - raw_tracking_data$DurationMinutes)
+        ((raw_tracking_data$AdjustedEventDuration != NA) &
+            (raw_tracking_data$Engagement != "Engagement")),
+        (raw_tracking_data$NavigationBlockDuration -
+            raw_tracking_data$DurationMinutes)
     )
 )
 ```
+
+### Identification of inaccurately categorised disengagements
+
+Events were given engagement labels in the data pre-processing stage (see file __ in the Info folder for detail), however, some rare events were mistakenly classified as disengagements. During the opening of the e-reader system, an event was occasionally categorised as a 'disengagement' even though the text was visible to the participants. These events are first identified by inspection of 'unusual disengagements' that don't have a clear disengagement-linked event type (see information on events in ___ in the Info folder). Ten events were identified as inaccurately categorised and so these events are corrected into engagements.
+
+```{r, inaccurately categorised disengagements}
+raw_tracking_data$IsUnusualDisengagement <-
+    ((raw_tracking_data$Engagement == "Disengagement") &
+        (raw_tracking_data$Type != "blur" &
+            raw_tracking_data$Type != "openMenu" &
+            raw_tracking_data$Type != "inactiveTimeout" &
+            raw_tracking_data$Type != "close" &
+            raw_tracking_data$Type != "logout" &
+            raw_tracking_data$Type != "openBook" &
+            raw_tracking_data$Type != "bookDialogOpen" &
+            raw_tracking_data$Type != "openInformation"))
+raw_tracking_data$Engagement <-
+    ifelse(data$IsUnusualDisengagement &
+        raw_tracking_data$IsOpeningEvent &
+        raw_tracking_data$IsPageOpen &
+        !raw_tracking_data$IsBlurred &
+        !raw_tracking_data$IsDialogOpen &
+        !raw_tracking_data$IsMenuOpen &
+        !raw_tracking_data$IsInactive,
+    "Engagement",
+    raw_tracking_data$Engagement
+    )
+```
+
+### Reading session artefacts
+
+The data analysis for the current study was focused on engaged reading, and so very short reading sessions or sessions that largely consisted of disengagement events only were not considered to be meaningful. These reading sessions were likely to occur if the participant attempts to resume a reading session and becomes quickly distracted by other things, or if they accidentally open the e-reader.
+
+We expected that an intentional reading session would last more than a minute, and it would consist of less than 95% of disengagement. To ensure that this threshold was meaningful and did not remove reading sessions of interest, we identified potential reading session artefacts with these thresholds and compared the artefacts identified to visualisations of each participants' reading sessions (see timeline figures in folder Figu). The comparison showed that these two thresholds could identify most of the reading sessions that seemed to consist of little reading. Additional testing showed that some of the remaining reading sessions mostly consisted of a combination of disengagements and 'dialog' -events (dialog events refer to the opening of the menu), and so another threshold was added: a reading session of interest should consist of less than 80% of disengagement and dialog. Comparison to the figures indicated that these three thresholds were sufficient in detecting reading session artefacts.
+
+```{r, identify reading session artefacts}
+# prepare a new df
+UserList <- levels(raw_tracking_data$UserId)
+SessionDetails <- data.frame(
+    UserId = factor(),
+    ReadingSessionNumber = numeric(),
+    SessionLength = numeric(),
+    DisengagementDuration = numeric(),
+    DialogDuration = numeric(),
+    SlowReadingDuration = numeric(),
+    EngagementProportion = numeric(),
+    DisengagementProportion = numeric(),
+    DialogAndDisengagementProportion = numeric()
+)
+firstrow <- 1
+raw_tracking_data$ReadingSessionNumber <- as.numeric(as.character(raw_tracking_data$ReadingSessionNumber))
+
+# calculate session details to the new df
+for (user in UserList) {
+    subset_df1 <- filter(raw_tracking_data, UserId == user)
+    for (session in unique(subset_df1$ReadingSessionNumber)) {
+        subset_df2 <- filter(subset_df1, ReadingSessionNumber == session)
+        temporary_df <- subset_df2 %>%
+            summarise(
+                SessionLength =
+                    sum(AdjustedEventDuration, na.rm = TRUE),
+                DisengagementDuration =
+                    sum(
+                        subset_df2[subset_df2$Engagement == "Disengagement", ]$AdjustedEventDuration,
+                        na.rm = TRUE
+                    ),
+                DialogDuration =
+                    sum(
+                        subset_df2[subset_df2$Engagement == "Dialog", ]$AdjustedEventDuration,
+                        na.rm = TRUE
+                    ),
+                SlowReadingDuration =
+                    sum(
+                        subset_df2[subset_df2$NavBlockSpeedLabel == "SlowReading", ]$AdjustedEventDuration,
+                        na.rm = TRUE
+                    ),
+                EngagementProportion =
+                    (
+                        sum(
+                            subset_df2[subset_df2$Engagement == "Engagement", ]$AdjustedEventDuration,
+                            na.rm = TRUE
+                        )
+                        / SessionLength
+                    ),
+                DisengagementProportion =
+                    (DisengagementDuration / SessionLength),
+                DialogAndDisengagementProportion =
+                    ((DisengagementDuration + DialogDuration) / SessionLength)
+            )
+        temporary_df$UserId <- user
+        temporary_df$ReadingSessionNumber <- session
+        rows <- nrow(temporary_df)
+        SessionDetails <- bind_rows(SessionDetails, temporary_df)
+        firstrow <- firstrow + rows
+    }
+}
+
+# identify potential reading session artefacts based on thresholds
+SessionDetails$PotentialReadingSessionArtefact <- ifelse(
+    ((SessionDetails$SessionLength < 1) |
+        (SessionDetails$DisengagementProportion > 0.95) |
+        (SessionDetails$DialogAndDisengagementProportion > 0.8)),
+    TRUE,
+    FALSE
+)
+Artefacts <- filter(SessionDetails, PotentialReadingSessionArtefact)
+```
+
+A new core dataframe was created in which reading session artefacts were removed.
+
+```{r, remove reading session artefacts}
+tracking_data_artefacts_removed <- filter(raw_tracking_data, !PossibleArtefactSession)
+# order the new df
+tracking_data_artefacts_removed <- tracking_data_artefacts_removed[with(tracking_data_artefacts_removed, order(UserId, Date, Time, Id)), ]
+```
+
+## Cumulative time in a reading session
+
+Add a variable in the dataframe that tells us the cumulative time in a reading session for each event.
+
+```{r, add cumulative time}
+tracking_data_artefacts_removed <- tracking_data_artefacts_removed %>%
+    group_by(UserId, ReadingSessionNumber) %>%
+    mutate(
+        CumReadingSessionTime = cumsum(AdjustedEventDuration)
+    )
+```
+
+## Dataframe of grouped navigation blocks
+
+Navigation blocks refer to continuous 
