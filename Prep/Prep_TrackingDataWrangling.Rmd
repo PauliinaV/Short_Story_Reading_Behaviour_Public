@@ -19,7 +19,6 @@ library(psych)
 library(tidyverse)
 library(tidyr)
 library(dplyr)
-library(ggplot2)
 getwd()
 ```
 
@@ -30,7 +29,12 @@ Load raw data from Data -folder and change variable types. See documents in Info
 ```{r, load data}
 # load data
 raw_tracking_data <-
-    read.csv("Data_RawData.csv", header = TRUE, sep = ";", dec = ",")
+    read.csv(
+        "preprocessed_raw_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
 
 # change variable types
 str(raw_tracking_data)
@@ -47,7 +51,40 @@ raw_tracking_data[, c(
 )])
 ## turn reading block number (page view) into an ordered variable
 raw_tracking_data$ReadingBlockNumber <-
-    as.ordered(raw_tracking_data$ReadingBlockNumber)
+    as.ordered(
+        raw_tracking_data$ReadingBlockNumber
+    )
+
+## fix date and time variable types
+raw_tracking_data$Time <-
+    gsub(
+        x = raw_tracking_data$Time, ",", "."
+    )
+raw_tracking_data$Time <-
+    substr(
+        raw_tracking_data$Time, 11, 23
+    )
+raw_tracking_data$Date <-
+    as.Date(
+        raw_tracking_data$Date,
+        format = "%Y-%m-%d"
+    )
+op <-
+    options(digits.secs = 3)
+raw_tracking_data$Time <-
+    strptime(
+        raw_tracking_data$Time,
+        format = "%H:%M:%OS"
+    )
+
+# order the df by User, date, time and event id
+raw_tracking_data <-
+    raw_tracking_data[
+        with(
+            raw_tracking_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
 ```
 
 ## Exclusion criteria
@@ -55,11 +92,12 @@ raw_tracking_data$ReadingBlockNumber <-
 Sixty-two participants were recruited to take part in the study. Two of the participants did not finish the study, and so they are excluded from the sample. The final *n* = 60.
 
 ```{r, exclusion}
-raw_tracking_data <- filter(
-    raw_tracking_data,
-    (UserId != "33") &
-        (UserId != "61")
-)
+raw_tracking_data <-
+    filter(
+        raw_tracking_data,
+        (UserId != "33") &
+            (UserId != "61")
+    )
 ```
 
 
@@ -90,12 +128,13 @@ raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "
 Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
 
 ```{r, find the last event in reading session}
-raw_tracking_data$IsLastEventInReadingSession <- (
-    (raw_tracking_data$ReadingSessionNumber !=
-        lead(raw_tracking_data$ReadingSessionNumber, 1)) |
-        (raw_tracking_data$UserId !=
-            lead(raw_tracking_data$UserId, 1))
-)
+raw_tracking_data$IsLastEventInReadingSession <-
+    (
+        (raw_tracking_data$ReadingSessionNumber !=
+            lead(raw_tracking_data$ReadingSessionNumber, 1)) |
+            (raw_tracking_data$UserId !=
+                lead(raw_tracking_data$UserId, 1))
+    )
 raw_tracking_data$IsLastEventInReadingSession <- # last event in df
     replace_na(raw_tracking_data$IsLastEventInReadingSession, TRUE)
 table(
@@ -108,17 +147,18 @@ table(
 
 **Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing. Similarly, an engagement event that has a duration of >5min in the middle of a reading session is indicative of a missing event: the e-reader system automatically masks the text after 5 minutes of inactivity (event type 'blur'), if an engagement event lasts for longer than 5 minutes, the text mask event may have not been recorded in the tracking data.
 
-Missing events occur when the system doesn't have the time to record an event, for example when the e-reader system is abruptly closed or when network connection fails*. Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
+Missing events occur when the system doesn't have the time to record an event, for example when the e-reader system is abruptly closed or when network connection fails (see Note). Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
 
-**Note: the e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures.*
+*Note: the e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures.*
 
 ```{r, find excessive engagement durations}
 
-excessive_engagement_durations_subdata <- filter(
-    raw_tracking_data,
-    (Engagement == "Engagement") &
-        (DurationMinutes > 5.1)
-)
+excessive_engagement_durations_subdata <-
+    filter(
+        raw_tracking_data,
+        (Engagement == "Engagement") &
+            (DurationMinutes > 5.1)
+    )
 
 table(excessive_engagement_durations_subdata$IsLastEventInReadingSession)
 # 7 excessive engagement durations: X in the middle of session, Y at the end
@@ -132,29 +172,31 @@ The raw data is not edited, but instead the excessive durations are adjusted by 
     * Excessive engagement events' duration that exceeds 5 minutes is deducted from the navigation block duration, whereas excessive non-engagement events' entire duration is deducted from the navigation block duration.
 
 ```{r, adjustments to excessive durations}
-raw_tracking_data$AdjustedEventDuration <- ifelse(
-    ((raw_tracking_data$Engagement == "Engagement") &
-        (raw_tracking_data$DurationMinutes > 5.1)),
-    5,
+raw_tracking_data$AdjustedEventDuration <-
     ifelse(
-        ((raw_tracking_data$IsLastEventInReadingSession &
-            raw_tracking_data$Engagement != "Engagement")),
-        0
+        ((raw_tracking_data$Engagement == "Engagement") &
+            (raw_tracking_data$DurationMinutes > 5.1)),
+        5,
+        ifelse(
+            ((raw_tracking_data$IsLastEventInReadingSession &
+                raw_tracking_data$Engagement != "Engagement")),
+            0
+        )
     )
-)
 
-raw_tracking_data$AdjustedNavigationBlockDuration <- ifelse(
-    ((raw_tracking_data$AdjustedEventDuration != NA) &
-        (raw_tracking_data$Engagement == "Engagement")),
-    (raw_tracking_data$NavigationBlockDuration -
-        (raw_tracking_data$DurationMinutes - 5)),
+raw_tracking_data$AdjustedNavigationBlockDuration <-
     ifelse(
         ((raw_tracking_data$AdjustedEventDuration != NA) &
-            (raw_tracking_data$Engagement != "Engagement")),
+            (raw_tracking_data$Engagement == "Engagement")),
         (raw_tracking_data$NavigationBlockDuration -
-            raw_tracking_data$DurationMinutes)
+            (raw_tracking_data$DurationMinutes - 5)),
+        ifelse(
+            ((raw_tracking_data$AdjustedEventDuration != NA) &
+                (raw_tracking_data$Engagement != "Engagement")),
+            (raw_tracking_data$NavigationBlockDuration -
+                raw_tracking_data$DurationMinutes)
+        )
     )
-)
 ```
 
 ### Identification of inaccurately categorised disengagements
@@ -206,7 +248,12 @@ SessionDetails <- data.frame(
     DialogAndDisengagementProportion = numeric()
 )
 firstrow <- 1
-raw_tracking_data$ReadingSessionNumber <- as.numeric(as.character(raw_tracking_data$ReadingSessionNumber))
+raw_tracking_data$ReadingSessionNumber <-
+    as.numeric(
+        as.character(
+            raw_tracking_data$ReadingSessionNumber
+        )
+    )
 
 # calculate session details to the new df
 for (user in UserList) {
@@ -254,22 +301,32 @@ for (user in UserList) {
 }
 
 # identify potential reading session artefacts based on thresholds
-SessionDetails$PotentialReadingSessionArtefact <- ifelse(
-    ((SessionDetails$SessionLength < 1) |
-        (SessionDetails$DisengagementProportion > 0.95) |
-        (SessionDetails$DialogAndDisengagementProportion > 0.8)),
-    TRUE,
-    FALSE
-)
-Artefacts <- filter(SessionDetails, PotentialReadingSessionArtefact)
+SessionDetails$PotentialReadingSessionArtefact <-
+    ifelse(
+        ((SessionDetails$SessionLength < 1) |
+            (SessionDetails$DisengagementProportion > 0.95) |
+            (SessionDetails$DialogAndDisengagementProportion > 0.8)),
+        TRUE,
+        FALSE
+    )
+Artefacts <-
+    filter(
+        SessionDetails,
+        PotentialReadingSessionArtefact
+    )
 ```
 
 A new core dataframe was created in which reading session artefacts were removed.
 
 ```{r, remove reading session artefacts}
-tracking_data_artefacts_removed <- filter(raw_tracking_data, !PossibleArtefactSession)
+tracking_data_artefacts_removed <-
+    filter(
+        raw_tracking_data,
+        !PossibleArtefactSession
+    )
 # order the new df
-tracking_data_artefacts_removed <- tracking_data_artefacts_removed[with(tracking_data_artefacts_removed, order(UserId, Date, Time, Id)), ]
+tracking_data_artefacts_removed <-
+    tracking_data_artefacts_removed[with(tracking_data_artefacts_removed, order(UserId, Date, Time, Id)), ]
 ```
 
 ## Cumulative time in a reading session
@@ -277,13 +334,20 @@ tracking_data_artefacts_removed <- tracking_data_artefacts_removed[with(tracking
 Add a variable in the dataframe that tells us the cumulative time in a reading session for each event.
 
 ```{r, add cumulative time}
-tracking_data_artefacts_removed <- tracking_data_artefacts_removed %>%
+tracking_data_artefacts_removed <-
+    tracking_data_artefacts_removed %>%
     group_by(UserId, ReadingSessionNumber) %>%
     mutate(
         CumReadingSessionTime = cumsum(AdjustedEventDuration)
     )
 ```
 
-## Dataframe of grouped navigation blocks
 
-Navigation blocks refer to continuous 
+## Save wrangled tracking data
+
+The wrangled tracking data is saved for usage in other scripts to compute reading behaviour measures and to eventually analyse the results.
+The dataset has already been saved, and so the below r code chunk is not run.
+
+```{r, eval=FALSE, echo=TRUE, save wrangled data}
+write.csv2("wrangled_tracking_data.csv", header = TRUE, dec = ",", sep = ";")
+```
