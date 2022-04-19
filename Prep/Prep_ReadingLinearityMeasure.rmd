@@ -227,10 +227,16 @@ wrangled_tracking_data <-
 
 ## Determine linearity
 
+First we determine how much the participants' location shifts in between different navigation blocks. This essentially tells us how much, and to what direction, the participants navigated.
 
+In order to count the number of pages turned, we first create variables that check whether consequtive navigation blocks (one per row) should be compared. We only want to compare navigation blocks from
+a) the same user
+b) the same reading session and
+c) the same reading set up.
 
-```{r}
-# create variables
+A reading set up affects the amount of 'pages' that the short story has, for example, in a small browser window the story is organised in more 'pages' than in a large browser window. Pages turned should only be determined between events that have the same reading set up. Note that this does not limit our ability to notice linearity of navigation as changing the reading set up will either result in an event that is in its own navigation block (which can then be compared to a navigation block; this happens e.g. when the participant resizes a browser window), or a change in reading set up starts a new reading session (e.g. when the participant changes device).
+
+```{r, create variables for pages turned calculation}
 grouped_navigation_blocks_data$IsNewUser <-
     (
         grouped_navigation_blocks_data$UserId !=
@@ -246,7 +252,11 @@ grouped_navigation_blocks_data$IsScreenChange <-
         grouped_navigation_blocks_data$TotalPagesInSection !=
             (lag(grouped_navigation_blocks_data$TotalPagesInSection, 1))
     )
+```
 
+We can then calculate the amount of 'pages' turned between navigation blocks. The variable is calculated by subtracting a navigation block's start location (in pages) from the next navigation block's start location.
+
+```{r, count pages turned}
 # count the number of pages turned within a navigation block
 grouped_navigation_blocks_data$PagesTurned <-
     ifelse(
