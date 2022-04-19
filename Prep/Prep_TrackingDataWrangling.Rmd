@@ -143,7 +143,7 @@ table(
 )
 ```
 
-**Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document ___), the duration should be recorded as 0. A disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so it's duration is arbitrary.
+**Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document X), the duration should be recorded as 0. A disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so it's duration is arbitrary.
 
 **Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing. Similarly, an engagement event that has a duration of >5min in the middle of a reading session is indicative of a missing event: the e-reader system automatically masks the text after 5 minutes of inactivity (event type 'blur'), if an engagement event lasts for longer than 5 minutes, the text mask event may have not been recorded in the tracking data.
 
