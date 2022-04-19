@@ -1,0 +1,282 @@
+---
+title: "Prep_LinearityMeasure"
+author: "Pauliina Vuorinen"
+date: "19/04/2022-"
+output: html_document
+library: "S1_code_library.bib"
+---
+
+## Introduction
+
+The purpose of this script is to compute a measure of reading linearity. Linearity refers to the frequency of nonlinear navigation during reading of the short story. This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
+
+## Setup
+
+```{r, setup}
+library(psych)
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+getwd()
+```
+
+## Load data and check variable types
+
+```{r, load data}
+# load data
+wrangled_tracking_data <-
+    read.csv(
+        "wrangled_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+
+# change variable types
+str(wrangled_tracking_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn user and story indicators into factors
+wrangled_tracking_data[, c(
+    "UserId",
+    "StoryId"
+)] <- convert.magic(wrangled_tracking_data[, c(
+    "UserId",
+    "StoryId"
+)])
+## turn reading block number (page view) into an ordered variable
+wrangled_tracking_data$ReadingBlockNumber <-
+    as.ordered(
+        wrangled_tracking_data$ReadingBlockNumber
+    )
+## fix date and time variable types
+wrangled_tracking_data$Time <-
+    gsub(
+        x = wrangled_tracking_data$Time, ",", "."
+    )
+wrangled_tracking_data$Time <-
+    substr(
+        wrangled_tracking_data$Time, 11, 23
+    )
+wrangled_tracking_data$Date <-
+    as.Date(
+        wrangled_tracking_data$Date,
+        format = "%Y-%m-%d"
+    )
+op <-
+    options(digits.secs = 3)
+wrangled_tracking_data$Time <-
+    strptime(
+        wrangled_tracking_data$Time,
+        format = "%H:%M:%OS"
+    )
+# order the df by User, date, time and event id
+wrangled_tracking_data <-
+    wrangled_tracking_data[
+        with(
+            wrangled_tracking_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
+```
+
+## Dataframe of grouped navigation blocks
+
+In order to calculate a measure of reading linearity, it is necessary to determine whether each navigation event in the data refers to nonlinear or linear navigation. Linear navigation was defined as movement forwards in the text without skipping any pages, whereas nonlinear navigation was defined as a regression or a forward leap according to the following:
+* Regression: Any navigation backwards in the text, either by turning the page or using the progress bar.
+* Forward leap: A jump forwards in the text with the progress bar to a section further than the next page, or turning of more than one page in a row at a browsing speed.
+
+Note that browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read.
+
+Indeed, individual page turns and page opening events cannot tell us about the linearity of the navigation. Therefore, in order to determine whether each event includes nonlinear or linear navigation, consequtive events that describe one navigation sequence need to be grouped together. A navigation block is defined as a combination of consequtive events that reflect navigation to one direction at roughly the same speed (see information about speed labels in Info folder ____). This means that navigational events (such as page turn events and usage of progress bar) and 'openPage' events are grouped together as long as the direction and the speed label remain constant. For example, a reader who turns a page forwards at a skimming speed four times in a row and then uses the progress bar to jump backwards in the text, has two different navigation blocks. Note that indicators for the navigation blocks are already included in the preprocessed raw data. See more information about navigation blocks in Info folder ___.
+
+Navigation blocks are grouped together based on the indicators already present in the data. In addition to the grouping, we also extract important event information that is needed for analyses, such as the duration of each navigation block.
+
+```{r, group navigation blocks}
+# first create a new df
+grouped_navigation_blocks_data <- wrangled_tracking_data[1, ]
+namevector <-
+    c(
+        "FirstStartLocation",
+        "LastStartLocation",
+        "FirstVisibleCharacterCount",
+        "LastVisibleCharacterCount",
+        "FirstReadingBlock",
+        "LastReadingBlock",
+        "FirstPercentage",
+        "LastPercentage",
+        "FirstPage",
+        "LastPage",
+        "NavBlockEndLocation",
+        "AverageReadingSpeed",
+        "NavBlockStartDeadline",
+        "NavBlockEndDeadline",
+        "FirstCumReadingSessionTime",
+        "LastCumReadingSessionTime",
+        "NavBlockDuration2",
+        "NavBlockSpeedLabel"
+    )
+grouped_navigation_blocks_data[, namevector] <- NA
+grouped_navigation_blocks_data <- NavData[0, ]
+
+# group navigation blocks into a new df
+for (i in levels(wrangled_tracking_data$UserId)) {
+    subset_user <- subset(
+        x = wrangled_tracking_data,
+        subset = UserId == i
+    )
+    subset_user$NavigationBlockNumber <-
+        as.ordered(subset_user$NavigationBlockNumber)
+
+    for (j in levels(subset_user$NavigationBlockNumber)) {
+        subset_navigationblock <- subset(
+            x = subset_user,
+            subset = NavigationBlockNumber == j
+        )
+        temporary_df <-
+            mutate(
+                subset_navigationblock,
+                FirstStartLocation =
+                    subset_navigationblock[
+                        1,
+                        "StartLocation"
+                    ],
+                LastStartLocation =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "StartLocation"
+                    ],
+                FirstVisibleCharacterCount =
+                    subset_navigationblock[
+                        1,
+                        "VisibleCharacterCount"
+                    ],
+                LastVisibleCharacterCount =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "VisibleCharacterCount"
+                    ],
+                FirstReadingBlock =
+                    subset_navigationblock[
+                        1,
+                        "ReadingBlockNumber"
+                    ],
+                LastReadingBlock =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "ReadingBlockNumber"
+                    ],
+                FirstPercentage =
+                    subset_navigationblock[
+                        1, "Percentage"
+                    ],
+                LastPercentage =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "Percentage"
+                    ],
+                FirstPage =
+                    subset_navigationblock[1, "PageInSection"],
+                LastPage =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "PageInSection"
+                    ],
+                NavBlockEndLocation =
+                    LastStartLocation + LastVisibleCharacterCount,
+                AverageReadingSpeed =
+                    mean(EngagedReadingSpeed),
+                NavBlockStartDeadline =
+                    subset_navigationblock[
+                        1,
+                        "TimeBeforeDeadlinesDays"
+                    ],
+                NavBlockEndDeadline =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "TimeBeforeDeadlinesDays"
+                    ],
+                FirstCumReadingSessionTime =
+                    subset_navigationblock[1, "CumReadingSessionTime"],
+                LastCumReadingSessionTime =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "CumReadingSessionTime"
+                    ],
+                NavBlockDuration2 =
+                    min(NavDurFix),
+                NavBlockSpeedLabel =
+                    subset_navigationblock[
+                        nrow(subset_navigationblock),
+                        "EngagedSpeedLabel"
+                    ]
+            )
+        grouped_navigation_blocks_data <-
+            rbind(grouped_navigation_blocks_data, temporary_df[1, ])
+    }
+}
+# add information about grouped navigation blocks to wrangled df
+wrangled_tracking_data <-
+    merge(
+        wrangled_tracking_data,
+        grouped_navigation_blocks_data[, c(2, 24, 70:72)],
+        by = c("UserId", "NavigationBlockNumber"),
+        all.x = TRUE
+    )
+```
+
+## Determine linearity
+
+
+
+```{r}
+# create variables
+grouped_navigation_blocks_data$IsNewUser <-
+    (
+        grouped_navigation_blocks_data$UserId !=
+            (lag(grouped_navigation_blocks_data$UserId, 1))
+    )
+grouped_navigation_blocks_data$IsNewSession <-
+    (
+        grouped_navigation_blocks_data$ReadingSessionNumber !=
+            (lag(grouped_navigation_blocks_data$ReadingSessionNumber, 1))
+    )
+grouped_navigation_blocks_data$IsScreenChange <-
+    (
+        grouped_navigation_blocks_data$TotalPagesInSection !=
+            (lag(grouped_navigation_blocks_data$TotalPagesInSection, 1))
+    )
+
+# count the number of pages turned within a navigation block
+grouped_navigation_blocks_data$PagesTurned <-
+    ifelse(
+        (
+            !lead(grouped_navigation_blocks_data$IsNewUser, 1) &
+                !lead(grouped_navigation_blocks_data$IsNewSession, 1) &
+                !lead(grouped_navigation_blocks_data$IsScreenChange, 1)
+        ),
+        (
+            lead(grouped_navigation_blocks_data$FirstPage, 1) -
+                grouped_navigation_blocks_data$FirstPage
+        ),
+        ifelse(
+            (
+                grouped_navigation_blocks_data$FirstPage !=
+                    grouped_navigation_blocks_data$LastPage
+            ),
+            (
+                grouped_navigation_blocks_data$LastPage -
+                    grouped_navigation_blocks_data$FirstPage
+            ),
+            0
+        )
+    )
+# - regression, + forward leap or a chronological page turn, 0 not a navigation
+table(
+    sign(grouped_navigation_blocks_data$PagesTurned)
+)
+```
+
+
+
+
