@@ -19,7 +19,7 @@ library(psych)
 library(tidyverse)
 library(tidyr)
 library(dplyr)
-getwd()
+getwd() # check that working directory is ~/Short_Story_Reading_Behaviour_Public
 ```
 
 ## Load data and check variable types
@@ -27,47 +27,47 @@ getwd()
 Load raw data from Data -folder and change variable types. See documents in Info -folder for information on different tracking events.
 
 ```{r, load data}
-# load data
 raw_tracking_data <-
     read.csv(
-        "preprocessed_raw_tracking_data.csv",
+        "Data/preprocessed_raw_tracking_data.csv",
         header = TRUE,
         sep = ";",
         dec = ","
     )
+head(raw_tracking_data)
+```
 
-# change variable types
+```{r, change variable types}
 str(raw_tracking_data)
-rename(raw_tracking_data, StoryId = BookId)
+names(raw_tracking_data)[names(raw_tracking_data) == "BookId"] <- "StoryId"
 source("Functions/Functions_VariableTypeConversion.R")
 
 ## turn user and story indicators into factors
 raw_tracking_data[, c(
     "UserId",
     "StoryId"
-)] <- convert.magic(raw_tracking_data[, c(
-    "UserId",
-    "StoryId"
-)])
-## turn reading block number (page view) into an ordered variable
+)] <- convert.magic(
+    raw_tracking_data[, c(
+        "UserId",
+        "StoryId"
+    )],
+    "factor"
+)
+## turn reading block (page view) number  into an ordered variable
+
 raw_tracking_data$ReadingBlockNumber <-
     as.ordered(
         raw_tracking_data$ReadingBlockNumber
     )
-
 ## fix date and time variable types
-raw_tracking_data$Time <-
-    gsub(
-        x = raw_tracking_data$Time, ",", "."
-    )
-raw_tracking_data$Time <-
-    substr(
-        raw_tracking_data$Time, 11, 23
-    )
 raw_tracking_data$Date <-
     as.Date(
         raw_tracking_data$Date,
-        format = "%Y-%m-%d"
+        format = "%d.%m.%Y"
+    )
+raw_tracking_data$Time <-
+    gsub(
+        x = raw_tracking_data$Time, ",", "."
     )
 op <-
     options(digits.secs = 3)
@@ -76,8 +76,10 @@ raw_tracking_data$Time <-
         raw_tracking_data$Time,
         format = "%H:%M:%OS"
     )
+```
 
-# order the df by User, date, time and event id
+```{r, order df}
+# order by User, date, time and event id
 raw_tracking_data <-
     raw_tracking_data[
         with(
@@ -100,34 +102,32 @@ raw_tracking_data <-
     )
 ```
 
-
 ## Missing and erroneous data values
 
-Fix unrealistic and misleading data values in the tracking data. These errors arise from accidental miscoding in the collection of the tracking data, or alternative data formatting.
+Fix unrealistic and misleading data values in the tracking data. These errors arise from accidental miscoding during the collection of the tracking data, or alternative data formatting.
 
-In the below code:
 1. Change navigation block numbers (continuous navigation in one direction) recorded as zero into NA values. A navigation block number is only recorded as zero if the participant is not navigating the document. This is misleading, and so zeros are turned to NAs.
-2. Similarly to navigation block numbers, reading block numbers (page views) are recorded as zero when the participant is not viewing a page. This is misleading, and so zeros are turned to NAs.
-3. Inactive timeout events are erroneously coded as 'engagements' in the raw data. The inactive timeout indicates that the page view has been masked due to > 5mins of inactivity, and therefore, these event types should be coded as 'disengagements'.
-
-
-```{r, erroneous values}
-# point (1) above
+```{r, fix navigation block formatting}
 raw_tracking_data[, "NavigationBlockNumber"][raw_tracking_data[, "NavigationBlockNumber"] == 0] <- NA
+```
 
-# point (2) above
+2. Similarly to navigation block numbers, reading block numbers (page views) are recorded as zero when the participant is not viewing a page. This is misleading, and so zeros are turned to NAs.
+```{r, fix reading block formatting}
 raw_tracking_data[, "ReadingBlockNumber"][raw_tracking_data[, "ReadingBlockNumber"] == 0] <- NA
+```
 
-# point (3) above
+3. Inactive timeout events are erroneously coded as 'engagements' in the raw data. The inactive timeout indicates that the page view has been masked due to > 5mins of inactivity, and therefore, these event types should be coded as 'disengagements'.
+```{r, fix inactiveTimeout engagement type}
 raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "Disengagement"
-# FIX: inactiveTimeout has wrong naming convention
 ```
 
 ### Adjustments to event and navigation block durations
 
 Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
 
-```{r, find the last event in reading session}
+```{r, find last event in reading session}
+# an event is the last one in a reading session if:
+## the current session != next, or the current user != next
 raw_tracking_data$IsLastEventInReadingSession <-
     (
         (raw_tracking_data$ReadingSessionNumber !=
@@ -135,8 +135,14 @@ raw_tracking_data$IsLastEventInReadingSession <-
             (raw_tracking_data$UserId !=
                 lead(raw_tracking_data$UserId, 1))
     )
-raw_tracking_data$IsLastEventInReadingSession <- # last event in df
+# last event in df assigned manually
+raw_tracking_data$IsLastEventInReadingSession <-
     replace_na(raw_tracking_data$IsLastEventInReadingSession, TRUE)
+```
+
+124 of the last reading session events are disengagements and five are engagements.
+
+```{r, check last event in reading session engagement types}
 table(
     raw_tracking_data$Engagement,
     raw_tracking_data$IsLastEventInReadingSession
@@ -152,26 +158,20 @@ Missing events occur when the system doesn't have the time to record an event, f
 *Note: the e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures.*
 
 ```{r, find excessive engagement durations}
-
 excessive_engagement_durations_subdata <-
     filter(
         raw_tracking_data,
         (Engagement == "Engagement") &
             (DurationMinutes > 5.1)
     )
-
-table(excessive_engagement_durations_subdata$IsLastEventInReadingSession)
-# 7 excessive engagement durations: X in the middle of session, Y at the end
+table(excessive_engagement_durations_subdata$IsLastEventInReadingSession) # CHECK
 ```
 
-The raw data is not edited, but instead the excessive durations are adjusted by creating new variables. 
-
-* 'AdjustedEventDuration' shows the suggested new event duration
+The excessive durations are adjusted by creating new variables:
+1. 'AdjustedEventDuration' shows the suggested new event duration
     * Set to 5 minutes for engagement events and to 0 for non-engagement events.
-* 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
-    * Excessive engagement events' duration that exceeds 5 minutes is deducted from the navigation block duration, whereas excessive non-engagement events' entire duration is deducted from the navigation block duration.
 
-```{r, adjustments to excessive durations}
+```{r, adjust to event durations}
 raw_tracking_data$AdjustedEventDuration <-
     ifelse(
         ((raw_tracking_data$Engagement == "Engagement") &
@@ -183,7 +183,12 @@ raw_tracking_data$AdjustedEventDuration <-
             0
         )
     )
+```
 
+2. 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
+    * Excessive engagement events' duration that exceeds 5 minutes is deducted from the navigation block duration, whereas excessive non-engagement events' entire duration is deducted from the navigation block duration.
+
+```{r, adjust navigation block durations}
 raw_tracking_data$AdjustedNavigationBlockDuration <-
     ifelse(
         ((raw_tracking_data$AdjustedEventDuration != NA) &
