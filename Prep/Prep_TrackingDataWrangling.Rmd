@@ -42,23 +42,76 @@ str(raw_tracking_data)
 names(raw_tracking_data)[names(raw_tracking_data) == "BookId"] <- "StoryId"
 source("Functions/Functions_VariableTypeConversion.R")
 
-## turn user and story indicators into factors
+## turn columns into factors that should be factors
 raw_tracking_data[, c(
     "UserId",
-    "StoryId"
+    "StoryId",
+    "Engagement",
+    "EngagedSpeedLabel",
+    "Direction",
+    "NavigationBlockDirection"
 )] <- convert.magic(
     raw_tracking_data[, c(
         "UserId",
-        "StoryId"
+        "StoryId",
+        "Engagement",
+        "EngagedSpeedLabel",
+        "Direction",
+        "NavigationBlockDirection"
     )],
     "factor"
 )
-## turn reading block (page view) number  into an ordered variable
-
-raw_tracking_data$ReadingBlockNumber <-
-    as.ordered(
-        raw_tracking_data$ReadingBlockNumber
+## fix numeric columns that were automatically categorised as chr
+raw_tracking_data[, c(
+    "BaselineSpeed",
+    "AdjustedBaselineSpeed",
+    "TimeBeforeDeadlinesDays",
+    "TimeBeforeDeadlineMinutes",
+    "DurationMinutes",
+    "ReadingBlockDuration",
+    "EngagedReadingDuration",
+    "EngagedReadingSpeed",
+    "NavigationBlockDuration"
+)] <- convert.magic(
+    raw_tracking_data[, c(
+        "BaselineSpeed",
+        "AdjustedBaselineSpeed",
+        "TimeBeforeDeadlinesDays",
+        "TimeBeforeDeadlineMinutes",
+        "DurationMinutes",
+        "ReadingBlockDuration",
+        "EngagedReadingDuration",
+        "EngagedReadingSpeed",
+        "NavigationBlockDuration"
+    )],
+    "numeric"
+)
+## turn 'isIntrinsicCondition' into a logical variable
+raw_tracking_data$IsIntrinsicCondition <-
+    as.logical(
+        raw_tracking_data$IsIntrinsicCondition
     )
+### Create variable called 'Condition'
+raw_tracking_data$Condition <-
+    ifelse(raw_tracking_data$IsIntrinsicCondition == TRUE,
+        "AutonomousCondition",
+        "NonAutonomousCondition"
+    )
+## turn reading block (page view) number,
+### reading session number, and
+#### navigation block number into ordered factors
+raw_tracking_data[, c(
+    "ReadingBlockNumber",
+    "ReadingSessionNumber",
+    "NavigationBlockNumber"
+)] <- convert.magic(
+    raw_tracking_data[, c(
+        "ReadingBlockNumber",
+        "ReadingSessionNumber",
+        "NavigationBlockNumber"
+    )],
+    "ordered"
+)
 ## fix date and time variable types
 raw_tracking_data$Date <-
     as.Date(
@@ -151,9 +204,12 @@ table(
 
 **Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document X), the duration should be recorded as 0. A disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so it's duration is arbitrary.
 
-**Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing. Similarly, an engagement event that has a duration of >5min in the middle of a reading session is indicative of a missing event: the e-reader system automatically masks the text after 5 minutes of inactivity (event type 'blur'), if an engagement event lasts for longer than 5 minutes, the text mask event may have not been recorded in the tracking data.
+**Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event.
 
-Missing events occur when the system doesn't have the time to record an event, for example when the e-reader system is abruptly closed or when network connection fails (see Note). Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
+* A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing.
+* An engagement event that has a duration of >5min in the middle of a reading session is similarly indicative of a missing event: the e-reader system automatically masks the text after 5 minutes of inactivity (event type 'blur'), therefore, if an engagement event lasts for longer than 5 minutes, the text mask event is missing from the tracking data.
+
+Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails (see Note below). Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
 
 *Note: the e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures.*
 
@@ -164,12 +220,14 @@ excessive_engagement_durations_subdata <-
         (Engagement == "Engagement") &
             (DurationMinutes > 5.1)
     )
-table(excessive_engagement_durations_subdata$IsLastEventInReadingSession) # CHECK
+nrow(excessive_engagement_durations_subdata)
+# only 3 cases of excessive engagement duration
 ```
 
 The excessive durations are adjusted by creating new variables:
 1. 'AdjustedEventDuration' shows the suggested new event duration
     * Set to 5 minutes for engagement events and to 0 for non-engagement events.
+    * If an event is not the last in a reading session or an excessive engagement duration, AdjustedEventDuration = DurationMinutes
 
 ```{r, adjust to event durations}
 raw_tracking_data$AdjustedEventDuration <-
@@ -180,45 +238,88 @@ raw_tracking_data$AdjustedEventDuration <-
         ifelse(
             ((raw_tracking_data$IsLastEventInReadingSession &
                 raw_tracking_data$Engagement != "Engagement")),
-            0
+            0,
+            raw_tracking_data$DurationMinutes
         )
     )
 ```
 
+Next, we will check that AdjustedEventDuration does what we expect it to do. 
+```{r, check AdjustedEventDuration 1/2}
+table(raw_tracking_data$DurationMinutes !=
+    raw_tracking_data$AdjustedEventDuration)
+```
+
+The above code shows that 67 event durations were adjusted. Check the amount of events that we pursued to adjust:
+```{r, check AdjustedEventDuration 2/2}
+table(
+    ( # amount of events last in a reading session that should be adjusted:
+        raw_tracking_data$IsLastEventInReadingSession &
+            raw_tracking_data$Engagement != "Engagement" &
+            raw_tracking_data$DurationMinutes != 0
+    ) | # excessive durations that should be adjusted:
+        (raw_tracking_data$Engagement == "Engagement" &
+            raw_tracking_data$DurationMinutes > 5.1
+        )
+)
+```
+
+We pursued to adjust 67 event durations with the above criteria, and we correctly adjusted these 67 events.
+
+Next:
+
 2. 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
-    * Excessive engagement events' duration that exceeds 5 minutes is deducted from the navigation block duration, whereas excessive non-engagement events' entire duration is deducted from the navigation block duration.
+    * This variable is calculated by summing AdjustedEventDuration for each UserId and each NavigationBlockNumber
 
 ```{r, adjust navigation block durations}
-raw_tracking_data$AdjustedNavigationBlockDuration <-
-    ifelse(
-        ((raw_tracking_data$AdjustedEventDuration != NA) &
-            (raw_tracking_data$Engagement == "Engagement")),
-        (raw_tracking_data$NavigationBlockDuration -
-            (raw_tracking_data$DurationMinutes - 5)),
-        ifelse(
-            ((raw_tracking_data$AdjustedEventDuration != NA) &
-                (raw_tracking_data$Engagement != "Engagement")),
-            (raw_tracking_data$NavigationBlockDuration -
-                raw_tracking_data$DurationMinutes)
-        )
+adjusted_navigationblock_duration <- raw_tracking_data %>%
+    group_by(UserId, NavigationBlockNumber) %>%
+    summarise(
+        AdjustedNavigationBlockDuration =
+            sum(AdjustedEventDuration)
     )
+raw_tracking_data <-
+    merge(
+        raw_tracking_data,
+        adjusted_navigationblock_duration,
+        by = c("UserId", "NavigationBlockNumber")
+    )
+```
+
+Finally, create a new dataframe without the unadjusted event duration and navigation block duration to avoid confusion.
+
+```{r, remove unadjusted durations}
+adjusted_durations_data <- raw_tracking_data %>%
+    select(-DurationMinutes, -NavigationBlockDuration)
 ```
 
 ### Identification of inaccurately categorised disengagements
 
-Events were given engagement labels in the data pre-processing stage (see file __ in the Info folder for detail), however, some rare events were mistakenly classified as disengagements. During the opening of the e-reader system, an event was occasionally categorised as a 'disengagement' even though the text was visible to the participants. These events are first identified by inspection of 'unusual disengagements' that don't have a clear disengagement-linked event type (see information on events in ___ in the Info folder). Ten events were identified as inaccurately categorised and so these events are corrected into engagements.
+Events were given engagement labels in the data pre-processing stage (see file __ in the Info folder for detail), however, some rare events were mistakenly classified as disengagements. During the opening of the e-reader system, an event was occasionally categorised as a 'disengagement' even though the text was visible to the participants. These events are first identified by inspection of 'unusual disengagements' which
+1. don't have a clear disengagement-linked event type (such as 'blur' or 'close', see more information on events in ___ in the Info folder),
+2. occur when the page is open (IsPageOpen == TRUE), and
+3. occur when disengagement linked tests are FALSE (e.g. the page is not blurred: !IsBlurred)
 
+## CHECK: 
 ```{r, inaccurately categorised disengagements}
-raw_tracking_data$IsUnusualDisengagement <-
-    ((raw_tracking_data$Engagement == "Disengagement") &
-        (raw_tracking_data$Type != "blur" &
-            raw_tracking_data$Type != "openMenu" &
-            raw_tracking_data$Type != "inactiveTimeout" &
-            raw_tracking_data$Type != "close" &
-            raw_tracking_data$Type != "logout" &
-            raw_tracking_data$Type != "openBook" &
-            raw_tracking_data$Type != "bookDialogOpen" &
-            raw_tracking_data$Type != "openInformation"))
+adjusted_durations_data$IsUnusualDisengagement <-
+    (
+        (adjusted_durations_data$Engagement == "Disengagement") &
+            (adjusted_durations_data$Type != "blur" &
+                adjusted_durations_data$Type != "openMenu" &
+                adjusted_durations_data$Type != "inactiveTimeout" &
+                adjusted_durations_data$Type != "close" &
+                adjusted_durations_data$Type != "logout" &
+                adjusted_durations_data$Type != "openBook" &
+                adjusted_durations_data$Type != "bookDialogOpen" &
+                adjusted_durations_data$Type != "openInformation") &
+            (adjusted_durations_data$IsPageOpen &
+                !adjusted_durations_data$IsBlurred &
+                !adjusted_durations_data$IsDialogOpen &
+                !adjusted_durations_data$IsMenuOpen &
+                !adjusted_durations_data$IsInactive)
+    )
+```
 raw_tracking_data$Engagement <-
     ifelse(data$IsUnusualDisengagement &
         raw_tracking_data$IsOpeningEvent &
@@ -230,7 +331,7 @@ raw_tracking_data$Engagement <-
     "Engagement",
     raw_tracking_data$Engagement
     )
-```
+
 
 ### Reading session artefacts
 
