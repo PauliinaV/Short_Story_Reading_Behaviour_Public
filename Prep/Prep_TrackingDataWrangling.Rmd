@@ -174,11 +174,70 @@ raw_tracking_data[, "ReadingBlockNumber"][raw_tracking_data[, "ReadingBlockNumbe
 raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "Disengagement"
 ```
 
+### Identification of inaccurately categorised disengagements
+
+Events were given engagement labels in the data pre-processing stage (see file __ in the Info folder for detail). A mistake in this categorisation was identified later, which showed that some e-reader system opening events were mistakenly classified as disengagements. After testing and extensive exploration of the data, these inaccurately categorised disengagements were identified by the following criteria:
+
+1. The event is a disengagement (Engagement == "Disengagement"),
+2. The event occurs during an opening event (IsOpeningEvent == TRUE) when the page has loaded (IsPageOpen == TRUE),
+3. The event occurs in the e-reader (IsReading == TRUE)
+4. The event occurs when disengagement-linked tests are FALSE (e.g. the text is not blurred: !IsBlurred), or
+5. The event doesn't have a clear disengagement-linked event type (such as 'blur' or 'close', see more information on events in ___ in the Info folder)
+
+```{r, inaccurately categorised disengagements}
+raw_tracking_data$IsUnusualDisengagement <-
+    (
+        (raw_tracking_data$Engagement == "Disengagement") & #1
+            (raw_tracking_data$IsOpeningEvent & #2
+                raw_tracking_data$IsPageOpen) & 
+            (raw_tracking_data$IsReading) & #3
+                (!raw_tracking_data$IsBlurred & #4
+                !raw_tracking_data$IsDialogOpen &
+                !raw_tracking_data$IsMenuOpen &
+                !raw_tracking_data$IsInactive) &
+            (raw_tracking_data$Type != "blur" & #5
+                raw_tracking_data$Type != "openMenu" &
+                raw_tracking_data$Type != "inactiveTimeout" &
+                raw_tracking_data$Type != "close" &
+                raw_tracking_data$Type != "logout" &
+                raw_tracking_data$Type != "openBook" &
+                raw_tracking_data$Type != "bookDialogOpen" &
+                raw_tracking_data$Type != "openInformation")
+)
+```
+
+10 Unsual disengagements were found:
+```{r, check unusual disengagements}
+table(raw_tracking_data$IsUnusualDisengagement)
+```
+
+These events had a tendency to occur after a text masking event ('blur') and start a new reading session. The e-reader system was expecting an 'openPage' event to signify the opening of a new page, but instead the page had been loaded previously. This confusing caused the events to be categorised as disengagements rather than engagements. To fix this mistake, the 10 unusual disengagements are turned into engagements: <!-- this is a placeholder text, check with M-->
+
+```{r, turn unusual disengagements into engagements}
+raw_tracking_data$Engagement <- as.character(raw_tracking_data$Engagement)
+
+raw_tracking_data$Engagement <- ifelse(
+    raw_tracking_data$IsUnusualDisengagement,
+    "Engagement",
+    raw_tracking_data$Engagement
+)
+
+raw_tracking_data$Engagement <- as.factor(raw_tracking_data$Engagement)
+```
+
 ### Adjustments to event and navigation block durations
 
 Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
 
 ```{r, find last event in reading session}
+# make sure the df is correctly ordered
+raw_tracking_data <-
+    raw_tracking_data[
+        with(
+            raw_tracking_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
 # an event is the last one in a reading session if:
 ## the current session != next, or the current user != next
 raw_tracking_data$IsLastEventInReadingSession <-
@@ -292,47 +351,7 @@ adjusted_durations_data <- raw_tracking_data %>%
     select(-DurationMinutes, -NavigationBlockDuration)
 ```
 
-### Identification of inaccurately categorised disengagements
-
-Events were given engagement labels in the data pre-processing stage (see file __ in the Info folder for detail), however, some rare events were mistakenly classified as disengagements. During the opening of the e-reader system, an event was occasionally categorised as a 'disengagement' even though the text was visible to the participants. These events are first identified by inspection of 'unusual disengagements' which
-1. don't have a clear disengagement-linked event type (such as 'blur' or 'close', see more information on events in ___ in the Info folder),
-2. occur when the page is open (IsPageOpen == TRUE), and
-3. occur when disengagement linked tests are FALSE (e.g. the page is not blurred: !IsBlurred)
-
-## CHECK: 
-```{r, inaccurately categorised disengagements}
-adjusted_durations_data$IsUnusualDisengagement <-
-    (
-        (adjusted_durations_data$Engagement == "Disengagement") &
-            (adjusted_durations_data$Type != "blur" &
-                adjusted_durations_data$Type != "openMenu" &
-                adjusted_durations_data$Type != "inactiveTimeout" &
-                adjusted_durations_data$Type != "close" &
-                adjusted_durations_data$Type != "logout" &
-                adjusted_durations_data$Type != "openBook" &
-                adjusted_durations_data$Type != "bookDialogOpen" &
-                adjusted_durations_data$Type != "openInformation") &
-            (adjusted_durations_data$IsPageOpen &
-                !adjusted_durations_data$IsBlurred &
-                !adjusted_durations_data$IsDialogOpen &
-                !adjusted_durations_data$IsMenuOpen &
-                !adjusted_durations_data$IsInactive)
-    )
-```
-raw_tracking_data$Engagement <-
-    ifelse(data$IsUnusualDisengagement &
-        raw_tracking_data$IsOpeningEvent &
-        raw_tracking_data$IsPageOpen &
-        !raw_tracking_data$IsBlurred &
-        !raw_tracking_data$IsDialogOpen &
-        !raw_tracking_data$IsMenuOpen &
-        !raw_tracking_data$IsInactive,
-    "Engagement",
-    raw_tracking_data$Engagement
-    )
-
-
-### Reading session artefacts
+### Reading session artefacts --
 
 The data analysis for the current study was focused on engaged reading, and so very short reading sessions or sessions that largely consisted of disengagement events only were not considered to be meaningful. These reading sessions were likely to occur if the participant attempts to resume a reading session and becomes quickly distracted by other things, or if they accidentally open the e-reader.
 
