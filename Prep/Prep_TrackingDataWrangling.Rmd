@@ -157,14 +157,14 @@ raw_tracking_data <-
 
 ## Missing and erroneous data values
 
-Fix unrealistic and misleading data values in the tracking data. These errors arise from accidental miscoding during the collection of the tracking data, or alternative data formatting.
+Fix unrealistic and misleading values in the tracking data. These errors arise from accidental miscoding during the collection of the tracking data, or alternative data formatting.
 
-1. Change navigation block numbers (continuous navigation in one direction) recorded as zero into NA values. A navigation block number is only recorded as zero if the participant is not navigating the document. This is misleading, and so zeros are turned to NAs.
+1. Change navigation block numbers (continuous navigation in one direction) recorded as zero into NA values. A navigation block number was recorded as zero if the participant was not navigating the document. This is misleading, and so zeros are turned to NAs.
 ```{r, fix navigation block formatting}
 raw_tracking_data[, "NavigationBlockNumber"][raw_tracking_data[, "NavigationBlockNumber"] == 0] <- NA
 ```
 
-2. Similarly to navigation block numbers, reading block numbers (page views) are recorded as zero when the participant is not viewing a page. This is misleading, and so zeros are turned to NAs.
+2. Similarly to navigation block numbers, reading block numbers (page views) were recorded as zero when the participant was not viewing a page. This is misleading, and so zeros are turned to NAs.
 ```{r, fix reading block formatting}
 raw_tracking_data[, "ReadingBlockNumber"][raw_tracking_data[, "ReadingBlockNumber"] == 0] <- NA
 ```
