@@ -193,8 +193,7 @@ raw_tracking_data$IsLastEventInReadingSession <-
     replace_na(raw_tracking_data$IsLastEventInReadingSession, TRUE)
 ```
 
-124 of the last reading session events are disengagements and five are engagements.
-
+124 of the last reading session events are disengagements and five are engagements:
 ```{r, check last event in reading session engagement types}
 table(
     raw_tracking_data$Engagement,
@@ -202,16 +201,16 @@ table(
 )
 ```
 
-**Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document X), the duration should be recorded as 0. A disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so it's duration is arbitrary.
+**Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document X), the duration of the event should be recorded as 0. This is because a disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so its duration is arbitrary.
 
-**Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event.
+**Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. This can happen for a couple different reasons:
 
 * A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing.
-* An engagement event that has a duration of >5min in the middle of a reading session is similarly indicative of a missing event: the e-reader system automatically masks the text after 5 minutes of inactivity (event type 'blur'), therefore, if an engagement event lasts for longer than 5 minutes, the text mask event is missing from the tracking data.
+* In the middle of a reading session, an engagement event that has a duration of >5min is also indicative of a missing event: if an engagement event lasts for longer than 5 minutes, the data is missing a 'blur' and an 'inactiveTimeout' event from the tracking data. This is because the e-reader system automatically masks the text after 5 minutes of inactivity which triggers the 'blur' and 'inactiveTimeout' events
 
-Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails (see Note below). Indeed, correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
+Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails. The e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures. <!--{this is a placeholder, need to check with M}-->
 
-*Note: the e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures.*
+Correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
 
 ```{r, find excessive engagement durations}
 excessive_engagement_durations_subdata <-
@@ -227,9 +226,9 @@ nrow(excessive_engagement_durations_subdata)
 The excessive durations are adjusted by creating new variables:
 1. 'AdjustedEventDuration' shows the suggested new event duration
     * Set to 5 minutes for engagement events and to 0 for non-engagement events.
-    * If an event is not the last in a reading session or an excessive engagement duration, AdjustedEventDuration = DurationMinutes
+    * If an event is not the last event in a reading session or an excessive engagement duration, the event duration does not need to be adjusted and so AdjustedEventDuration = DurationMinutes
 
-```{r, adjust to event durations}
+```{r, adjustments to event durations}
 raw_tracking_data$AdjustedEventDuration <-
     ifelse(
         ((raw_tracking_data$Engagement == "Engagement") &
@@ -244,12 +243,11 @@ raw_tracking_data$AdjustedEventDuration <-
     )
 ```
 
-Next, we will check that AdjustedEventDuration does what we expect it to do. 
+Next, we will check that AdjustedEventDuration works correctly:
 ```{r, check AdjustedEventDuration 1/2}
 table(raw_tracking_data$DurationMinutes !=
     raw_tracking_data$AdjustedEventDuration)
 ```
-
 The above code shows that 67 event durations were adjusted. Check the amount of events that we pursued to adjust:
 ```{r, check AdjustedEventDuration 2/2}
 table(
@@ -269,7 +267,8 @@ We pursued to adjust 67 event durations with the above criteria, and we correctl
 Next:
 
 2. 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
-    * This variable is calculated by summing AdjustedEventDuration for each UserId and each NavigationBlockNumber
+    * NavigationBlockDuration sums together the durations of all events that belong in the same navigation block (events that include navigation in the same direction)
+    * NavigationBlockDuration is therefore influenced by the error in event durations. We adjust navigation block duration by summing AdjustedEventDuration for each UserId and each NavigationBlockNumber
 
 ```{r, adjust navigation block durations}
 adjusted_navigationblock_duration <- raw_tracking_data %>%
@@ -286,7 +285,7 @@ raw_tracking_data <-
     )
 ```
 
-Finally, create a new dataframe without the unadjusted event duration and navigation block duration to avoid confusion.
+Finally, create a new dataframe without unadjusted event duration and navigation block duration to avoid confusion.
 
 ```{r, remove unadjusted durations}
 adjusted_durations_data <- raw_tracking_data %>%
