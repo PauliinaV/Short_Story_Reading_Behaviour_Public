@@ -61,7 +61,7 @@ raw_tracking_data[, c(
     )],
     "factor"
 )
-## fix numeric columns that were automatically categorised as chr
+## fix numeric columns that were automatically categorised as character
 raw_tracking_data[, c(
     "BaselineSpeed",
     "AdjustedBaselineSpeed",
