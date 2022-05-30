@@ -252,7 +252,7 @@ raw_tracking_data$IsLastEventInReadingSession <-
     replace_na(raw_tracking_data$IsLastEventInReadingSession, TRUE)
 ```
 
-124 of the last reading session events are disengagements and five are engagements:
+123 of the last reading session events are disengagements and six are engagements:
 ```{r, check last event in reading session engagement types}
 table(
     raw_tracking_data$Engagement,
@@ -279,7 +279,7 @@ excessive_engagement_durations_subdata <-
             (DurationMinutes > 5.1)
     )
 nrow(excessive_engagement_durations_subdata)
-# only 3 cases of excessive engagement duration
+# only 4 cases of excessive engagement duration
 ```
 
 The excessive durations are adjusted by creating new variables:
@@ -351,15 +351,24 @@ adjusted_durations_data <- raw_tracking_data %>%
     select(-DurationMinutes, -NavigationBlockDuration)
 ```
 
-### Reading session artefacts --
+### Reading session artefacts
 
-The data analysis for the current study was focused on engaged reading, and so very short reading sessions or sessions that largely consisted of disengagement events only were not considered to be meaningful. These reading sessions were likely to occur if the participant attempts to resume a reading session and becomes quickly distracted by other things, or if they accidentally open the e-reader.
+The data analysis for the current study was focused on engaged reading, and so very short reading sessions or sessions that only consist of disengagement events were not considered to be meaningful. Reading sessions with little reading may have occurred when participants attempted to resume a reading session but became quickly distracted by other things, or if they accidentally opened the browser tab with the e-reader.
 
-We expected that an intentional reading session would last more than a minute, and it would consist of less than 95% of disengagement. To ensure that this threshold was meaningful and did not remove reading sessions of interest, we identified potential reading session artefacts with these thresholds and compared the artefacts identified to visualisations of each participants' reading sessions (see timeline figures in folder Figu). The comparison showed that these two thresholds could identify most of the reading sessions that seemed to consist of little reading. Additional testing showed that some of the remaining reading sessions mostly consisted of a combination of disengagements and 'dialog' -events (dialog events refer to the opening of the menu), and so another threshold was added: a reading session of interest should consist of less than 80% of disengagement and dialog. Comparison to the figures indicated that these three thresholds were sufficient in detecting reading session artefacts.
+We expected an intentional reading session to be captured by the following criteria:
+
+1. Reading sessions should last more than a minute,
+2. Less than 95% of the reading session duration should be disengagement events,
+
+To ensure that this threshold was meaningful and did not remove any reading sessions of interest, we identified potential reading session artefacts with this threshold and compared them to visualisations of each participants' reading sessions (see timeline figures in folder Figu). The comparison showed that these two criteria could be used to identify most of the reading sessions that seemed to consist of little reading. Additional testing showed that some of the remaining reading sessions mostly consisted of a combination of disengagements and 'dialog' -events (dialog events refer to the opening of the menu), and so a third criteria was added:
+
+3. Less than 80% of the reading session duration should be disengagement and dialog events.
+
+Comparison to the visualisations indicated that these three criteria were sufficient in detecting reading session artefacts.
 
 ```{r, identify reading session artefacts}
 # prepare a new df
-UserList <- levels(raw_tracking_data$UserId)
+UserList <- levels(adjusted_durations_data$UserId)
 SessionDetails <- data.frame(
     UserId = factor(),
     ReadingSessionNumber = numeric(),
@@ -372,16 +381,16 @@ SessionDetails <- data.frame(
     DialogAndDisengagementProportion = numeric()
 )
 firstrow <- 1
-raw_tracking_data$ReadingSessionNumber <-
+adjusted_durations_data$ReadingSessionNumber <-
     as.numeric(
         as.character(
-            raw_tracking_data$ReadingSessionNumber
+            adjusted_durations_data$ReadingSessionNumber
         )
     )
 
 # calculate session details to the new df
 for (user in UserList) {
-    subset_df1 <- filter(raw_tracking_data, UserId == user)
+    subset_df1 <- filter(adjusted_durations_data, UserId == user)
     for (session in unique(subset_df1$ReadingSessionNumber)) {
         subset_df2 <- filter(subset_df1, ReadingSessionNumber == session)
         temporary_df <- subset_df2 %>%
@@ -433,19 +442,24 @@ SessionDetails$PotentialReadingSessionArtefact <-
         TRUE,
         FALSE
     )
+```
+
+In total 32 reading session are identified as artefacts, from 11 different participants.
+```{r, check artefacts}
 Artefacts <-
     filter(
         SessionDetails,
         PotentialReadingSessionArtefact
     )
+nrow(Artefacts)
+table(Artefacts$UserId)
 ```
 
-A new core dataframe was created in which reading session artefacts were removed.
-
+Remove reading session artefacts and create a new df:
 ```{r, remove reading session artefacts}
 tracking_data_artefacts_removed <-
     filter(
-        raw_tracking_data,
+        adjusted_durations_data,
         !PossibleArtefactSession
     )
 # order the new df
