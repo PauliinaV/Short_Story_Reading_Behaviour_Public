@@ -6,9 +6,19 @@ output: html_document
 library: "S1_code_library.bib"
 ---
 
-## Introduction
+## Introduction and Definition of Nonlinearity
 
-The purpose of this script is to compute a measure of reading linearity. Linearity refers to the frequency of nonlinear navigation during reading of the short story. This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
+The purpose of this script is to compute a measure of reading linearity. 
+
+More specifically, linear navigation was defined as movement forwards in the text without skipping any pages. Nonlinear navigation, on the other hand, was defined as a regression or a forward leap according to the following:
+* Regression: Any navigation backwards in the text, either by turning the page or using the progress bar.
+* Forward leap: A jump forwards in the text with the progress bar to a section further than the next page, or turning of more than one page in a row at a browsing speed.
+
+Note that browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read.
+
+We measure linearity of reading by how often a linear navigation event is followed by nonlinear navigation. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
+
+This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
 
 ## Setup
 
@@ -82,11 +92,7 @@ wrangled_tracking_data <-
 
 ## Dataframe of grouped navigation blocks
 
-In order to calculate a measure of reading linearity, it is necessary to determine whether each navigation event in the data refers to nonlinear or linear navigation. Linear navigation was defined as movement forwards in the text without skipping any pages, whereas nonlinear navigation was defined as a regression or a forward leap according to the following:
-* Regression: Any navigation backwards in the text, either by turning the page or using the progress bar.
-* Forward leap: A jump forwards in the text with the progress bar to a section further than the next page, or turning of more than one page in a row at a browsing speed.
-
-Note that browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read.
+In order to calculate a measure of reading linearity, it is necessary to determine whether each navigation event in the data refers to nonlinear or linear navigation. 
 
 Indeed, individual page turns and page opening events cannot tell us about the linearity of the navigation. Therefore, in order to determine whether each event includes nonlinear or linear navigation, consequtive events that describe one navigation sequence need to be grouped together. A navigation block is defined as a combination of consequtive events that reflect navigation to one direction at roughly the same speed (see information about speed labels in Info folder ____). This means that navigational events (such as page turn events and usage of progress bar) and 'openPage' events are grouped together as long as the direction and the speed label remain constant. For example, a reader who turns a page forwards at a skimming speed four times in a row and then uses the progress bar to jump backwards in the text, has two different navigation blocks. Note that indicators for the navigation blocks are already included in the preprocessed raw data. See more information about navigation blocks in Info folder ___.
 
