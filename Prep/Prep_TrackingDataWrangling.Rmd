@@ -142,6 +142,37 @@ raw_tracking_data <-
     ]
 ```
 
+Calculate some additional variables that will be useful later.
+EndLocation tells us about what is the last visible character on the page (as count of characters from the beginning of the story).
+VisibleColumns indicates whether the text is divided in one or two columns. The number of columns depends on how wide the user's browser window is. Any 'WindowWidth' that is larger than 1192 pixels is shown the text in two columns, whereas smaller browser windows are shown the text in one column. See Figure XX in the paper for the visualisation of different column set ups.
+
+```{r, add column and end location information}
+raw_tracking_data$EndLocation <- (
+    raw_tracking_data$StartLocation +
+        raw_tracking_data$VisibleCharacterCount
+)
+raw_tracking_data$VisibleColumns <- ifelse(
+    raw_tracking_data$WindowWidth > 1192,
+    "TwoColumns",
+    "OneColumn"
+)
+```
+
+Add information about the different books in the dataset:
+
+```{r, add book information}
+# book_information_data <- read.csv()
+# the above should include storyId, chlength, and wordlength
+# raw_tracking_data <- merge(
+# raw_tracking_data,
+# book_information_data,
+# by="StoryId"
+# )
+# raw_tracking_data$Percentage <- (
+# raw_tracking_data$StartLocation/raw_tracking_data$ChLength
+# )
+```
+
 ## Exclusion criteria
 
 Sixty-two participants were recruited to take part in the study. Two of the participants did not finish the study, and so they are excluded from the sample. The final *n* = 60.
@@ -187,15 +218,15 @@ Events were given engagement labels in the data pre-processing stage (see file _
 ```{r, inaccurately categorised disengagements}
 raw_tracking_data$IsUnusualDisengagement <-
     (
-        (raw_tracking_data$Engagement == "Disengagement") & #1
-            (raw_tracking_data$IsOpeningEvent & #2
-                raw_tracking_data$IsPageOpen) & 
-            (raw_tracking_data$IsReading) & #3
-                (!raw_tracking_data$IsBlurred & #4
+        (raw_tracking_data$Engagement == "Disengagement") & # 1
+            (raw_tracking_data$IsOpeningEvent & # 2
+                raw_tracking_data$IsPageOpen) &
+            (raw_tracking_data$IsReading) & # 3
+            (!raw_tracking_data$IsBlurred & # 4
                 !raw_tracking_data$IsDialogOpen &
                 !raw_tracking_data$IsMenuOpen &
                 !raw_tracking_data$IsInactive) &
-            (raw_tracking_data$Type != "blur" & #5
+            (raw_tracking_data$Type != "blur" & # 5
                 raw_tracking_data$Type != "openMenu" &
                 raw_tracking_data$Type != "inactiveTimeout" &
                 raw_tracking_data$Type != "close" &
@@ -203,7 +234,7 @@ raw_tracking_data$IsUnusualDisengagement <-
                 raw_tracking_data$Type != "openBook" &
                 raw_tracking_data$Type != "bookDialogOpen" &
                 raw_tracking_data$Type != "openInformation")
-)
+    )
 ```
 
 10 Unsual disengagements were found:
@@ -436,7 +467,7 @@ for (user in UserList) {
 # identify potential reading session artefacts based on criteria
 SessionDetails$PotentialReadingSessionArtefact <-
     ifelse(
-        ((SessionDetails$SessionLength < 1) | #criteria 2
+        ((SessionDetails$SessionLength < 1) | # criteria 2
             (SessionDetails$DisengagementProportion > 0.95) | # criteria 1
             (SessionDetails$DialogAndDisengagementProportion > 0.8)), # criteria 3
         TRUE,
@@ -460,7 +491,7 @@ Remove reading session artefacts and create a new df:
 # merge dfs
 adjusted_durations_data <- merge(
     adjusted_durations_data,
-    SessionDetails[, c(1,2,10)],
+    SessionDetails[, c(1, 2, 10)],
     by = c("UserId", "ReadingSessionNumber")
 )
 
@@ -497,7 +528,7 @@ The dataset has already been saved, and so the below r code chunk is not run.
 
 ```{r, eval=FALSE, echo=TRUE, save wrangled data}
 write.csv2(tracking_data_artefacts_removed,
-    "wrangled_tracking_data.csv"#,
+    "wrangled_tracking_data.csv",
     header = TRUE,
     dec = ",",
     sep = ";"
