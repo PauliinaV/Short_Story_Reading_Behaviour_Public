@@ -357,7 +357,7 @@ We pursued to adjust 67 event durations with the above criteria, and we correctl
 Next:
 
 2. 'AdjustedNavigationBlockDuration' shows the suggested adjustment to NavigationBlockDuration
-    * NavigationBlockDuration sums together the durations of all events that belong in the same navigation block (events that include navigation in the same direction)
+    * NavigationBlockDuration sums together the durations of all events that belong in the same navigation block (events that include navigation in the same direction at roughly the same speed)
     * NavigationBlockDuration is therefore influenced by the error in event durations. We adjust navigation block duration by summing AdjustedEventDuration for each UserId and each NavigationBlockNumber
 
 ```{r, adjust navigation block durations}
