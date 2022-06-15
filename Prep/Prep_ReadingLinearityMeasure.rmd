@@ -8,15 +8,15 @@ library: "S1_code_library.bib"
 
 ## Introduction and Definition of Nonlinearity
 
-The purpose of this script is to compute a measure of reading linearity. 
+The purpose of this script is to compute a measure of linearity during reading of the short story. 
 
-More specifically, linear navigation was defined as movement forwards in the text without skipping any pages. Nonlinear navigation, on the other hand, was defined as a regression or a forward leap according to the following:
-* Regression: Any navigation backwards in the text, either by turning the page or using the progress bar.
+Linear navigation was defined as movement forwards in the text without skipping any pages. Nonlinear navigation, on the other hand, was defined as a regression or a forward leap according to the following:
+* Regression: Any navigation backwards in the text, either by turning the pages or by using the progress bar.
 * Forward leap: A jump forwards in the text with the progress bar to a section further than the next page, or turning of more than one page in a row at a browsing speed.
 
-Note that browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read.
+Browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read. Browsing speed was defined as less than 1s used on a page-view.
 
-We measure linearity of reading by how often a linear navigation event is followed by nonlinear navigation. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
+To measure frequency of nonlinear navigation, we calculate how often a linear navigation event is followed by nonlinear navigation. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
 
 This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
 
@@ -27,7 +27,7 @@ library(psych)
 library(tidyverse)
 library(tidyr)
 library(dplyr)
-getwd()
+getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 ```
 
 ## Load data and check variable types
@@ -36,7 +36,7 @@ getwd()
 # load data
 wrangled_tracking_data <-
     read.csv(
-        "wrangled_tracking_data.csv",
+        "Data/wrangled_tracking_data.csv",
         header = TRUE,
         sep = ";",
         dec = ","
@@ -50,20 +50,19 @@ source("Functions/Functions_VariableTypeConversion.R")
 wrangled_tracking_data[, c(
     "UserId",
     "StoryId"
-)] <- convert.magic(wrangled_tracking_data[, c(
-    "UserId",
-    "StoryId"
-)])
+)] <- convert.magic(
+    wrangled_tracking_data[, c(
+        "UserId",
+        "StoryId"
+    )],
+    "factor"
+)
 ## turn reading block number (page view) into an ordered variable
 wrangled_tracking_data$ReadingBlockNumber <-
     as.ordered(
         wrangled_tracking_data$ReadingBlockNumber
     )
 ## fix date and time variable types
-wrangled_tracking_data$Time <-
-    gsub(
-        x = wrangled_tracking_data$Time, ",", "."
-    )
 wrangled_tracking_data$Time <-
     substr(
         wrangled_tracking_data$Time, 11, 23
@@ -92,11 +91,15 @@ wrangled_tracking_data <-
 
 ## Dataframe of grouped navigation blocks
 
-In order to calculate a measure of reading linearity, it is necessary to determine whether each navigation event in the data refers to nonlinear or linear navigation. 
+First, we determine whether each navigation event in the data refers to nonlinear or linear navigation. Participants can move in the text by using the progress bar to jump backwards, or forwards to a position that is further than the next page. When the participant uses a progress bar, the e-reader system registers an event of type 'progressBarJump' followed by an event of type 'openPage' in the new location. Therefore, the linearity of progress bar navigation can be assessed by comparing the location of the event of type 'progressBarJump' and the location of the next event ('openPage'). Nonlinear navigation by page turns is more complex, however, because consecutive navigation events need to be grouped together. This type of nonlinearity is represented in the data by multiple page turns: a forward leap by page turns, for example, requires that the user turns more than one page forwards in a row at a browsing speed - and this is shown in the data by multiple page turn and 'openPage' pairs. To determine whether each event includes nonlinear or linear navigation, consecutive events that describe one navigation sequence need to be grouped together.
 
-Indeed, individual page turns and page opening events cannot tell us about the linearity of the navigation. Therefore, in order to determine whether each event includes nonlinear or linear navigation, consequtive events that describe one navigation sequence need to be grouped together. A navigation block is defined as a combination of consequtive events that reflect navigation to one direction at roughly the same speed (see information about speed labels in Info folder ____). This means that navigational events (such as page turn events and usage of progress bar) and 'openPage' events are grouped together as long as the direction and the speed label remain constant. For example, a reader who turns a page forwards at a skimming speed four times in a row and then uses the progress bar to jump backwards in the text, has two different navigation blocks. Note that indicators for the navigation blocks are already included in the preprocessed raw data. See more information about navigation blocks in Info folder ___.
+In the preprocessed data, navigation blocks are used to indicate if consecutive events should be grouped together or not. Consecutive events have the same navigation block number if they are reflective of nonlinear navigation to the same direction, at roughly the same reading speed (the 'openPage' events have the same speed labels, see information on speed labels in ___). Navigation events (such as page turn or a 'progressBarJump') are always part of the same navigation block as the following 'openPage' event - simply put, this reflects that when a user turns a page on the e-reader, a new page opens. If an event that occurs after a navigation event and an 'openPage' event pair indicates of another page turn in the same direction and at the same speed, then this navigation event and 'openPage' event are also given the same navigation block number. If the following event is not a navigation event or the navigation is not used to move at the same direction at similar speed, then navigation block number = previous navigation block number + 1.
 
-Navigation blocks are grouped together based on the indicators already present in the data. In addition to the grouping, we also extract important event information that is needed for analyses, such as the duration of each navigation block.
+Similarly to page turns, progress bar navigation is grouped together with the following 'openPage' event. However, multiple, consecutive occurrences of progress bar navigation are not grouped within the same navigation block.
+
+See more information about navigation blocks in ___.
+
+Navigation blocks are grouped together based on the indicators ('NavigationBlockNumber') already present in the data. In addition to the grouping, we also extract important event information that is needed for analyses, such as the duration of each navigation block.
 
 ```{r, group navigation blocks}
 # first create a new df
@@ -119,14 +122,15 @@ namevector <-
         "NavBlockEndDeadline",
         "FirstCumReadingSessionTime",
         "LastCumReadingSessionTime",
-        "NavBlockDuration2",
+        "AdjustedNavigationBlockDuration",
         "NavBlockSpeedLabel"
     )
-grouped_navigation_blocks_data[, namevector] <- NA
-grouped_navigation_blocks_data <- NavData[0, ]
+grouped_navigation_blocks_data[0, namevector] <- NA
+grouped_navigation_blocks_data <- grouped_navigation_blocks_data[0, ]
 
 # group navigation blocks into a new df
 for (i in levels(wrangled_tracking_data$UserId)) {
+    # subset of each user
     subset_user <- subset(
         x = wrangled_tracking_data,
         subset = UserId == i
@@ -135,6 +139,7 @@ for (i in levels(wrangled_tracking_data$UserId)) {
         as.ordered(subset_user$NavigationBlockNumber)
 
     for (j in levels(subset_user$NavigationBlockNumber)) {
+        # subset of each user's each navigation block
         subset_navigationblock <- subset(
             x = subset_user,
             subset = NavigationBlockNumber == j
@@ -203,14 +208,17 @@ for (i in levels(wrangled_tracking_data$UserId)) {
                         "TimeBeforeDeadlinesDays"
                     ],
                 FirstCumReadingSessionTime =
-                    subset_navigationblock[1, "CumReadingSessionTime"],
+                    subset_navigationblock[
+                        1,
+                        "CumReadingSessionTime"
+                    ],
                 LastCumReadingSessionTime =
                     subset_navigationblock[
                         nrow(subset_navigationblock),
                         "CumReadingSessionTime"
                     ],
-                NavBlockDuration2 =
-                    min(NavDurFix),
+                AdjustedNavigationBlockDuration =
+                    min(AdjustedNavigationBlockDuration),
                 NavBlockSpeedLabel =
                     subset_navigationblock[
                         nrow(subset_navigationblock),
@@ -221,11 +229,14 @@ for (i in levels(wrangled_tracking_data$UserId)) {
             rbind(grouped_navigation_blocks_data, temporary_df[1, ])
     }
 }
-# add information about grouped navigation blocks to wrangled df
+# add information created for grouped navigation blocks to wrangled_tracking_data
+# columns selected from grouped_navigation_blocks_data:
+## UserId, NavigationBlockNumber,
+### FirstCumReadingSessionTime, LastCumReadingSessionTime, NavBlockSpeedLabel
 wrangled_tracking_data <-
     merge(
         wrangled_tracking_data,
-        grouped_navigation_blocks_data[, c(2, 24, 70:72)],
+        grouped_navigation_blocks_data[, c(2, 4, 64:66)],
         by = c("UserId", "NavigationBlockNumber"),
         all.x = TRUE
     )
@@ -233,16 +244,16 @@ wrangled_tracking_data <-
 
 ## Determine linearity
 
-First we determine how much the participants' location shifts in between different navigation blocks. This essentially tells us how much, and to what direction, the participants navigated.
+Next we determine how much the participants' location shifts in between different navigation blocks. This essentially tells us how much, and to what direction, the participant moved in the text (if at all).
 
-In order to count the number of pages turned, we first create variables that check whether consequtive navigation blocks (one per row) should be compared. We only want to compare navigation blocks from
+To count the number of pages turned, we first create variables that check whether consecutive navigation blocks (one per row) should be compared. We only want to compare navigation blocks from
 a) the same user
 b) the same reading session and
-c) the same reading set up.
+c) the same reading set up (see below).
 
-A reading set up affects the amount of 'pages' that the short story has, for example, in a small browser window the story is organised in more 'pages' than in a large browser window. Pages turned should only be determined between events that have the same reading set up. Note that this does not limit our ability to notice linearity of navigation as changing the reading set up will either result in an event that is in its own navigation block (which can then be compared to a navigation block; this happens e.g. when the participant resizes a browser window), or a change in reading set up starts a new reading session (e.g. when the participant changes device).
+A reading set up affects the amount of 'pages' that the short story has, for example, in a small browser window the story is organised in more 'pages' than in a large browser window. Pages turned should only be determined between events that have the same reading set up. Note that this does not limit our ability to notice linearity of navigation as changing the reading set up will either result in an event that is in its own navigation block (which can then be compared to a subsequent navigation block; this happens e.g. when the participant resizes a browser window), or a change in reading set up starts a new reading session (e.g. when the participant changes device).
 
-```{r, create variables for pages turned calculation}
+```{r, create tests}
 grouped_navigation_blocks_data$IsNewUser <-
     (
         grouped_navigation_blocks_data$UserId !=
@@ -253,30 +264,37 @@ grouped_navigation_blocks_data$IsNewSession <-
         grouped_navigation_blocks_data$ReadingSessionNumber !=
             (lag(grouped_navigation_blocks_data$ReadingSessionNumber, 1))
     )
-grouped_navigation_blocks_data$IsScreenChange <-
+grouped_navigation_blocks_data$IsReadingSetUpChange <-
     (
         grouped_navigation_blocks_data$TotalPagesInSection !=
             (lag(grouped_navigation_blocks_data$TotalPagesInSection, 1))
     )
 ```
 
-We can then calculate the amount of 'pages' turned between navigation blocks. The variable is calculated by subtracting a navigation block's start location (in pages) from the next navigation block's start location.
+We can then calculate the amount of 'pages' turned between navigation blocks. The variable is calculated by subtracting a navigation block's start location (in pages) from the next navigation block's start location. If the reading set up, user, or reading session changes between the two navigation blocks and the navigation block includes movement, 'PagesTurned' is instead calculated by comparing the first page in a navigation block to the last page in the same navigation block.
 
 ```{r, count pages turned}
 # count the number of pages turned within a navigation block
 grouped_navigation_blocks_data$PagesTurned <-
     ifelse(
-        (
+        ( # following navigation block is from
+            ## same user,
+            ## same reading session, and
+            ## same reading set up
             !lead(grouped_navigation_blocks_data$IsNewUser, 1) &
                 !lead(grouped_navigation_blocks_data$IsNewSession, 1) &
-                !lead(grouped_navigation_blocks_data$IsScreenChange, 1)
+                !lead(grouped_navigation_blocks_data$IsReadingSetUpChange, 1)
         ),
         (
             lead(grouped_navigation_blocks_data$FirstPage, 1) -
                 grouped_navigation_blocks_data$FirstPage
         ),
         ifelse(
-            (
+            ( # the navigation block includes movement but
+                ## the navigation block following it has a
+                ### different user,
+                ### different reading session, or
+                ### different readign set up
                 grouped_navigation_blocks_data$FirstPage !=
                     grouped_navigation_blocks_data$LastPage
             ),
@@ -287,12 +305,16 @@ grouped_navigation_blocks_data$PagesTurned <-
             0
         )
     )
-# - regression, + forward leap or a chronological page turn, 0 not a navigation
+# Check PagesTurned
+## - regression, + forward leap or a chronological page turn, 0 not a navigation
 table(
     sign(grouped_navigation_blocks_data$PagesTurned)
 )
 ```
 
+PagesTurned tells us the direction and extent of navigation. We use this information to assign each navigation event a label of 'Regression' or 'ForwardLeap'. Considering that regressions refer to any movement backwards in text, any navigation block with a negative value for PagesTurned can be labelled as a 'Regression'. Forward leaps include forwards movement to a position further than the next page. Therefore, any navigation block with a PagesTurned value >1 can be labelled as a 'ForwardLeap'.
+
+{add assignment}
 
 
 
