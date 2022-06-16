@@ -123,7 +123,8 @@ namevector <-
         "FirstCumReadingSessionTime",
         "LastCumReadingSessionTime",
         "AdjustedNavigationBlockDuration",
-        "NavBlockSpeedLabel"
+        "NavBlockSpeedLabel",
+        "AnyProgressBarUsage"
     )
 grouped_navigation_blocks_data[0, namevector] <- NA
 grouped_navigation_blocks_data <- grouped_navigation_blocks_data[0, ]
@@ -223,23 +224,17 @@ for (i in levels(wrangled_tracking_data$UserId)) {
                     subset_navigationblock[
                         nrow(subset_navigationblock),
                         "EngagedSpeedLabel"
-                    ]
+                    ],
+                AnyProgressBarUsage =
+                    any
+                    (
+                        subset_navigationblock$Type == "progressBarJump"
+                    )
             )
         grouped_navigation_blocks_data <-
             rbind(grouped_navigation_blocks_data, temporary_df[1, ])
     }
 }
-# add information created for grouped navigation blocks to wrangled_tracking_data
-# columns selected from grouped_navigation_blocks_data:
-## UserId, NavigationBlockNumber,
-### FirstCumReadingSessionTime, LastCumReadingSessionTime, NavBlockSpeedLabel
-wrangled_tracking_data <-
-    merge(
-        wrangled_tracking_data,
-        grouped_navigation_blocks_data[, c(2, 4, 64:66)],
-        by = c("UserId", "NavigationBlockNumber"),
-        all.x = TRUE
-    )
 ```
 
 ## Determine linearity
@@ -312,9 +307,87 @@ table(
 )
 ```
 
-PagesTurned tells us the direction and extent of navigation. We use this information to assign each navigation event a label of 'Regression' or 'ForwardLeap'. Considering that regressions refer to any movement backwards in text, any navigation block with a negative value for PagesTurned can be labelled as a 'Regression'. Forward leaps include forwards movement to a position further than the next page. Therefore, any navigation block with a PagesTurned value >1 can be labelled as a 'ForwardLeap'.
+PagesTurned tells us the direction and extent of navigation. We use this information to assign each navigation event a label of 'Regression' or 'ForwardLeap'. Considering that regressions refer to any movement backwards in text, any navigation block with a negative value for PagesTurned can be labelled as a 'Regression' (PagesTurned < 0). Forward leaps include forward movement to a position further than the next page (PagesTurned > 1), either by turning pages at a browsing speed (NavigationBlockSpeedLabel == "Browsing") or by using the progress bar (Type == progressBarJump).
 
-{add assignment}
+```{r, regression and forward leap label assignment}
+grouped_navigation_blocks_data$IsRegression <-
+(
+  grouped_navigation_blocks_data$PagesTurned < 0
+)
+table(grouped_navigation_blocks_data$IsRegression)
+
+grouped_navigation_blocks_data$IsForwardLeap <-
+(
+    ((grouped_navigation_blocks_data$PagesTurned > 1) &
+     (grouped_navigation_blocks_data$NavBlockSpeedLabel == "Browsing")) |
+    ((grouped_navigation_blocks_data$PagesTurned > 1) &
+       (grouped_navigation_blocks_data$AnyProgressBarUsage))
+)
+table(grouped_navigation_blocks_data$IsForwardLeap)
+```
+
+The data includes 530 regressions and 72 forward leaps.
+
+Our aim is to measure linearity on each page-view, and so we need to first merge grouped_navigation_blocks_data with wrangled_tracking_data:
+
+```{r, merge navigation block data with wrangled data}
+# columns selected from grouped_navigation_blocks_data:
+## UserId, NavigationBlockNumber, ReadingSessionNumber
+### IsRegression, IsForwardLeap
+### FirstCumReadingSessionTime, LastCumReadingSessionTime, NavBlockSpeedLabel
+wrangled_tracking_data <-
+    merge(
+        wrangled_tracking_data,
+        grouped_navigation_blocks_data[, c(2:4, 64:66, 71:72)],
+        by = c("UserId", "ReadingSessionNumber", "NavigationBlockNumber"),
+        all.x = TRUE
+    )
+```
+
+Create columns that summarise information on nonlinearity based on IsRegression and IsForwardLeap
+- IsNonlinearNavigation tells us whether the event includes a regression or a forward leap
+- Linearity tells us what is the linearity type of the event (regression, forward leap, or linear/nonnavigation)
+- IsLinearToNonlinear tells us whether the event initiates nonlinear navigation following linear navigation. First event in a reading session can be TRUE for IsLinearToNonlinear if the first event includes nonlinear navigation.
+
+```{r}
+wrangled_tracking_data$IsNonlinearNavigation <-
+    ifelse(
+        wrangled_tracking_data$IsRegression |
+        wrangled_tracking_data$IsForwardLeap,
+        TRUE,
+        FALSE
+    )
+wrangled_tracking_data$Linearity <-
+    ifelse(
+        wrangled_tracking_data$IsRegression,
+        "Regression",
+        ifelse(
+            wrangled_tracking_data$IsForwardLeap,
+            "ForwardLeap",
+            "LinearOrNonNavigation"
+        )
+    )
+## add movement from Linear to Nonlinear
+### then remove !IsReading and only use one event per page-view
+```
 
 
 
+```{r, checks}
+# make sure the df is correctly ordered
+wrangled_tracking_data <-
+    wrangled_tracking_data[
+        with(
+            wrangled_tracking_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
+
+eachuserfirstevent <- wrangled_tracking_data %>%
+    group_by(UserId, ReadingSessionNumber) %>%
+    filter(IsReading) %>%
+    summarise(
+        first_event_type_from_user = first(Type),
+        first_event_linearity_from_user = first(Linearity)
+    )
+```
