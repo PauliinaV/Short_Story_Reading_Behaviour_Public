@@ -212,7 +212,7 @@ Events were given engagement labels in the data pre-processing stage (see file _
 1. The event is a disengagement (Engagement == "Disengagement"),
 2. The event occurs during an opening event (IsOpeningEvent == TRUE) when the page has loaded (IsPageOpen == TRUE),
 3. The event occurs in the e-reader (IsReading == TRUE)
-4. The event occurs when disengagement-linked tests are FALSE (e.g. the text is not blurred: !IsBlurred), or
+4. The event occurs when disengagement-linked tests are FALSE (e.g. the text is not blurred: !IsBlurred), and
 5. The event doesn't have a clear disengagement-linked event type (such as 'blur' or 'close', see more information on events in ___ in the Info folder)
 
 ```{r, inaccurately categorised disengagements}
@@ -242,7 +242,7 @@ raw_tracking_data$IsUnusualDisengagement <-
 table(raw_tracking_data$IsUnusualDisengagement)
 ```
 
-These events had a tendency to occur after a text masking event ('blur') and start a new reading session. The e-reader system was expecting an 'openPage' event to signify the opening of a new page, but instead the page had been loaded previously. This confusing caused the events to be categorised as disengagements rather than engagements. To fix this mistake, the 10 unusual disengagements are turned into engagements: <!-- this is a placeholder text, check with M-->
+These events are part of the opening sequence of a new reading session (IsOpeningEvent). The e-reader system was expecting an 'openPage' event to signify the opening of a new page, but instead the page had been loaded previously. This confusion caused the events to be categorised as disengagements rather than engagements. To fix this mistake, the 10 unusual disengagements are turned into engagements:
 
 ```{r, turn unusual disengagements into engagements}
 raw_tracking_data$Engagement <- as.character(raw_tracking_data$Engagement)
@@ -298,7 +298,7 @@ table(
 * A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing.
 * In the middle of a reading session, an engagement event that has a duration of >5min is also indicative of a missing event: if an engagement event lasts for longer than 5 minutes, the data is missing a 'blur' and an 'inactiveTimeout' event from the tracking data. This is because the e-reader system automatically masks the text after 5 minutes of inactivity which triggers the 'blur' and 'inactiveTimeout' events
 
-Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails. The e-reader system works on the client side, but no temporary data storage is implemented to store events collected during network connection issues and so these events are lost in case of network connection failures. <!--{this is a placeholder, need to check with M}-->
+Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails. The tracking works on the client side, but no temporary data storage is implemented to store events collected and so these events are not included in the tracking data.
 
 Correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes.
 
