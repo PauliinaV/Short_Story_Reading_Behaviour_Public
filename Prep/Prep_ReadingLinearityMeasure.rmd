@@ -338,7 +338,7 @@ Our aim is to measure linearity on each page-view, and so we need to first merge
 wrangled_tracking_data <-
     merge(
         wrangled_tracking_data,
-        grouped_navigation_blocks_data[, c(2:4, 64:66, 71:72)],
+        grouped_navigation_blocks_data[, c(2:4, 66:68, 73:75)],
         by = c("UserId", "ReadingSessionNumber", "NavigationBlockNumber"),
         all.x = TRUE
     )
