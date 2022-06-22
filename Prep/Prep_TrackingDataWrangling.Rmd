@@ -15,7 +15,7 @@ The purpose of this script is to clean the raw reading behaviour tracking data f
 Load libraries, set working directory
 
 ```{r, setup}
-library(psych)
+#library(psych)
 library(tidyverse)
 library(tidyr)
 library(dplyr)
@@ -507,6 +507,32 @@ tracking_data_artefacts_removed <-
     tracking_data_artefacts_removed[with(tracking_data_artefacts_removed, order(UserId, Date, Time, Id)), ]
 ```
 
+## Create tests for later usage
+
+Tests to check if an event is from a new user, reading session, or reading set up are useful across the analysis.
+
+```{r, create tests}
+tracking_data_artefacts_removed$IsNewUser <-
+    (
+        tracking_data_artefacts_removed$UserId !=
+            (lag(tracking_data_artefacts_removed$UserId, 1))
+    )
+tracking_data_artefacts_removed$IsNewSession <-
+    (
+        tracking_data_artefacts_removed$ReadingSessionNumber !=
+            (lag(tracking_data_artefacts_removed$ReadingSessionNumber, 1))
+    )
+tracking_data_artefacts_removed$IsReadingSetUpChange <-
+    (
+        tracking_data_artefacts_removed$TotalPagesInSection !=
+            (lag(tracking_data_artefacts_removed$TotalPagesInSection, 1))
+    )
+# first event is TRUE for all 3 tests
+tracking_data_artefacts_removed[1, "IsNewUser"] <- TRUE
+tracking_data_artefacts_removed[1, "IsNewSession"] <- TRUE
+tracking_data_artefacts_removed[1, "IsReadingSetUpChange"] <- TRUE
+```
+
 ## Cumulative time in a reading session
 
 Add a variable in the dataframe that tells us the cumulative time in a reading session for each event.
@@ -528,9 +554,6 @@ The dataset has already been saved, and so the below r code chunk is not run.
 
 ```{r, eval=FALSE, echo=TRUE, save wrangled data}
 write.csv2(tracking_data_artefacts_removed,
-    "wrangled_tracking_data.csv",
-    header = TRUE,
-    dec = ",",
-    sep = ";"
+    "wrangled_tracking_data.csv"
 )
 ```
