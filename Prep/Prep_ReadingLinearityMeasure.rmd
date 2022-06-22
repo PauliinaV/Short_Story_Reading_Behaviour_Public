@@ -248,7 +248,15 @@ c) the same reading set up (see below).
 
 A reading set up affects the amount of 'pages' that the short story has, for example, in a small browser window the story is organised in more 'pages' than in a large browser window. Pages turned should only be determined between events that have the same reading set up. Note that this does not limit our ability to notice linearity of navigation as changing the reading set up will either result in an event that is in its own navigation block (which can then be compared to a subsequent navigation block; this happens e.g. when the participant resizes a browser window), or a change in reading set up starts a new reading session (e.g. when the participant changes device).
 
+The page-wise data already includes variables for IsNewUser, IsNewSession, and IsReadingSetUpChange. These variables are first created and then re-created for grouped navigation blocks.
+
 ```{r, create tests}
+grouped_navigation_blocks_data <- grouped_navigation_blocks_data %>%
+    select(
+        -IsNewUser,
+        -IsNewSession,
+        -IsReadingSetUpChange
+    )
 grouped_navigation_blocks_data$IsNewUser <-
     (
         grouped_navigation_blocks_data$UserId !=
