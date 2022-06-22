@@ -23,7 +23,7 @@ This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd
 ## Setup
 
 ```{r, setup}
-library(psych)
+#library(psych)
 library(tidyverse)
 library(tidyr)
 library(dplyr)
@@ -272,6 +272,10 @@ grouped_navigation_blocks_data$IsReadingSetUpChange <-
         grouped_navigation_blocks_data$TotalPagesInSection !=
             (lag(grouped_navigation_blocks_data$TotalPagesInSection, 1))
     )
+# first event is TRUE for all 3 tests
+grouped_navigation_blocks_data[1, "IsNewUser"] <- TRUE
+grouped_navigation_blocks_data[1, "IsNewSession"] <- TRUE
+grouped_navigation_blocks_data[1, "IsReadingSetUpChange"] <- TRUE
 ```
 
 We can then calculate the amount of 'pages' turned between navigation blocks. The variable is calculated by subtracting a navigation block's start location (in pages) from the next navigation block's start location. If the reading set up, user, or reading session changes between the two navigation blocks and the navigation block includes movement, 'PagesTurned' is instead calculated by comparing the first page in a navigation block to the last page in the same navigation block.
@@ -375,7 +379,35 @@ wrangled_tracking_data$Linearity <-
             "LinearOrNonNavigation"
         )
     )
+## Find event that initiates nonlinearity
 for (row in 1:nrow(wrangled_tracking_data)) {
+    if(row == 1 |
+        wrangled_tracking_data[row, "IsNewUser"] |
+            wrangled_tracking_data[row, "IsNewSession"] |
+                wrangled_tracking_data[row, "IsReadingSetUpChange"]) {
+        # first row, new user, new session, or new set up
+        if(wrangled_tracking_data[row, "IsNonlinearNavigation"]) {
+            wrangled_tracking_data[row, "InitiatesNonlinearity"] <-
+                TRUE
+        } else {
+            wrangled_tracking_data[row, "InitiatesNonlinearity"] <-
+                FALSE
+        }
+    } else {
+            # same user, reading session and reading set up
+        if ((wrangled_tracking_data[row - 1, "Linearity"] !=
+                wrangled_tracking_data[row, "Linearity"]) &
+                wrangled_tracking_data[row, "IsNonlinearNavigation"]) {
+                    # previous event linearity != current event linearity
+                    ## and current event is nonlinear
+                    wrangled_tracking_data[row, "InitiatesNonlinearity"] <- TRUE
+                } else {
+                    wrangled_tracking_data[row, "InitiatesNonlinearity"] <-
+                    FALSE
+                }
+        }
+}
+
 ### then remove !IsReading and only use one event per page-view
 ```
 
