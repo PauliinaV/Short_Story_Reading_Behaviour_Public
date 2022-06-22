@@ -375,7 +375,7 @@ wrangled_tracking_data$Linearity <-
             "LinearOrNonNavigation"
         )
     )
-## add movement from Linear to Nonlinear
+for (row in 1:nrow(wrangled_tracking_data)) {
 ### then remove !IsReading and only use one event per page-view
 ```
 
