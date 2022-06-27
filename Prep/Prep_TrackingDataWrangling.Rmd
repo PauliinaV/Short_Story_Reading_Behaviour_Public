@@ -3,7 +3,7 @@ title: "Prep_TrackingDataWrangling"
 author: "Pauliina Vuorinen"
 date: "18/03/2022-"
 output: html_document
-library: "S1_code_library.bib"
+library: "~/Extra/RPackages.bib"
 ---
 
 ## Introduction
@@ -540,6 +540,7 @@ Add a variable in the dataframe that tells us the cumulative time in a reading s
 ```{r, add cumulative time}
 tracking_data_artefacts_removed <-
     tracking_data_artefacts_removed %>%
+    filter(IsReading) %>%
     group_by(UserId, ReadingSessionNumber) %>%
     mutate(
         CumReadingSessionTime = cumsum(AdjustedEventDuration)
