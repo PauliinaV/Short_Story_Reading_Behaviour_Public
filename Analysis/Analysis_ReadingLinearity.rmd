@@ -1,0 +1,120 @@
+---
+title: "Analysis_ReadingLinearity"
+author: "Pauliina Vuorinen"
+date: "27/06/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to analyse how linearly participants' read the short story during the study.
+We aim to assess how frequently participants' used nonlinearity during the study, how nonlinearity occurred, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to this nonlinearity. See the full article for details.
+
+To answer these research questions, we use 'StartsNonlinearity' (saved in Data as linearity_measure_data.csv) as a measure of the frequency of nonlinearity. This measure was computed in Prep_ReadingLinearityMeasure.rmd, and it tells us whether nonlinear navigation was initiated on a page-view or not. Therefore, StartsNonlinearity is TRUE when a participant starts a regression or a forward leap on a page-view and the previous page-view did not include similar nonlinearity (see Prep_TrackingDataWrangling.rmd in Prep for more detail).
+
+In this analysis script, StartsNonlinearity is used as an outcome variable in two different multilevel models. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict StartsNonlinearity. In the second model, the dependent variables include information on the timing and location of StartsNonlinearity. With the latter model our intention is to study in which situations nonlinearity occurs. Both model structures are based on selection outlined in the full article. The models are constructed using glm() in the lme4-package by @bates_fitting_2015.
+
+## Setup
+
+```{r, setup}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+library(lme4)
+getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
+```
+
+## Load data and check variable types
+
+```{r, load data}
+# load data
+linearity_measure_data <-
+    read.csv(
+        "Data/linearity_measure_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+# change variable types
+str(linearity_measure_data)
+source("Functions/Functions_VariableTypeConversion.R")
+## turn user and story indicators into factors
+linearity_measure_data$UserId <- as.factor(linearity_measure_data$UserId)
+## turn reading block number (page view) into an ordered variable
+wrangled_tracking_data$ReadingBlockNumber <-
+    as.ordered(
+        wrangled_tracking_data$ReadingBlockNumber
+    )
+```
+
+## Reader characteristics model
+
+The reader characteristics model of linearity aims to address the following hypotheses:
+
+* H6a: Situational autonomous motivation is connected to infrequent nonlinearity when task competence is high.
+* H6b: Task-relevant electronic experience is connected to infrequent nonlinearity when task competence is high.
+
+All reader characteristics models take the following structure:
+
+$Y_{i} = 
+    \beta_{0} +
+    Cond +
+    BS +
+    ContMot +
+    TskComp +
+    EExp1 +
+    EExp2 +
+    Cond x ContMot +
+    Cond x TskComp +
+    ContMot x TskComp +
+    TskComp x EExp1 +
+    TskComp x EExp2 +
+    EExp1 x EExp2 +
+    u_{Subject} +
+    u_{Story} +
+    u_{ScreenSize} +
+    \varepsilon_{i}$ 
+
+where
+**$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
+**$\beta_{0}$** is the intercept
+**Cond** represents autonomy condition (as a measure of situational motivation)
+**BS** is participants' baseline reading speed
+**ContMot** is participants' contextual reading motivation, measured by the IMI questionnaire (see ___)
+**TskComp** is participants' task competence (perception of competence to read the story), measured by the IMI questionnaire (see ___)
+**EExp1** is frequency of using task-relevant devices for any reading purpose
+**EExp2** is frequency of using any electronic devices for long-form text reading purposes
+**$u_{Subject}$** indicates a random intercept of subject indicator
+**$u_{Story}$** indicates a random intercept of story indicator
+**$u_{ScreenSize}$** indicates a random intercept of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
+**$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
+
+### Load data for reader characteristics
+
+First, we load data with reader characteristics
+
+```{r, load reader characteristics}
+# load df with StoryId and BS
+
+# load df with ContMot
+
+# load df with TskComp
+
+# load df with EExp1 and EExp2
+
+```
+
+Next, we merge reader characteristics together with the linearity df linearity_measure_data
+
+```{r, merge reader characteristics with df}
+# merge
+
+```
+
+### Set contrasts to predictors
+
+### Visualise outcome variable and predictors
+
+### Modelling by reader characteristics
+
