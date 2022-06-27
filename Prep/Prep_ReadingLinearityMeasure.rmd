@@ -1,9 +1,9 @@
 ---
 title: "Prep_LinearityMeasure"
 author: "Pauliina Vuorinen"
-date: "19/04/2022-"
+date: "19/04/2022-27/06/2022"
 output: html_document
-library: "S1_code_library.bib"
+library: "~/Extra/RPackages.bib"
 ---
 
 ## Introduction and Definition of Nonlinearity
@@ -16,7 +16,7 @@ Linear navigation was defined as movement forwards in the text without skipping 
 
 Browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read. Browsing speed was defined as less than 1s used on a page-view.
 
-To measure frequency of nonlinear navigation, we calculate how often a linear navigation event is followed by nonlinear navigation. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
+To measure frequency of nonlinear navigation, we calculate how often a nonnavigation event or a linear navigation event is followed by nonlinear navigation. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
 
 This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
 
@@ -301,7 +301,7 @@ grouped_navigation_blocks_data$PagesTurned <-
                 ## the navigation block following it has a
                 ### different user,
                 ### different reading session, or
-                ### different readign set up
+                ### different reading set up
                 grouped_navigation_blocks_data$FirstPage !=
                     grouped_navigation_blocks_data$LastPage
             ),
@@ -312,6 +312,12 @@ grouped_navigation_blocks_data$PagesTurned <-
             0
         )
     )
+# Manually set value for PagesTurned on last row of data
+LastRow <- nrow(grouped_navigation_blocks_data)
+grouped_navigation_blocks_data[LastRow, "PagesTurned"] <- (
+    grouped_navigation_blocks_data[LastRow, "LastPage"] -
+        grouped_navigation_blocks_data[LastRow, "FirstPage"]
+)
 # Check PagesTurned
 ## - regression, + forward leap or a chronological page turn, 0 not a navigation
 table(
@@ -345,7 +351,7 @@ Our aim is to measure linearity on each page-view, and so we need to first merge
 ```{r, merge navigation block data with wrangled data}
 # columns selected from grouped_navigation_blocks_data:
 ## UserId, NavigationBlockNumber, ReadingSessionNumber
-### IsRegression, IsForwardLeap
+### IsRegression, IsForwardLeap, PagesTurned,
 ### FirstCumReadingSessionTime, LastCumReadingSessionTime, NavBlockSpeedLabel
 wrangled_tracking_data <-
     merge(
@@ -356,10 +362,10 @@ wrangled_tracking_data <-
     )
 ```
 
-Create columns that summarise information on nonlinearity based on IsRegression and IsForwardLeap
+Next, we create columns that summarise information on nonlinearity based on IsRegression and IsForwardLeap
 - IsNonlinearNavigation tells us whether the event includes a regression or a forward leap
-- Linearity tells us what is the linearity type of the event (regression, forward leap, or linear/nonnavigation)
-- IsLinearToNonlinear tells us whether the event initiates nonlinear navigation following linear navigation. First event in a reading session can be TRUE for IsLinearToNonlinear if the first event includes nonlinear navigation.
+- Linearity tells us what is the type of linearity (regression, forward leap, or linear/nonnavigation)
+- StartsNonlinearity tells us whether the event initiates nonlinear navigation following linear navigation, nonnavigation, or nonlinear navigation of a different type.
 
 ```{r}
 wrangled_tracking_data$IsNonlinearNavigation <-
@@ -379,7 +385,7 @@ wrangled_tracking_data$Linearity <-
             "LinearOrNonNavigation"
         )
     )
-## Find event that initiates nonlinearity
+## Find events that initiate nonlinearity
 for (row in 1:nrow(wrangled_tracking_data)) {
     if(row == 1 |
         wrangled_tracking_data[row, "IsNewUser"] |
@@ -387,10 +393,12 @@ for (row in 1:nrow(wrangled_tracking_data)) {
                 wrangled_tracking_data[row, "IsReadingSetUpChange"]) {
         # first row, new user, new session, or new set up
         if(wrangled_tracking_data[row, "IsNonlinearNavigation"]) {
-            wrangled_tracking_data[row, "InitiatesNonlinearity"] <-
+            # nonlinear navigation
+            wrangled_tracking_data[row, "StartsNonlinearity"] <-
                 TRUE
         } else {
-            wrangled_tracking_data[row, "InitiatesNonlinearity"] <-
+            # not nonlinear
+            wrangled_tracking_data[row, "StartsNonlinearity"] <-
                 FALSE
         }
     } else {
@@ -398,22 +406,23 @@ for (row in 1:nrow(wrangled_tracking_data)) {
         if ((wrangled_tracking_data[row - 1, "Linearity"] !=
                 wrangled_tracking_data[row, "Linearity"]) &
                 wrangled_tracking_data[row, "IsNonlinearNavigation"]) {
-                    # previous event linearity != current event linearity
+                    # linearity type changes between previous and current event
                     ## and current event is nonlinear
-                    wrangled_tracking_data[row, "InitiatesNonlinearity"] <- TRUE
+                    wrangled_tracking_data[row, "StartsNonlinearity"] <-
+                        TRUE
                 } else {
-                    wrangled_tracking_data[row, "InitiatesNonlinearity"] <-
-                    FALSE
+                    wrangled_tracking_data[row, "StartsNonlinearity"] <-
+                        FALSE
                 }
         }
 }
-
-### then remove !IsReading and only use one event per page-view
 ```
 
+Finally, to create a measure for linearity to use in the analysis, we filter the df to only include one event per page-view.
+* Remove events that occur outside of visible page-views, such as disengagements and dialog events (triggered by viewing of information sheet).
+* Select one event per page-view that includes information on linearity (in particular, "StartsNonlinearity")
 
-
-```{r, checks}
+```{r, create a linearity df with one event per page-view}
 # make sure the df is correctly ordered
 wrangled_tracking_data <-
     wrangled_tracking_data[
@@ -422,12 +431,37 @@ wrangled_tracking_data <-
             order(UserId, Date, Time, Id)
         ),
     ]
-
-eachuserfirstevent <- wrangled_tracking_data %>%
-    group_by(UserId, ReadingSessionNumber) %>%
-    filter(IsReading) %>%
+# Remove events that do not occur on a page-view
+## 8143 rows (full data 9846 rows)
+linearity_measure_data <- wrangled_tracking_data %>%
+    filter(Engagement == "Engagement")
+# Select one event per each page-view:
+## group events by
+### UserId, ReadingSessionNumber, and ReadingBlockNumber (page-view indicator)
+#### and summarise important variables into columns
+linearity_measure_data <- linearity_measure_data %>%
+    group_by(UserId, ReadingSessionNumber, ReadingBlockNumber) %>%
     summarise(
-        first_event_type_from_user = first(Type),
-        first_event_linearity_from_user = first(Linearity)
+        StartLocation = first(StartLocation),
+        EndLocation = first(EndLocation),
+        IsNewUser = any(IsNewUser),
+        IsNewSession = any(IsNewSession),
+        IsReadingSetUpChange = any(IsReadingSetUpChange),
+        IncludesNonlinearity = any(IsNonlinearNavigation),
+        StartsNonlinearity = any(StartsNonlinearity),
+        FirstTimeUntilDeadlineDays = first(TimeBeforeDeadlinesDays),
+        FirstCumReadingSessionTime = first(CumReadingSessionTime),
+        WindowWidth = first(WindowWidth)
     )
+```
+
+## Save linearity measure df
+
+The new df is saved for usage in analysis.
+The dataset has already been saved, and so the below r code chunk is not run.
+
+```{r, eval=FALSE, echo=TRUE, save linearity df}
+write.csv2(linearity_measure_data,
+    "linearity_measure_data.csv"
+)
 ```
