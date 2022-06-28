@@ -1,0 +1,91 @@
+---
+title: "Prep_Questionnaires"
+author: "Pauliina Vuorinen"
+date: "28/06/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to prepare questionnaire data for use in the analysis.
+
+Three different questionnaires are processed: (1) Intrinsic Motivation Inventory (IMI), (2) IMI-R: task specific Intrinsic Motivation Inventory, and (3) Questionnaire on electronic reading experience. Our intention is to use these questionnaires to create 6 different variables to use in the analysis:
+
+From the IMI (1):
+* A measure of contextual reading motivation
+
+From the IMI-R (2):
+* 'Task competence' to study participants' perceived difficulty reading the short story
+* 'Task autonomy' to check the effect of the condition manipulation
+* 'Task interest' to check the effect of the condition manipulation
+
+From the questionnaire on electronic reading experience (3):
+* A measure of experience using task-specific devices for any electronic reading
+* A measure of experience reading task-specific texts on any electronic devices
+
+## Load data
+
+```{r, load data}
+raw_questionnaire_data <- read.csv(
+        "Data/raw_questionnaire_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+```
+
+```{r, change variable types}
+str(raw_questionnaire_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+raw_questionnaire_data[, c(
+    "UserId",
+    "StoryId"
+)] <- convert.magic(
+    raw_questionnaire_data[, c(
+        "UserId",
+        "StoryId"
+    )],
+    "factor"
+)
+```
+
+The questionnaire data has answers from participants who didn't complete the data in full, and these participants are excluded:
+
+```{r, remove excluded}
+raw_questionnaire_data <-
+    filter(
+        raw_questionnaire_data,
+        UserId != "33"
+        )
+raw_questionnaire_data <-
+    filter(
+        raw_questionnaire_data,
+        UserId != "61"
+    )
+raw_questionnaire_data <-
+    filter(
+        raw_questionnaire_data,
+        UserId != "81"
+    )
+```
+
+```{r}
+Questions <- qdata %>%
+    select(-UserId, -BookId, -Answer) %>%
+    distinct() %>%
+    pivot_wider(names_from = c(Questionnaire, QuestionNumber),
+                values_from = Question
+)
+
+AnswerData <- qdata %>%
+    group_by(UserId) %>%
+    select(-Question, -BookId) %>%
+    pivot_wider(names_from = c(Questionnaire, QuestionNumber),
+              values_from = Answer
+)
+
+SummaryQ <- AnswerData[,c(1, 37)]
+```
