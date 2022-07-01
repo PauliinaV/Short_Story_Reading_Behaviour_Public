@@ -24,6 +24,17 @@ From the questionnaire on electronic reading experience (3):
 * A measure of experience using task-specific devices for any electronic reading
 * A measure of experience reading task-specific texts on any electronic devices
 
+## Setup
+
+Load libraries, set working directory
+
+```{r, setup}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+getwd() # check that working directory is ~/Short_Story_Reading_Behaviour_Public
+```
+
 ## Load data
 
 ```{r, load data}
@@ -40,6 +51,7 @@ str(raw_questionnaire_data)
 source("Functions/Functions_VariableTypeConversion.R")
 
 ## turn columns into factors that should be factors
+names(raw_questionnaire_data)[names(raw_questionnaire_data) == "BookId"] <- "StoryId"
 raw_questionnaire_data[, c(
     "UserId",
     "StoryId"
@@ -72,20 +84,50 @@ raw_questionnaire_data <-
     )
 ```
 
-```{r}
-Questions <- qdata %>%
-    select(-UserId, -BookId, -Answer) %>%
+## Create datasets from the questions and answers
+
+To efficiently access the questionnaire data, we create two separate datasets:
+* all_answer_data
+    * Contains only the following columns: UserId, Questionnaire (Ids to identify the Questionnaires), QuestionNumber, and Answer
+    * Used to study the answers and group them together
+    * In this dataset the answers are organised by UserId under columns of which headings show QuestionnaireId_QuestionNumber
+* all_questions_data
+    * Used to check which question matches the 'Questionnaire' Id and 'QuestionNumber'
+    * The column headings show QuestionnaireId_QuestionNumber and the values show the corresponding 'Question'
+
+```{r, create answer and question datasets}
+all_answer_data <- raw_questionnaire_data %>%
+    group_by(UserId) %>%
+    select(-Question, -StoryId) %>%
+    pivot_wider(names_from = c(Questionnaire, QuestionNumber),
+              values_from = Answer
+)
+all_questions_data <- raw_questionnaire_data %>%
+    select(-UserId, -StoryId, -Answer) %>%
     distinct() %>%
     pivot_wider(names_from = c(Questionnaire, QuestionNumber),
                 values_from = Question
 )
+```
 
-AnswerData <- qdata %>%
-    group_by(UserId) %>%
-    select(-Question, -BookId) %>%
-    pivot_wider(names_from = c(Questionnaire, QuestionNumber),
-              values_from = Answer
-)
+## Participant demographics
 
-SummaryQ <- AnswerData[,c(1, 37)]
+We check participants' demographic information, including their gender, age, and whether English is their native language or not. First, we create a new dataset with only these columns:
+
+```{r, create a dataset on demographics}
+demographics_data <-
+    all_answer_data[, c(1, 22:24)] 
+names(demographics_data)[2:4] <- c("Age", "Gender", "NativeEnglish")
+str(demographics_data)
+demographics_data$Age <-
+    as.numeric(
+    demographics_data$Age
+    )
+```
+
+Second, we study demographics to include it in the method-section of the full article:
+
+```{r, demographics}
+
+
 ```
