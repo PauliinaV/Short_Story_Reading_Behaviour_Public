@@ -125,9 +125,80 @@ demographics_data$Age <-
     )
 ```
 
-Second, we study demographics to include it in the method-section of the full article:
+Second, we study demographics of the sample:
+- The sample includes 35 women, 24 men, and one participant who preferred not to disclose their gender.
+- The participants' average age is 21.53 (*SD* = 2.21), and age range is 19-30
+- Forty-three of the 60 participants (71.67%) are native speakers of English, whereas the remaining 17 participants are not.
 
 ```{r, demographics}
-
-
+# Gender
+table(demographics_data$Gender)
+# Age
+mean(demographics_data$Age)
+sd(demographics_data$Age)
+range(demographics_data$Age)
+# Native language
+table(demographics_data$NativeEnglish)
 ```
+
+## Intrinsic Motivation Inventory (IMI)
+
+IMI is used in the study to measure participants' situational reading motivation.
+The questionnaire consists of multiple different components:
+* Interest: participants' interest in the short story and their enjoyment of the task
+* Competence: participants' perceived difficulty reading the short story
+* Effort: participants' perceived effortfulness of reading the short story
+* Pressure: participants' feelings of pressure to read the short story
+* Choice: participants' perceived autonomy in reading the short story
+
+The sample is not sufficiently large for a confirmatory factor analysis (which requires *n* > 200), and therefore, we rely on the above components which were proposed by previous research [e.g. XX].
+First, we create a dataset with only the responses to IMI:
+```{r, create dataset for IMI}
+# select correct columns from all_answer_data
+IMI_data <- all_answer_data[, c(1, 38:64)]
+# remove special characters from answers
+IMI_data <- IMI_data %>%
+    mutate_if(is.factor, as.character
+)
+for (item in 2:length(IMI_data)) {
+    # this doesn't yet work
+  IMI_data[, item] <- substr(
+    IMI_data[, item],
+        1,
+        1
+    )
+}
+IMI_data <- IMI_data %>%
+    mutate_if(is.character, as.numeric
+)
+# reversed questions
+
+ReversedItemsIMI <- c("questionnaire22_9",
+                      "questionnaire22_10",
+                      "questionnaire22_11",
+                      "questionnaire22_12",
+                      "questionnaire22_16",
+                      "questionnaire22_17",
+                      "questionnaire22_20",
+                      "questionnaire22_25",
+                      "questionnaire22_26",
+                      "questionnaire22_27",
+                      "questionnaire22_29",
+                      "questionnaire22_30")
+
+for (item in 2:length(TaskIMI)) {
+  if (any((colnames(TaskIMI)[item]) == ReversedItemsIMI)) {
+    TaskIMI[, item] = 8 - TaskIMI[, item]
+  }
+}
+TaskIMIGrouped <- data.frame(UserId = TaskIMI$UserId,
+                    FullScoreWoPressure = ((apply(TaskIMI[c(2:5, 7:18, 20:28)], 1, sum))/length(TaskIMI[c(2:5, 7:18, 20:28)])),
+                    Interest = (apply(TaskIMI[c(2, 5, 8, 12, 16, 20, 22)], 1, sum)/length(TaskIMI[c(2, 5, 8, 12, 16, 20, 22)])),
+                    Competence = (apply(TaskIMI[c(3, 9, 13, 17, 27, 28)], 1, sum)/length(TaskIMI[c(3, 9, 13, 17, 27, 28)])),
+                    Effort = (apply(TaskIMI[c(7, 11, 18, 23, 25)], 1, sum)/length(TaskIMI[c(7, 11, 18, 23, 25)])),
+                  #  Pressure = (apply(TaskIMI[c(6, 19)], 1, sum)/length(TaskIMI[c(6, 19)])), # Pressure not used due to no correlation
+                    Choice = (apply(TaskIMI[c(4, 10, 14, 15, 21, 24, 26)], 1, sum)/length(TaskIMI[c(4, 10, 14, 15, 21, 24, 26)]))
+)
+
+
+ ```
