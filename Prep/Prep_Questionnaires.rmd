@@ -152,16 +152,13 @@ The questionnaire consists of multiple different components:
 * Choice: participants' perceived autonomy in reading the short story
 
 The sample is not sufficiently large for a confirmatory factor analysis (which requires *n* > 200), and therefore, we rely on the above components which were proposed by previous research [e.g. XX].
-First, we create a dataset with only the responses to IMI:
+First, we create a dataset with only the responses to IMI and tidy the answers to usable format:
 ```{r, create dataset for IMI}
 # select correct columns from all_answer_data
 IMI_data <- all_answer_data[, c(1, 38:64)]
 # remove special characters from answers
-IMI_data <- IMI_data %>%
-    mutate_if(is.factor, as.character
-)
+IMI_data <- as.data.frame(IMI_data)
 for (item in 2:length(IMI_data)) {
-    # this doesn't yet work
   IMI_data[, item] <- substr(
     IMI_data[, item],
         1,
@@ -171,8 +168,12 @@ for (item in 2:length(IMI_data)) {
 IMI_data <- IMI_data %>%
     mutate_if(is.character, as.numeric
 )
-# reversed questions
+```
 
+Some of the IMI items are reverse coded. These items are reversed:
+
+```{r, reverse IMI questions}
+# reversed questions
 ReversedItemsIMI <- c("questionnaire22_9",
                       "questionnaire22_10",
                       "questionnaire22_11",
@@ -185,12 +186,17 @@ ReversedItemsIMI <- c("questionnaire22_9",
                       "questionnaire22_27",
                       "questionnaire22_29",
                       "questionnaire22_30")
-
-for (item in 2:length(TaskIMI)) {
-  if (any((colnames(TaskIMI)[item]) == ReversedItemsIMI)) {
-    TaskIMI[, item] = 8 - TaskIMI[, item]
+for (item in 2:length(IMI_data)) {
+  if (any((colnames(IMI_data)[item]) == ReversedItemsIMI)) {
+    IMI_data[, item] = 8 - IMI_data[, item]
   }
 }
+```
+
+Finally, we group IMI responses together from each of the components:
+
+```{r, group IMI responses}
+# in progress
 TaskIMIGrouped <- data.frame(UserId = TaskIMI$UserId,
                     FullScoreWoPressure = ((apply(TaskIMI[c(2:5, 7:18, 20:28)], 1, sum))/length(TaskIMI[c(2:5, 7:18, 20:28)])),
                     Interest = (apply(TaskIMI[c(2, 5, 8, 12, 16, 20, 22)], 1, sum)/length(TaskIMI[c(2, 5, 8, 12, 16, 20, 22)])),
@@ -199,6 +205,4 @@ TaskIMIGrouped <- data.frame(UserId = TaskIMI$UserId,
                   #  Pressure = (apply(TaskIMI[c(6, 19)], 1, sum)/length(TaskIMI[c(6, 19)])), # Pressure not used due to no correlation
                     Choice = (apply(TaskIMI[c(4, 10, 14, 15, 21, 24, 26)], 1, sum)/length(TaskIMI[c(4, 10, 14, 15, 21, 24, 26)]))
 )
-
-
- ```
+```
