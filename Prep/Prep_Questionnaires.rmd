@@ -39,11 +39,11 @@ getwd() # check that working directory is ~/Short_Story_Reading_Behaviour_Public
 
 ```{r, load data}
 raw_questionnaire_data <- read.csv(
-        "Data/raw_questionnaire_data.csv",
-        header = TRUE,
-        sep = ";",
-        dec = ","
-    )
+    "Data/raw_questionnaire_data.csv",
+    header = TRUE,
+    sep = ";",
+    dec = ","
+)
 ```
 
 ```{r, change variable types}
@@ -71,7 +71,7 @@ raw_questionnaire_data <-
     filter(
         raw_questionnaire_data,
         UserId != "33"
-        )
+    )
 raw_questionnaire_data <-
     filter(
         raw_questionnaire_data,
@@ -99,15 +99,17 @@ To efficiently access the questionnaire data, we create two separate datasets:
 all_answer_data <- raw_questionnaire_data %>%
     group_by(UserId) %>%
     select(-Question, -StoryId) %>%
-    pivot_wider(names_from = c(Questionnaire, QuestionNumber),
-              values_from = Answer
-)
+    pivot_wider(
+        names_from = c(Questionnaire, QuestionNumber),
+        values_from = Answer
+    )
 all_questions_data <- raw_questionnaire_data %>%
     select(-UserId, -StoryId, -Answer) %>%
     distinct() %>%
-    pivot_wider(names_from = c(Questionnaire, QuestionNumber),
-                values_from = Question
-)
+    pivot_wider(
+        names_from = c(Questionnaire, QuestionNumber),
+        values_from = Question
+    )
 ```
 
 ## Participant demographics
@@ -116,12 +118,12 @@ We check participants' demographic information, including their gender, age, and
 
 ```{r, create a dataset on demographics}
 demographics_data <-
-    all_answer_data[, c(1, 22:24)] 
+    all_answer_data[, c(1, 22:24)]
 names(demographics_data)[2:4] <- c("Age", "Gender", "NativeEnglish")
 str(demographics_data)
 demographics_data$Age <-
     as.numeric(
-    demographics_data$Age
+        demographics_data$Age
     )
 ```
 
@@ -151,7 +153,7 @@ The questionnaire consists of multiple different components:
 * Pressure: participants' feelings of pressure to read the short story
 * Choice: participants' perceived autonomy in reading the short story
 
-The sample is not sufficiently large for a confirmatory factor analysis (which requires *n* > 200), and therefore, we rely on the above components which were proposed by previous research [e.g. XX].
+The sample is not sufficiently large for a confirmatory factor analysis (which requires *n* > 200 for fair performance; @comrey_interpretation_1992), and therefore, we rely on the above components which were proposed by previous research.
 First, we create a dataset with only the responses to IMI and tidy the answers to usable format:
 ```{r, create dataset for IMI}
 # select correct columns from all_answer_data
@@ -159,50 +161,84 @@ IMI_data <- all_answer_data[, c(1, 38:64)]
 # remove special characters from answers
 IMI_data <- as.data.frame(IMI_data)
 for (item in 2:length(IMI_data)) {
-  IMI_data[, item] <- substr(
-    IMI_data[, item],
+    IMI_data[, item] <- substr(
+        IMI_data[, item],
         1,
         1
     )
 }
 IMI_data <- IMI_data %>%
-    mutate_if(is.character, as.numeric
-)
+    mutate_if(is.character, as.numeric)
 ```
 
-Some of the IMI items are reverse coded. These items are reversed:
+Some of the IMI items are reverse coded. The scores of these items are reversed:
 
 ```{r, reverse IMI questions}
 # reversed questions
-ReversedItemsIMI <- c("questionnaire22_9",
-                      "questionnaire22_10",
-                      "questionnaire22_11",
-                      "questionnaire22_12",
-                      "questionnaire22_16",
-                      "questionnaire22_17",
-                      "questionnaire22_20",
-                      "questionnaire22_25",
-                      "questionnaire22_26",
-                      "questionnaire22_27",
-                      "questionnaire22_29",
-                      "questionnaire22_30")
+ReversedItemsIMI <- c(
+    "questionnaire22_9",
+    "questionnaire22_10",
+    "questionnaire22_11",
+    "questionnaire22_12",
+    "questionnaire22_16",
+    "questionnaire22_17",
+    "questionnaire22_20",
+    "questionnaire22_25",
+    "questionnaire22_26",
+    "questionnaire22_27",
+    "questionnaire22_29",
+    "questionnaire22_30"
+)
 for (item in 2:length(IMI_data)) {
-  if (any((colnames(IMI_data)[item]) == ReversedItemsIMI)) {
-    IMI_data[, item] = 8 - IMI_data[, item]
-  }
+    if (any((colnames(IMI_data)[item]) == ReversedItemsIMI)) {
+        IMI_data[, item] <- 8 - IMI_data[, item]
+    }
 }
 ```
 
-Finally, we group IMI responses together from each of the components:
+Finally, we group IMI responses together by calculating each participants' mean score for each factor. This average score is then used in analyses.
 
 ```{r, group IMI responses}
-# in progress
-TaskIMIGrouped <- data.frame(UserId = TaskIMI$UserId,
-                    FullScoreWoPressure = ((apply(TaskIMI[c(2:5, 7:18, 20:28)], 1, sum))/length(TaskIMI[c(2:5, 7:18, 20:28)])),
-                    Interest = (apply(TaskIMI[c(2, 5, 8, 12, 16, 20, 22)], 1, sum)/length(TaskIMI[c(2, 5, 8, 12, 16, 20, 22)])),
-                    Competence = (apply(TaskIMI[c(3, 9, 13, 17, 27, 28)], 1, sum)/length(TaskIMI[c(3, 9, 13, 17, 27, 28)])),
-                    Effort = (apply(TaskIMI[c(7, 11, 18, 23, 25)], 1, sum)/length(TaskIMI[c(7, 11, 18, 23, 25)])),
-                  #  Pressure = (apply(TaskIMI[c(6, 19)], 1, sum)/length(TaskIMI[c(6, 19)])), # Pressure not used due to no correlation
-                    Choice = (apply(TaskIMI[c(4, 10, 14, 15, 21, 24, 26)], 1, sum)/length(TaskIMI[c(4, 10, 14, 15, 21, 24, 26)]))
+# Identify the items belonging in each factor
+interest_items <- c(2, 5, 8, 12, 16, 20, 22)
+competence_items <- c(3, 9, 13, 17, 27, 28)
+effort_items <- c(7, 11, 18, 23, 25)
+pressure_items <- c(6, 19)
+choice_items <- c(4, 10, 14, 15, 21, 24, 26)
+
+# find each participants' mean for each factor
+IMI_grouped_data <-
+    data.frame(
+        UserId = IMI_data$UserId,
+        Interest = (
+            apply(IMI_data[c(interest_items)], 1, sum)
+            / length(IMI_data[c(interest_items)])
+        ),
+        Competence = (
+            apply(IMI_data[c(competence_items)], 1, sum)
+            / length(IMI_data[c(competence_items)])
+        ),
+        Effort = (
+            apply(IMI_data[c(effort_items)], 1, sum)
+            / length(IMI_data[c(effort_items)])
+        ),
+        Pressure = (
+            apply(IMI_data[c(pressure_items)], 1, sum)
+            / length(IMI_data[c(pressure_items)])
+        ),
+        Choice = (
+            apply(IMI_data[c(choice_items)], 1, sum)
+            / length(IMI_data[c(choice_items)])
+        )
+    )
+```
+
+Save IMI_grouped_data for usage in analysis.
+The dataset has already been saved, and so the below r code chunk is not run.
+
+```{r, eval=FALSE, echo=TRUE, save wrangled data}
+write.csv2(
+    IMI_grouped_data,
+    "IMI_grouped_questionnaire_data.csv"
 )
 ```
