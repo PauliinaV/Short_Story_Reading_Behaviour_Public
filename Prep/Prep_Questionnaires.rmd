@@ -407,16 +407,25 @@ IMI is used in the study to measure participants' situational reading motivation
 The questionnaire consists of multiple different components:
 * Interest: participants' interest in the short story and their enjoyment of the task
 * Competence: participants' perceived difficulty reading the short story
-* Effort: participants' perceived effortfulness of reading the short story
-* Pressure: participants' feelings of pressure to read the short story
-* Choice: participants' perceived autonomy in reading the short story
+* Autonomy: participants' perceived autonomy in reading the short story
 
 Similarly to IMI-R, we create scores for the subcomponents by summing the scores together. We also inspect cronbach's alpha to assess the internal consistency of IMI in our sample.
+
+In addition to these three subcomponents, the version of the IMI that we used in the study had questions on 'effort' and 'pressure' subcomponents as well. Whereas effort indicates how effortful participants found reading of the short story, pressure indicates whether participants experienced feelings of pressure to read to story. These two components were not included in analyses because of three reasons: (1) we had not determined hypotheses concerning the subcomponents and thus they were not considered to be important variables, (2) feedback from participants indicated that the items in the 'effort' subcomponent were ambiguous. Indeed, putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story. (3) The subcomponents showed poor psychometric properties: the 'pressure' component had poor internal consistency (Cronbach's alpha < .5), whereas the 'effort' component was not correlated with the other elements in the questionnaire. Due to these reasons, the 'effort' and 'pressure' scores were not used in analyses,
 
 First, we create a dataset with only the responses to IMI and tidy the answers to usable format:
 ```{r 'create dataset for IMI'}
 # select correct columns from all_answer_data
-IMI_data <- all_answer_data[, c(1, 38:64)]
+IMI_data <- all_answer_data[, c(
+    1,
+    38:41,
+    44:46,
+    48:53,
+    56:58,
+    60,
+    62:64
+)]
+
 # remove special characters from answers
 IMI_data <- as.data.frame(IMI_data)
 for (item in 2:length(IMI_data)) {
@@ -446,14 +455,10 @@ ReversedItemsIMI <- c(
     "questionnaire22_9",
     "questionnaire22_10",
     "questionnaire22_11",
-    "questionnaire22_12",
     "questionnaire22_16",
-    "questionnaire22_17",
     "questionnaire22_20",
-    "questionnaire22_25",
     "questionnaire22_26",
     "questionnaire22_27",
-    "questionnaire22_29",
     "questionnaire22_30"
 )
 for (item in 2:length(IMI_data)) {
@@ -473,17 +478,10 @@ Similarly to IMI-R, IMI is measured on a 7-point Likert scale, and so the scores
 # there is an issue with polychoric correlations
 ## removing either column 23 and 25 fixes the issue??
 ### cor for now
-# IMI_item_polychor_correlations <- POLYCHORIC_R(
-#    IMI_data[, c(2:length(IMI_data))],
-#    verbose = FALSE
-# )
-
-IMI_item_correlations <- cor(
-    IMI_data[, c(2:length(IMI_data))]
+IMI_item_polychor_correlations <- POLYCHORIC_R(
+    IMI_data[, c(2:length(IMI_data))],
+    verbose = FALSE
 )
-# not really polycor but fix this:
-IMI_item_polychor_correlations <- IMI_item_correlations
-
 round(IMI_item_polychor_correlations, 2)
 ```
 
@@ -539,31 +537,6 @@ IMICompetenceCronbach <-
         IMI_competence_subscale,
         CI = TRUE
     )
-# Effort
-IMI_effort_subscale <- dplyr::select(
-    IMI_data,
-    questionnaire22_13,
-    questionnaire22_17,
-    questionnaire22_24,
-    questionnaire22_29,
-    questionnaire22_31
-)
-IMIEffortCronbach <-
-    cronbach.alpha(
-        IMI_effort_subscale,
-        CI = TRUE
-    )
-# Pressure
-IMI_pressure_subscale <- dplyr::select(
-    IMI_data,
-    questionnaire22_12,
-    questionnaire22_25
-)
-IMIPressureCronbach <-
-    cronbach.alpha(
-        IMI_pressure_subscale,
-        CI = TRUE
-    )
 # Autonomy
 IMI_autonomy_subscale <- dplyr::select(
     IMI_data,
@@ -584,27 +557,24 @@ IMIAutonomyCronbach <-
 
 - The subscale of 'interest' has 'excellent' internal consistency, Cronbach's Alpha = `r round(IMIInterestCronbach$alpha, 3)` (Confidence interval = `r round(IMIInterestCronbach$ci, 2)`).
 - The subscale of 'competence' has 'good' internal consistency, Cronbach's Alpha = `r round(IMICompetenceCronbach$alpha, 3)` (Confidence interval = `r round(IMICompetenceCronbach$ci, 2)`).
-- The subscale of 'effort' has 'good' internal consistency (Cronbach's Alpha = `r round(IMIEffortCronbach$alpha, 3)`, Confidence interval = `r round(IMIEffortCronbach$ci, 2)`)
-- The subscale of 'pressure' has 'unacceptable' internal consistency (Cronbach's Alpha = `r round(IMIPressureCronbach$alpha, 3)`, Confidence interval = `r round(IMIPressureCronbach$ci, 2)`)
 - The subscale of 'autonomy' has 'good' internal consistency (Cronbach's Alpha = `r round(IMIAutonomyCronbach$alpha, 3)`, Confidence interval = `r round(IMIAutonomyCronbach$ci, 2)`)
 
-'Interest', 'competence', 'effort', and 'autonomy' show sufficient internal consistency. However, the subcomponent of 'pressure' has a very low internal consistency score. This is likely to be due to the fact that the IMI only includes two items measuring participants' feelings of pressure and tension. Furthermore, these two items are not significantly correlated with each other: `r cor.test(IMI_pressure_subscale$questionnaire22_12, IMI_pressure_subscale$questionnaire22_25)`. Due to the low internal consistency of 'pressure', we do not calculate a score for it and the 'pressure' component is not used in analyses.
+All subcomponents show sufficient internal consistency.
 
 ### IMI scores
 
 Next, we calculate each participants' score on each of the IMI subscales by summing item scores together.
 
-We create each participant a score on each of the subscales by summing item scores together. The IMI scores are named as 'SInterest', 'SCompetence', 'SEffort', and 'SAutonomy' (S: situational motivation) to distinguish them from the IMI-R subscale scores.
+We create each participant a score on each of the subscales by summing item scores together. The IMI scores are named as 'SInterest', 'SCompetence', and 'SAutonomy' (S: situational motivation) to distinguish them from the IMI-R subscale scores.
 
 ```{r 'IMI scores'}
 IMI_scores <- IMI_data %>%
     mutate(
         SInterest = rowSums(.[names(IMI_interest_subscale)]),
         SCompetence = rowSums(.[names(IMI_competence_subscale)]),
-        SEffort = rowSums(.[names(IMI_effort_subscale)]),
         SAutonomy = rowSums(.[names(IMI_autonomy_subscale)])
     ) %>%
-    dplyr::select(UserId, SInterest, SCompetence, SEffort, SAutonomy)
+    dplyr::select(UserId, SInterest, SCompetence, SAutonomy)
 ```
 
 Inspect participants' IMI scores:
@@ -638,20 +608,6 @@ ggplot(IMI_scores, aes(x = UserId, y = SCompetence)) +
 ```
 
 The average situational competence score is `r round(mean(IMI_scores$SCompetence), 2)` (*SD* = `r round(sd(IMI_scores$SCompetence), 2)`, *range* = `r round(range(IMI_scores$SCompetence), 2)`). The plot shows that participants varied more in how difficult they found the reading task than in their enjoyment of the short story. The average situational competence score divided by the amount of questions is `r round((mean(IMI_scores$SCompetence)/6), 2)`, which corresponds with the third highest option in the Likert scale (scale: 1 (*not at all true*) to 7 (*very true*)).
-
-```{r}
-# effort subscale
-## max score on the scale: 5*7 = 35, min score 5*1 = 5
-mean(IMI_scores$SEffort)
-sd(IMI_scores$SEffort)
-range(IMI_scores$SEffort)
-# visualise
-ggplot(IMI_scores, aes(x = UserId, y = SEffort)) +
-    geom_point() +
-    theme_classic()
-```
-
-The average situational effort score is `r round(mean(IMI_scores$SEffort), 2)` (*SD* = `r round(sd(IMI_scores$SEffort), 2)`, *range* = `r round(range(IMI_scores$SEffort), 2)`). The participants show a lot of variation in their scores for the effort subscale. The average situational effort score divided by the amount of items is `r round((mean(IMI_scores$SEffort)/5), 2)`, which corresponds with the neutral answer option on the scale (scale: 1 (*not at all true*) to 7 (*very true*)).
 
 ```{r}
 # autonomy subscale
@@ -689,33 +645,9 @@ ggplot(IMI_scores, aes(x = SCompetence, y = SAutonomy)) +
     geom_smooth() +
     theme_classic() +
     ggtitle("IMI: situational competence and autonomy scores")
-ggplot(IMI_scores, aes(x = SInterest, y = SEffort)) +
-    geom_point() +
-    geom_smooth() +
-    theme_classic() +
-    ggtitle("IMI: situational interest and effort scores")
-ggplot(IMI_scores, aes(x = SCompetence, y = SEffort)) +
-    geom_point() +
-    geom_smooth() +
-    theme_classic() +
-    ggtitle("IMI: situational competence and effort scores")
-ggplot(IMI_scores, aes(x = SAutonomy, y = SEffort)) +
-    geom_point() +
-    geom_smooth() +
-    theme_classic() +
-    ggtitle("IMI: situational autonomy and effort scores")
 ```
 
 The 'interest', 'autonomy', and 'competence' IMI subscales are positively correlated with each other. This indicates that participants who enjoyed reading the short story, also found the story easier to read, and they felt autonomous in text selection and how they read the story.
-
-In contrast, the 'effort' subscale is not correlated with any of the other components. Similarly to the IMI-R, participants may have found the 'effort' items ambiguous to respond to as putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story. Due to this ambiguity, the 'effort' score is not used in analyses.
-
-```{r 'IMI remove effort component'}
-IMI_scores <- dplyr::select(
-    IMI_scores,
-    -SEffort
-)
-```
 
 Finally, we save the IMI scores dataset for use in analyses. This dataset has already been saved and so the below code is not run.
 
