@@ -17,18 +17,17 @@ From the IMI-R (1):
 * Consists of the following subcomponents:
     * 'Interest': interest in reading as an activity, e.g. *I think recreational reading is enjoyable*
     * 'Competence': Sense of competence in one's own reading ability, e.g. *"I think I am good at reading"*
-    * 'Effort': Perceived effortufulness of reading, e.g. *"I put energy into recreational reading"*
 
 From the IMI (2):
 * A measure of situational reading motivation
 * Consists of the following subcomponents:
-    * 'Task competence' to study participants' perceived difficulty reading the short story
-    * 'Task autonomy' to check the effect of the condition manipulation
-    * 'Task interest' to check the effect of the condition manipulation
+    * 'Interest': participants' interest in the short story that they read, e.g. **
+    * 'Competence': Perceived competence in reading and difficulty of the read short story, e.g. **
+    * 'Autonomy': Perceived autonomy in text selection and the ways in which the short story was read, e.g. **
 
 From the questionnaire on electronic reading experience (3):
-* A measure of experience using task-specific devices for any electronic reading
-* A measure of experience reading task-specific texts on any electronic devices
+* A measure of experience using task-specific devices (smartphones, tablets, laptops, PCs, Macs) for any electronic reading
+* A measure of experience reading task-specific texts (long-form fiction) on any electronic devices
 
 ## Setup
 
@@ -168,10 +167,10 @@ table(demographics_data$NativeEnglish)
 We save a dataset on demographics for usage in the analyses:
 
 ```{r 'save demographics dataset', eval=FALSE, echo=TRUE}
-write.csv2(
-    demographics_data,
-    "demographics_data.csv"
-)
+# write.csv2(
+#    demographics_data,
+#    "demographics_data.csv"
+# )
 ```
 
 ## Revised Intrinsic Motivation Inventory (IMI-R)
@@ -204,25 +203,27 @@ The items are expected to load on the subcomponents as follows:
     - questionnaire11_18: Reading is an activity that I can do well
     - questionnaire11_20: I think I read well, in comparison to others
 
-- Effort:
-    - questionnaire11_5: I put a lot of effort into recreational reading
-    - questionnaire11_11: I put energy into recreational reading
-    - questionnaire11_13: I try hard when I read recreationally
-    - questionnaire11_15: I try hard to read well
-    - questionnaire11_16: It is important to me to do well at reading
+In addition to these two components, the version of the questionnaire that we included in the study also had items on 'effort' which can tells us of how effortful an individual thinks reading is e.g. *"I put energy into recreational reading"*. These items were disregarded from the analyses due to two reasons: (1) we had not determined hypotheses concerning the 'effort' subcomponent and thus it was not considered to be an important variable, and (2) feedback from participants indicated that the items in the 'effort' subcomponent were ambiguous. Indeed, putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story. Due to these reasons, the 'effort' score was not used in analyses.
 
-We intend use these three subcomponents in analyses. To do so, we check the internal consistency of the scale and correlations between the items. Item scores within each of the subcomponents are then summed together for use in the analysis.
+The subcomponents of contextual 'interest' and 'competence' were used in analyses. To do so, we check the internal consistency of the scale and correlations between the items. Item scores within each of the subcomponents are then summed together for use in the analysis.
 
 First, we create a dataset with only the responses to IMI-R:
 
 ```{r 'create dataset for IMI-R'}
 # select correct columns from all_answer_data
-IMIR_data <- all_answer_data[, c(1:21)] # UserId, questionnaire11_1:questionnaire11_20
+## UserId, and items in the 'interest' and 'competence' subcomponents of IMIR
+IMIR_data <- all_answer_data[, c(
+    1:5,
+    7:11,
+    13,
+    15,
+    18:21
+)]
 ```
 
 Missing responses need to be removed, and so we check if IMI-R has any missing responses.
 
-```{r 'remove missing values'}
+```{r 'remove missing values IMI-R'}
 any(is.na(IMIR_data))
 ```
 
@@ -231,7 +232,7 @@ IMI-R was admistered at the beginning of the study, and so there are no missing 
 
 Next, we remove special characters from the answers:
 
-```{r ' remove special characters'}
+```{r ' remove special characters IMI-R'}
 # remove special characters
 IMIR_data <- as.data.frame(IMIR_data)
 for (item in 2:length(IMIR_data)) {
@@ -257,7 +258,7 @@ We then check correlations between the items.
 
 IMI-R is measured on a 7-point Likert scale, and so the scores are ordinal. Therefore, we use polychor correlations rather than Pearson's correlations.
 
-```{r}
+```{r 'correlations IMI-R'}
 IMIR_item_polychor_correlations <- POLYCHORIC_R(
     IMIR_data[, c(2:length(IMIR_data))],
     verbose = FALSE
@@ -267,15 +268,15 @@ round(IMIR_item_polychor_correlations, 2)
 
 Visualise correlations:
 
-```{r}
+```{r 'correlation plot IMI-R'}
 corrplot(round(IMIR_item_polychor_correlations, 2), method = "circle", type = "lower")
 ```
 
 Most of the items seem to be highly correlated with each other.
 
-Next, we check the internal consistency of the IMI overall scale and each of the subscales (interest, competence, and effort) by computing Cronbach's Alpha [XX Cronbach, 1951].
+Next, we check the internal consistency of the IMIR overall scale and each of the subscales (interest, competence, and effort) by computing Cronbach's Alpha [XX Cronbach, 1951].
 
-```{r 'overall scale Cronbachs alpha'}
+```{r 'overall scale Cronbachs alpha IMI-R'}
 IMIRFullScaleCronbach <-
     cronbach.alpha(
         IMIR_data[, 2:length(IMIR_data)],
@@ -287,7 +288,7 @@ The full scale Cronbach's Alpha is = `r round(IMIRFullScaleCronbach$alpha, 3)` w
 
 Next, we check Cronbach's alpha of each subscale:
 
-```{r 'subscale Cronbachs alpha'}
+```{r 'subscale Cronbachs alpha IMI-R'}
 # Interest
 IMIR_interest_subscale <- dplyr::select(
     IMIR_data,
@@ -321,47 +322,31 @@ IMIRCompetenceCronbach <-
         IMIR_competence_subscale,
         CI = TRUE
     )
-# Effort
-IMIR_effort_subscale <- dplyr::select(
-    IMIR_data,
-    questionnaire11_5,
-    questionnaire11_11,
-    questionnaire11_13,
-    questionnaire11_15,
-    questionnaire11_16
-)
-IMIREffortCronbach <-
-    cronbach.alpha(
-        IMIR_effort_subscale,
-        CI = TRUE
-    )
 ```
 
 - The subscale of 'interest' has 'good' internal consistency, Cronbach's Alpha = `r round(IMIRInterestCronbach$alpha, 3)` (Confidence interval = `r round(IMIRInterestCronbach$ci, 2)`).
 - The subscale of 'competence' has 'acceptable' internal consistency, Cronbach's Alpha = `r round(IMIRCompetenceCronbach$alpha, 3)` (Confidence interval = `r round(IMIRCompetenceCronbach$ci, 2)`).
-- The subscale of 'effort' has 'acceptable' internal consistency (Cronbach's Alpha = `r round(IMIREffortCronbach$alpha, 3)`, Confidence interval = `r round(IMIREffortCronbach$ci, 2)`)
 
-All subscales show sufficiently high internal consistency.
+Both subscales show sufficiently high internal consistency.
 
 ### IMI-R scores
 
-Next, we calculate each participants' score on each of the IMI-R subscales by summing item scores together.
+Next, we calculate each participants' score on both of the IMI-R subscales by summing item scores together.
 
-We create each participant a score on each of the subscales by summing item scores together. The IMI-R scores are named as 'CInterest', 'CCompetence', and 'CEffort' (C: contextual motivation) to distinguish them from the IMI subscale scores.
+We create each participant a score on both of the subscales by summing item scores together. The IMI-R scores are named as 'CInterest' and 'CCompetence' (C: contextual motivation) to distinguish them from the IMI subscale scores.
 
-```{r 'IMI scores'}
+```{r 'IMI-R scores'}
 IMIR_scores <- IMIR_data %>%
     mutate(
         CInterest = rowSums(.[names(IMIR_interest_subscale)]),
-        CCompetence = rowSums(.[names(IMIR_competence_subscale)]),
-        CEffort = rowSums(.[names(IMIR_effort_subscale)])
+        CCompetence = rowSums(.[names(IMIR_competence_subscale)])
     ) %>%
-    dplyr::select(UserId, CInterest, CCompetence, CEffort)
+    dplyr::select(UserId, CInterest, CCompetence)
 ```
 
 Inspect participants' IMI-R scores:
 
-```{r}
+```{r 'IMI-R interest'}
 # interest subscale
 ## max score on the scale: 9*7 = 63, min score 9*1 = 9
 mean(IMIR_scores$CInterest)
@@ -375,9 +360,9 @@ ggplot(IMIR_scores, aes(x = UserId, y = CInterest)) +
 
 The average contextual interest score is `r round(mean(IMIR_scores$CInterest), 2)` (*SD* = `r round(sd(IMIR_scores$CInterest), 2)`, *range* = `r round(range(IMIR_scores$CInterest), 2)`). Therefore, most of the participants were contextually motivated to read for fun. This makes sense as the sample was collected by convenience sampling, and individuals who enjoy reading as an activity are more likely to take part in a book reading study than people who are not motivated to read.
 
-The mean score divided by the number of Likert options, `r round((mean(IMIR_scores$CInterest)/9), 2)` corresponds with the third highest option on the Likert-scale from 1 (*not at all true*) to 7 (*very true*).
+The mean score divided by the number of items, `r round((mean(IMIR_scores$CInterest)/9), 2)` corresponds with the third highest option on the Likert-scale from 1 (*not at all true*) to 7 (*very true*).
 
-```{r}
+```{r 'IMI-R competence'}
 # competence subscale
 ## max score on the scale: 6*7 = 42, min score 6*1 = 6
 mean(IMIR_scores$CCompetence)
@@ -389,25 +374,11 @@ ggplot(IMIR_scores, aes(x = UserId, y = CCompetence)) +
     theme_classic()
 ```
 
-The average contextual competence score is `r round(mean(IMIR_scores$CCompetence), 2)` (*SD* = `r round(sd(IMIR_scores$CCompetence), 2)`, *range* = `r round(range(IMIR_scores$CCompetence), 2)`). The plot shows that participants vary more in their perceived reading competence than in their reading enjoyment. The average contextual competence score divided by the amount of Likert choices is `r round((mean(IMIR_scores$CCompetence)/7), 2)`, which indicates slightly positive sense of competence (scale 1 (*not at all true*) to 7 (*very true*)).
-
-```{r}
-# effort subscale
-## max score on the scale: 5*7 = 35, min score 5*1 = 5
-mean(IMIR_scores$CEffort)
-sd(IMIR_scores$CEffort)
-range(IMIR_scores$CEffort)
-# visualise
-ggplot(IMIR_scores, aes(x = UserId, y = CEffort)) +
-    geom_point() +
-    theme_classic()
-```
-
-The average contextual effort score is `r round(mean(IMIR_scores$CEffort), 2)` (*SD* = `r round(sd(IMIR_scores$CEffort), 2)`, *range* = `r round(range(IMIR_scores$CEffort), 2)`). The participants show a lot of variation in their scores for the effort subscale. The average contextual effort score divided by the amount of Likert choices is `r round((mean(IMIR_scores$CEffort)/7), 2)`, which corresponds with a slightly negative answer to effort (scale 1 (*not at all true*) to 7 (*very true*)).
+The average contextual competence score is `r round(mean(IMIR_scores$CCompetence), 2)` (*SD* = `r round(sd(IMIR_scores$CCompetence), 2)`, *range* = `r round(range(IMIR_scores$CCompetence), 2)`). The plot shows that participants vary more in their perceived reading competence than in their reading enjoyment. The average contextual competence score divided by the amount of items is `r round((mean(IMIR_scores$CCompetence)/6), 2)`, which indicates slightly positive sense of competence (scale: 1 (*not at all true*) to 7 (*very true*)).
 
 We then check correlations between scores:
 
-```{r}
+```{r 'IMI-R score correlations'}
 IMIR_scores_correlations <- cor(
     IMIR_scores[, 2:length(IMIR_scores)]
 )
@@ -417,25 +388,13 @@ ggplot(IMIR_scores, aes(x = CInterest, y = CCompetence)) +
     geom_smooth() +
     theme_classic() +
     ggtitle("IMI-R: contextual interest and competence scores")
-ggplot(IMIR_scores, aes(x = CInterest, y = CEffort)) +
-    geom_point() +
-    geom_smooth() +
-    theme_classic() +
-    ggtitle("IMI-R: contextual interest and effort scores")
-ggplot(IMIR_scores, aes(x = CCompetence, y = CEffort)) +
-    geom_point() +
-    geom_smooth() +
-    theme_classic() +
-    ggtitle("IMI-R: situational competence and choice scores")
 ```
 
-The IMI-R subscales are positively correlated with each other. This indicates that participants who generally enjoy reading, also perceive themselves as competent in reading, and they put effort in reading.
-
-Connection between the interest and competence scores seems to be stronger than between either subscale and the effort component. Participants may have varied in how they understood the items for the effort subscale, as putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story.
+The IMI-R subscales are positively correlated with each other. This indicates that participants who generally enjoy reading, also perceive themselves as competent in reading.
 
 Finally, we save the IMI-R scores dataset for use in analyses. This dataset has already been saved and so the below code is not run.
 
-```{r 'save IMI scores data', eval=FALSE, echo=TRUE}
+```{r 'save IMI-R scores data', eval=FALSE, echo=TRUE}
 write.csv2(
     IMIR_scores,
     "IMIR_scores.csv"
@@ -504,234 +463,475 @@ for (item in 2:length(IMI_data)) {
 }
 ```
 
-We group IMI responses together by calculating each participants' mean score for each factor. This average score is then used in analyses.
-
-```{r 'group IMI responses'}
-# Identify the items belonging in each factor
-interest_items <- c(2, 5, 8, 12, 16, 20, 22)
-competence_items <- c(3, 9, 13, 17, 27, 28)
-effort_items <- c(7, 11, 18, 23, 25)
-pressure_items <- c(6, 19)
-choice_items <- c(4, 10, 14, 15, 21, 24, 26)
-
-# find each participants' mean for each factor
-IMI_grouped_data <-
-    data.frame(
-        UserId = IMI_data$UserId,
-        Interest = (
-            apply(IMI_data[c(interest_items)], 1, sum)
-            / length(IMI_data[c(interest_items)])
-        ),
-        Competence = (
-            apply(IMI_data[c(competence_items)], 1, sum)
-            / length(IMI_data[c(competence_items)])
-        ),
-        Effort = (
-            apply(IMI_data[c(effort_items)], 1, sum)
-            / length(IMI_data[c(effort_items)])
-        ),
-        Pressure = (
-            apply(IMI_data[c(pressure_items)], 1, sum)
-            / length(IMI_data[c(pressure_items)])
-        ),
-        Choice = (
-            apply(IMI_data[c(choice_items)], 1, sum)
-            / length(IMI_data[c(choice_items)])
-        )
-    )
-```
-
-### IMI-R scale tests and adjustments
+### IMI scale tests and adjustments
 
 We then check correlations between the items.
 
-IMI-R is measured on a 7-point Likert scale, and so the scores are ordinal. Therefore, we use polychor correlations rather than Pearson's correlations.
+Similarly to IMI-R, IMI is measured on a 7-point Likert scale, and so the scores are ordinal. Therefore, we use polychor correlations rather than Pearson's correlations.
 
 ```{r}
-IMI_item_polychor_correlations <- POLYCHORIC_R(
-    IMI_data[, c(2:length(IMI_data))],
-    verbose = FALSE
+# there is an issue with polychoric correlations
+## removing either column 23 and 25 fixes the issue??
+### cor for now
+# IMI_item_polychor_correlations <- POLYCHORIC_R(
+#    IMI_data[, c(2:length(IMI_data))],
+#    verbose = FALSE
+# )
+
+IMI_item_correlations <- cor(
+    IMI_data[, c(2:length(IMI_data))]
 )
+# not really polycor but fix this:
+IMI_item_polychor_correlations <- IMI_item_correlations
+
 round(IMI_item_polychor_correlations, 2)
 ```
 
 Visualise correlations:
 
 ```{r}
-corrplot(round(IMIR_item_polychor_correlations, 2), method = "circle", type = "lower")
+corrplot(round(IMI_item_polychor_correlations, 2), method = "circle", type = "lower")
 ```
 
-Most of the items seem to be highly correlated with each other.
+Next, we check the internal consistency of the IMI overall scale and each of the subscales (interest, competence, effort, pressure and autonomy) by computing Cronbach's Alpha [XX Cronbach, 1951].
 
-Next, we check the internal consistency of the IMI overall scale and each of the subscales (interest, competence, and effort) by computing Cronbach's Alpha [XX Cronbach, 1951].
-
-```{r 'overall scale Cronbachs alpha'}
-IMIRFullScaleCronbach <-
+```{r 'overall scale Cronbachs alpha IMI'}
+IMIFullScaleCronbach <-
     cronbach.alpha(
-        IMIR_data[, 2:length(IMIR_data)],
+        IMI_data[, 2:length(IMI_data)],
         CI = TRUE
     )
 ```
 
-The full scale Cronbach's Alpha is = `r round(IMIRFullScaleCronbach$alpha, 3)` with a confidence interval of `r round(IMIRFullScaleCronbach$ci, 2)`. Similarly to IMI, IMI-R fullscale has 'good' internal consistency [XX].
+The full scale Cronbach's Alpha is = `r round(IMIFullScaleCronbach$alpha, 3)` with a confidence interval of `r round(IMIFullScaleCronbach$ci, 2)`. The fullscale therefore has 'excellent' internal consistency [XX].
 
 Next, we check Cronbach's alpha of each subscale:
 
-```{r 'subscale Cronbachs alpha'}
+```{r 'subscale Cronbachs alpha IMI'}
 # Interest
-IMIR_interest_subscale <- dplyr::select(
-    IMIR_data,
-    questionnaire11_1,
-    questionnaire11_2,
-    questionnaire11_4,
-    questionnaire11_7,
-    questionnaire11_9,
-    questionnaire11_12,
-    questionnaire11_14,
-    questionnaire11_17,
-    questionnaire11_19
+IMI_interest_subscale <- dplyr::select(
+    IMI_data,
+    questionnaire22_8,
+    questionnaire22_11,
+    questionnaire22_14,
+    questionnaire22_18,
+    questionnaire22_22,
+    questionnaire22_26,
+    questionnaire22_28
 )
-IMIRInterestCronbach <-
+IMIInterestCronbach <-
     cronbach.alpha(
-        IMIR_interest_subscale,
+        IMI_interest_subscale,
         CI = TRUE
     )
 # Competence
-IMIR_competence_subscale <- dplyr::select(
-    IMIR_data,
-    questionnaire11_3,
-    questionnaire11_6,
-    questionnaire11_8,
-    questionnaire11_10,
-    questionnaire11_18,
-    questionnaire11_20
+IMI_competence_subscale <- dplyr::select(
+    IMI_data,
+    questionnaire22_9,
+    questionnaire22_15,
+    questionnaire22_19,
+    questionnaire22_23,
+    questionnaire22_33,
+    questionnaire22_34
 )
-IMIRCompetenceCronbach <-
+IMICompetenceCronbach <-
     cronbach.alpha(
-        IMIR_competence_subscale,
+        IMI_competence_subscale,
         CI = TRUE
     )
 # Effort
-IMIR_effort_subscale <- dplyr::select(
-    IMIR_data,
-    questionnaire11_5,
-    questionnaire11_11,
-    questionnaire11_13,
-    questionnaire11_15,
-    questionnaire11_16
+IMI_effort_subscale <- dplyr::select(
+    IMI_data,
+    questionnaire22_13,
+    questionnaire22_17,
+    questionnaire22_24,
+    questionnaire22_29,
+    questionnaire22_31
 )
-IMIREffortCronbach <-
+IMIEffortCronbach <-
     cronbach.alpha(
-        IMIR_effort_subscale,
+        IMI_effort_subscale,
+        CI = TRUE
+    )
+# Pressure
+IMI_pressure_subscale <- dplyr::select(
+    IMI_data,
+    questionnaire22_12,
+    questionnaire22_25
+)
+IMIPressureCronbach <-
+    cronbach.alpha(
+        IMI_pressure_subscale,
+        CI = TRUE
+    )
+# Autonomy
+IMI_autonomy_subscale <- dplyr::select(
+    IMI_data,
+    questionnaire22_10,
+    questionnaire22_16,
+    questionnaire22_20,
+    questionnaire22_21,
+    questionnaire22_27,
+    questionnaire22_30,
+    questionnaire22_32
+)
+IMIAutonomyCronbach <-
+    cronbach.alpha(
+        IMI_autonomy_subscale,
         CI = TRUE
     )
 ```
 
-- The subscale of 'interest' has 'good' internal consistency, Cronbach's Alpha = `r round(IMIRInterestCronbach$alpha, 3)` (Confidence interval = `r round(IMIRInterestCronbach$ci, 2)`).
-- The subscale of 'competence' has 'acceptable' internal consistency, Cronbach's Alpha = `r round(IMIRCompetenceCronbach$alpha, 3)` (Confidence interval = `r round(IMIRCompetenceCronbach$ci, 2)`).
-- The subscale of 'effort' has 'acceptable' internal consistency (Cronbach's Alpha = `r round(IMIREffortCronbach$alpha, 3)`, Confidence interval = `r round(IMIREffortCronbach$ci, 2)`)
+- The subscale of 'interest' has 'excellent' internal consistency, Cronbach's Alpha = `r round(IMIInterestCronbach$alpha, 3)` (Confidence interval = `r round(IMIInterestCronbach$ci, 2)`).
+- The subscale of 'competence' has 'good' internal consistency, Cronbach's Alpha = `r round(IMICompetenceCronbach$alpha, 3)` (Confidence interval = `r round(IMICompetenceCronbach$ci, 2)`).
+- The subscale of 'effort' has 'good' internal consistency (Cronbach's Alpha = `r round(IMIEffortCronbach$alpha, 3)`, Confidence interval = `r round(IMIEffortCronbach$ci, 2)`)
+- The subscale of 'pressure' has 'unacceptable' internal consistency (Cronbach's Alpha = `r round(IMIPressureCronbach$alpha, 3)`, Confidence interval = `r round(IMIPressureCronbach$ci, 2)`)
+- The subscale of 'autonomy' has 'good' internal consistency (Cronbach's Alpha = `r round(IMIAutonomyCronbach$alpha, 3)`, Confidence interval = `r round(IMIAutonomyCronbach$ci, 2)`)
 
-All subscales show sufficiently high internal consistency.
+'Interest', 'competence', 'effort', and 'autonomy' show sufficient internal consistency. However, the subcomponent of 'pressure' has a very low internal consistency score. This is likely to be due to the fact that the IMI only includes two items measuring participants' feelings of pressure and tension. Furthermore, these two items are not significantly correlated with each other: `r cor.test(IMI_pressure_subscale$questionnaire22_12, IMI_pressure_subscale$questionnaire22_25)`. Due to the low internal consistency of 'pressure', we do not calculate a score for it and the 'pressure' component is not used in analyses.
 
-### IMI-R scores
+### IMI scores
 
-Next, we calculate each participants' score on each of the IMI-R subscales by summing item scores together.
+Next, we calculate each participants' score on each of the IMI subscales by summing item scores together.
 
-We create each participant a score on each of the subscales by summing item scores together. The IMI-R scores are named as 'CInterest', 'CCompetence', and 'CEffort' (C: contextual motivation) to distinguish them from the IMI subscale scores.
+We create each participant a score on each of the subscales by summing item scores together. The IMI scores are named as 'SInterest', 'SCompetence', 'SEffort', and 'SAutonomy' (S: situational motivation) to distinguish them from the IMI-R subscale scores.
 
 ```{r 'IMI scores'}
-IMIR_scores <- IMIR_data %>%
+IMI_scores <- IMI_data %>%
     mutate(
-        CInterest = rowSums(.[names(IMIR_interest_subscale)]),
-        CCompetence = rowSums(.[names(IMIR_competence_subscale)]),
-        CEffort = rowSums(.[names(IMIR_effort_subscale)])
+        SInterest = rowSums(.[names(IMI_interest_subscale)]),
+        SCompetence = rowSums(.[names(IMI_competence_subscale)]),
+        SEffort = rowSums(.[names(IMI_effort_subscale)]),
+        SAutonomy = rowSums(.[names(IMI_autonomy_subscale)])
     ) %>%
-    dplyr::select(UserId, CInterest, CCompetence, CEffort)
+    dplyr::select(UserId, SInterest, SCompetence, SEffort, SAutonomy)
 ```
 
-Inspect participants' IMI-R scores:
+Inspect participants' IMI scores:
 
-```{r}
+```{r 'Interest IMI scores'}
 # interest subscale
-## max score on the scale: 9*7 = 63, min score 9*1 = 9
-mean(IMIR_scores$CInterest)
-sd(IMIR_scores$CInterest)
-range(IMIR_scores$CInterest)
+## max score on the scale: 7*7 = 49, min score 7*1 = 7
+mean(IMI_scores$SInterest)
+sd(IMI_scores$SInterest)
+range(IMI_scores$SInterest)
 # visualise
-ggplot(IMIR_scores, aes(x = UserId, y = CInterest)) +
+ggplot(IMI_scores, aes(x = UserId, y = SInterest)) +
     geom_point() +
     theme_classic()
 ```
 
-The average contextual interest score is `r round(mean(IMIR_scores$CInterest), 2)` (*SD* = `r round(sd(IMIR_scores$CInterest), 2)`, *range* = `r round(range(IMIR_scores$CInterest), 2)`). Therefore, most of the participants were contextually motivated to read for fun. This makes sense as the sample was collected by convenience sampling, and individuals who enjoy reading as an activity are more likely to take part in a book reading study than people who are not motivated to read.
+The average situational interest score is `r round(mean(IMI_scores$SInterest), 2)` (*SD* = `r round(sd(IMI_scores$SInterest), 2)`, *range* = `r round(range(IMI_scores$SInterest), 2)`). Therefore, most of the participants were situationally motivated to read the short story.
 
-The mean score divided by the number of Likert options, `r round((mean(IMIR_scores$CInterest)/9), 2)` corresponds with the third highest option on the Likert-scale from 1 (*not at all true*) to 7 (*very true*).
+The mean score divided by the number of questions, `r round((mean(IMI_scores$SInterest)/7), 2)` corresponds with the third highest option on the Likert-scale from 1 (*not at all true*) to 7 (*very true*).
 
-```{r}
+```{r 'IMI competence score'}
 # competence subscale
 ## max score on the scale: 6*7 = 42, min score 6*1 = 6
-mean(IMIR_scores$CCompetence)
-sd(IMIR_scores$CCompetence)
-range(IMIR_scores$CCompetence)
+mean(IMI_scores$SCompetence)
+sd(IMI_scores$SCompetence)
+range(IMI_scores$SCompetence)
 # visualise
-ggplot(IMIR_scores, aes(x = UserId, y = CCompetence)) +
+ggplot(IMI_scores, aes(x = UserId, y = SCompetence)) +
     geom_point() +
     theme_classic()
 ```
 
-The average contextual competence score is `r round(mean(IMIR_scores$CCompetence), 2)` (*SD* = `r round(sd(IMIR_scores$CCompetence), 2)`, *range* = `r round(range(IMIR_scores$CCompetence), 2)`). The plot shows that participants vary more in their perceived reading competence than in their reading enjoyment. The average contextual competence score divided by the amount of Likert choices is `r round((mean(IMIR_scores$CCompetence)/7), 2)`, which indicates slightly positive sense of competence (scale 1 (*not at all true*) to 7 (*very true*)).
+The average situational competence score is `r round(mean(IMI_scores$SCompetence), 2)` (*SD* = `r round(sd(IMI_scores$SCompetence), 2)`, *range* = `r round(range(IMI_scores$SCompetence), 2)`). The plot shows that participants varied more in how difficult they found the reading task than in their enjoyment of the short story. The average situational competence score divided by the amount of questions is `r round((mean(IMI_scores$SCompetence)/6), 2)`, which corresponds with the third highest option in the Likert scale (scale: 1 (*not at all true*) to 7 (*very true*)).
 
 ```{r}
 # effort subscale
 ## max score on the scale: 5*7 = 35, min score 5*1 = 5
-mean(IMIR_scores$CEffort)
-sd(IMIR_scores$CEffort)
-range(IMIR_scores$CEffort)
+mean(IMI_scores$SEffort)
+sd(IMI_scores$SEffort)
+range(IMI_scores$SEffort)
 # visualise
-ggplot(IMIR_scores, aes(x = UserId, y = CEffort)) +
+ggplot(IMI_scores, aes(x = UserId, y = SEffort)) +
     geom_point() +
     theme_classic()
 ```
 
-The average contextual effort score is `r round(mean(IMIR_scores$CEffort), 2)` (*SD* = `r round(sd(IMIR_scores$CEffort), 2)`, *range* = `r round(range(IMIR_scores$CEffort), 2)`). The participants show a lot of variation in their scores for the effort subscale. The average contextual effort score divided by the amount of Likert choices is `r round((mean(IMIR_scores$CEffort)/7), 2)`, which corresponds with a slightly negative answer to effort (scale 1 (*not at all true*) to 7 (*very true*)).
+The average situational effort score is `r round(mean(IMI_scores$SEffort), 2)` (*SD* = `r round(sd(IMI_scores$SEffort), 2)`, *range* = `r round(range(IMI_scores$SEffort), 2)`). The participants show a lot of variation in their scores for the effort subscale. The average situational effort score divided by the amount of items is `r round((mean(IMI_scores$SEffort)/5), 2)`, which corresponds with the neutral answer option on the scale (scale: 1 (*not at all true*) to 7 (*very true*)).
+
+```{r}
+# autonomy subscale
+## max score on the scale: 7*7 = 49, min score 7*1 = 7
+mean(IMI_scores$SAutonomy)
+sd(IMI_scores$SAutonomy)
+range(IMI_scores$SAutonomy)
+# visualise
+ggplot(IMI_scores, aes(x = UserId, y = SAutonomy)) +
+    geom_point() +
+    theme_classic()
+```
+
+The average situational autonomy score is `r round(mean(IMI_scores$SAutonomy), 2)` (*SD* = `r round(sd(IMI_scores$SAutonomy), 2)`, *range* = `r round(range(IMI_scores$SAutonomy), 2)`). Most of the participants reported that they felt like they had autonomy in text selection and how they read the short story. The average situational autonomy score divided by the amount of items is `r round((mean(IMI_scores$SAutonomy)/7), 2)`, which corresponds with a slightly positive answer (scale: 1 (*not at all true*) to 7 (*very true*)).
 
 We then check correlations between scores:
 
-```{r}
-IMIR_scores_correlations <- cor(
-    IMIR_scores[, 2:length(IMIR_scores)]
+```{r 'IMI correlations between scores'}
+IMI_scores_correlations <- cor(
+    IMI_scores[, 2:length(IMI_scores)]
 )
-corrplot(IMIR_scores_correlations, method = "number")
-ggplot(IMIR_scores, aes(x = CInterest, y = CCompetence)) +
+corrplot(IMI_scores_correlations, method = "number")
+ggplot(IMI_scores, aes(x = SInterest, y = SCompetence)) +
     geom_point() +
     geom_smooth() +
     theme_classic() +
-    ggtitle("IMI-R: contextual interest and competence scores")
-ggplot(IMIR_scores, aes(x = CInterest, y = CEffort)) +
+    ggtitle("IMI: situational interest and competence scores")
+ggplot(IMI_scores, aes(x = SInterest, y = SAutonomy)) +
     geom_point() +
     geom_smooth() +
     theme_classic() +
-    ggtitle("IMI-R: contextual interest and effort scores")
-ggplot(IMIR_scores, aes(x = CCompetence, y = CEffort)) +
+    ggtitle("IMI: situational interest and effort scores")
+ggplot(IMI_scores, aes(x = SCompetence, y = SAutonomy)) +
     geom_point() +
     geom_smooth() +
     theme_classic() +
-    ggtitle("IMI-R: situational competence and choice scores")
+    ggtitle("IMI: situational competence and autonomy scores")
+ggplot(IMI_scores, aes(x = SInterest, y = SEffort)) +
+    geom_point() +
+    geom_smooth() +
+    theme_classic() +
+    ggtitle("IMI: situational interest and effort scores")
+ggplot(IMI_scores, aes(x = SCompetence, y = SEffort)) +
+    geom_point() +
+    geom_smooth() +
+    theme_classic() +
+    ggtitle("IMI: situational competence and effort scores")
+ggplot(IMI_scores, aes(x = SAutonomy, y = SEffort)) +
+    geom_point() +
+    geom_smooth() +
+    theme_classic() +
+    ggtitle("IMI: situational autonomy and effort scores")
 ```
 
-The IMI-R subscales are positively correlated with each other. This indicates that participants who generally enjoy reading, also perceive themselves as competent in reading, and they put effort in reading.
+The 'interest', 'autonomy', and 'competence' IMI subscales are positively correlated with each other. This indicates that participants who enjoyed reading the short story, also found the story easier to read, and they felt autonomous in text selection and how they read the story.
 
-Connection between the interest and competence scores seems to be stronger than between either subscale and the effort component. Participants may have varied in how they understood the items for the effort subscale, as putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story.
+In contrast, the 'effort' subscale is not correlated with any of the other components. Similarly to the IMI-R, participants may have found the 'effort' items ambiguous to respond to as putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story. Due to this ambiguity, the 'effort' score is not used in analyses.
 
-Finally, we save the IMI-R scores dataset for use in analyses. This dataset has already been saved and so the below code is not run.
+```{r 'IMI remove effort component'}
+IMI_scores <- dplyr::select(
+    IMI_scores,
+    -SEffort
+)
+```
 
-
-Save IMI_grouped_data for usage in analysis.
-The dataset has already been saved, and so the below r code chunk is not run.
+Finally, we save the IMI scores dataset for use in analyses. This dataset has already been saved and so the below code is not run.
 
 ```{r, eval=FALSE, echo=TRUE}
-# write.csv2(
-#    IMI_grouped_data,
-#    "IMI_grouped_questionnaire_data.csv"
-# )
+write.csv2(
+    IMI_scores,
+    "IMI_scores.csv"
+)
+```
+
+## Questionnaire on Electronic Reading Experience
+
+Questionnaire on Electronic Reading Experience was developed for the purposes of our studies. The questionnaire includes 23 items that are divided in four different types of questions:
+
+(1) The first item asks participants to report which digital devices they own. Participants are asked to select all options that apply.
+(2) The following 7 items are used to determine participants' frequency of reading different text types electronically (e.g. *"How often do you read fiction books electronically?"*). These items are responded on a 5-point Likert scale from 'Never' to 'Every day'.
+(3) The following 7 items (questionnaire3_9 to questionnaire3_15) ask participants to report their frequency of using different reading formats for recreational reading (e.g. *"How often do you use a tablet computer (such as an iPad) for reading recreationally?"*). Similarly to previous, these items are responded on a 5-point Likert scale from 'Never' to 'Every day'.
+(4) The final 7 items ask participants to report how frequently they use different reading formats as part of work or study (e.g. *"How often do you use a laptop for reading as part of work or study?"*). These items are again measured on a 5-point Likert scale from 'Never' to 'Every day'.
+
+Our intention was to compute measures of electronic experience for recreational reading of fictional texts, and therefore, we are interested in the frequency of reading long-form fiction electronically and the frequency of using digital devices for recreational reading that could be used to access the e-reader during the study. Indeed, our aim is to measure **task-relevant electronic reading experience** - experience of reading similar electronic texts (long-form fiction) that were available in the study, on devices that could have been used to access the e-reader.
+
+To create these measures, we combine participants responses in the following way:
+
+* To measure frequency of reading long-form fiction electronically, we sum together responses to items questionnaire3_4 (*"How often do you read fiction books electronically?"*) and questionnaire3_7 (*"How often do you read short stories or fanfiction electronically?"*)
+* To measure frequency of using digital devices for recreational reading (only devices that could be used in the study to access the e-reader), we sum together responses to items questionnaire3_10 (*"How often do you use a desktop computer for reading recreationally?"*), questionnaire3_11 (*"How often do you use a laptop for reading recreationally?"*), questionnaire3_12 (*"How often do you use a smartphone for reading recreationally?"*), and questionnaire3_13 (*"How often do you use a tablet computer (such as an iPad) for reading recreationally?"*).
+
+To do this, we first create a dataset with only responses to the electronic reading experience items (which is shortened as 'eexp'):
+
+```{r 'create dataset for eexp'}
+# select correct columns from all_answer_data
+eexp_data <- all_answer_data[, c(1, 67:88)] # UserId, questionnaire3_1:questionnaire3_22
+```
+
+We then check if the eexp_data includes any missing values:
+
+```{r 'any missing values eexp'}
+any(is.na(eexp_data))
+```
+
+There are no missing values
+
+Next, we code the answers into numeric values:
+
+```{r 'code responses as numeric eexp'}
+eexp_data <- as.data.frame(eexp_data)
+nameslist <- names(eexp_data[, 3:length(eexp_data)])
+for (k in nameslist) {
+    eexp_data[, k] <- recode(eexp_data[, k],
+        "Every day" = 5,
+        "A few times a week" = 4,
+        "A few times a month" = 3,
+        "A few times a year" = 2,
+        "Never" = 1
+    )
+}
+```
+
+
+We look into which digital devices were owned by participants:
+
+```{r 'code and inspect access to digital devices'}
+eexp_data$HasEInkEReader <- grepl(
+    "Dedicated e-reader",
+    eexp_data$questionnaire3_1
+)
+eexp_data$HasDesktopComputer <- grepl(
+    "Desktop computer",
+    eexp_data$questionnaire3_1
+)
+eexp_data$HasLaptop <- grepl(
+    "Laptop",
+    eexp_data$questionnaire3_1
+)
+eexp_data$HasSmartphone <- grepl(
+    "Smartphone",
+    eexp_data$questionnaire3_1
+)
+eexp_data$HasTabletComputer <- grepl(
+    "Tablet computer",
+    eexp_data$questionnaire3_1
+)
+eexp_data$HasOtherDevice <- grepl(
+    "Other device",
+    eexp_data$questionnaire3_1
+)
+eexp_data <- eexp_data %>%
+    mutate(
+        NumberOfDevices = rowSums(.[24:29])
+    )
+# inspect accessible devices:
+table(eexp_data$HasEInkEReader)
+table(eexp_data$HasDesktopComputer)
+table(eexp_data$HasLaptop)
+table(eexp_data$HasSmartphone)
+table(eexp_data$HasTabletComputer)
+table(eexp_data$HasOtherDevice)
+table(eexp_data$NumberOfDevices)
+eexp_data$NumberOfDevices <- as.factor(eexp_data$NumberOfDevices)
+ggplot(eexp_data) +
+    geom_bar(aes(x = NumberOfDevices)) +
+    theme_classic()
+```
+
+The bar graph shows that most of the participants have 2 different digital devices, followed by 3 and then 1 device(s). Most frequently, participants own laptops (`r round((sum(eexp_data$HasLaptop)/nrow(eexp_data))*100, 2)`%) and smartphones (`r round((sum(eexp_data$HasSmartphone)/nrow(eexp_data))*100, 2)`%). `r round((sum(eexp_data$HasTabletComputer)/nrow(eexp_data))*100, 2)`% of the participants have tablet computers, and `r round((sum(eexp_data$HasDesktopComputer)/nrow(eexp_data))*100, 2)`% of the participants own a desktop computer.
+
+`r round((sum(eexp_data$HasEInkEReader)/nrow(eexp_data))*100, 2)`% of the participants own a dedicated e-ink e-reader (`r (sum(eexp_data$HasEInkEReader)` participants). 
+
+Next, we compute the two electronic reading experience measures
+
+(1) Frequency of reading long-form fictional texts electronically, and
+(2) Frequency of using task-relevant digital devices for recreational reading purposes.
+
+```{r 'compute the eexp measures'}
+eexp_data <- eexp_data %>%
+    mutate(
+        Eexp1LongformEFreq = (questionnaire3_4
+        + questionnaire3_7),
+        Eexp2DeviceRecFreq = (questionnaire3_10
+        + questionnaire3_11
+            + questionnaire3_12
+            + questionnaire3_13)
+    )
+```
+
+Inspect participants' variation in the eexp measures. First we look at the frequence of reading long-form fictional texts electronically:
+
+```{r 'visualise eexp measure 1'}
+# frequency of reading fictional, long-form texts electronically
+# possible score range: min - 2, max - 10
+mean(eexp_data$Eexp1LongformEFreq)
+sd(eexp_data$Eexp1LongformEFreq)
+range(eexp_data$Eexp1LongformEFreq)
+table(eexp_data$Eexp1LongformEFreq)
+ggplot(eexp_data, aes(x = UserId, y = Eexp1LongformEFreq)) +
+    geom_point() +
+    theme_classic()
+```
+
+Most of the participants rarely read fiction books or short stories electronically. Indeed, on average participants' response corresponds to 'a few times a year' on the frequency Likert-scale (`r round(mean(eexp_data$Eexp1LongformEFreq/2), 2)`, 1: Never, 2: A few times a year, 3: A few times a month, 4: A few times a week, 5: Every day). Most of the participants indicated that they 'Never' read fiction books or short stories electronically (`r sum(eexp_data$Eexp1LongformEFreq == 2)`, `r round((sum(eexp_data$Eexp1LongformEFreq == 2)/nrow(eexp_data))*100, 2)`%).
+
+Secondly, we inspect variation in the second measure, frequency of using task-relevant digital devices for recreational reading:
+
+```{r 'visualise eexp measure 2'}
+# frequency of using task-relevant digital devices for recreational reading
+# possible score range: min - 4, max - 20
+mean(eexp_data$Eexp2DeviceRecFreq)
+sd(eexp_data$Eexp2DeviceRecFreq)
+range(eexp_data$Eexp2DeviceRecFreq)
+table(eexp_data$Eexp2DeviceRecFreq)
+ggplot(eexp_data, aes(x = UserId, y = Eexp2DeviceRecFreq)) +
+    geom_point() +
+    theme_classic()
+```
+
+Most participants also score low in the second electronic experience measure (task relevant digital device usage for recreational reading).  The average participant response corresponds to 'a few times a year' on the Likert-scale (`r round(mean(eexp_data$Eexp2DeviceRecFreq/4), 2)`, 1: Never, 2: A few times a year, 3: A few times a month, 4: A few times a week, 5: Every day). `r sum(eexp_data$Eexp2DeviceRecFreq == 4)` participants have the lowest possible score on this measure, and so they indicated 'Never' using laptops, smartphones, desktop computers, and tablet computers for recreational reading. In contrast, only `r sum(eexp_data$Eexp2DeviceRecFreq >= 16)` participants have a score that is higher than 16, indicating that they use task-relevant digital devices for recreational reading on average 'A few times a week'.
+
+We then inspect correlations between the two eexp measures:
+
+```{r 'correlation between eexp measures'}
+cor(eexp_data[, c("Eexp1LongformEFreq", "Eexp2DeviceRecFreq")])
+plot(eexp_data$Eexp1LongformEFreq, eexp_data$Eexp2DeviceRecFreq)
+```
+
+The two electronic reading experience measures are moderately, positively correlated. This indicates that participants who read long-form fictional texts electronically are also likely to use task-relevant digital devices for recreational reading purposes.
+
+We then inspect associations between the two measures and ownership of digital devices:
+
+```{r 'inspect access to digital devices and eexp measures'}
+# access to digital devices
+## eexp1: longform fictional texts electronically
+ggplot(
+    eexp_data,
+    aes(x = NumberOfDevices, y = Eexp1LongformEFreq)
+) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
+ANOVA_NumberOfDevices_Eexp1 <- aov(
+    Eexp1LongformEFreq ~ NumberOfDevices,
+    data = eexp_data
+)
+summary(ANOVA_NumberOfDevices_Eexp1)
+## eexp2: task-relevant devices for rec reading
+ggplot(
+    eexp_data,
+    aes(x = NumberOfDevices, y = Eexp2DeviceRecFreq)
+) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic()
+ANOVA_NumberOfDevices_Eexp2 <- aov(
+    Eexp2DeviceRecFreq ~ NumberOfDevices,
+    data = eexp_data
+)
+summary(ANOVA_NumberOfDevices_Eexp2)
+```
+
+Interestingly, the number of devices that participants own is not connected to either measure on task-relevant electronic reading experience. This indicates that ownership of more devices is not linked to more frequent electronic reading on these devices in our sample.
+
+We then create an abridged version of the dataset for use in analyses:
+
+```{r}
+eexp_scores <- dplyr::select(
+    eexp_data,
+    UserId,
+    Eexp1LongformEFreq,
+    Eexp2DeviceRecFreq,
+    NumberOfDevices
+)
+```
+
+Finally we save the eexp dataset. The dataset has already been saved, and so the below r code chunk is not run.
+
+```{r 'save eexp scores', eval=FALSE, echo=TRUE}
+write.csv2(
+    eexp_scores,
+    "eexp_scores.csv"
+)
 ```
