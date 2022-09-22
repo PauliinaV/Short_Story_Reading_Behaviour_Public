@@ -1,0 +1,448 @@
+---
+title: "Prep_StoryAnalysis"
+author: "Pauliina Vuorinen"
+date: "22/03=9/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to create a dataframe that collects together information about the different short stories that participants read during the study.
+
+First, we compute a measure of word frequency and number of different words in each story to capture text complexity.
+Second, we add information about length of each story in words and characters.
+Finally, we add information about the average rating of each story.
+
+Nine short stories were included in the study, however, only eight stories are analysed in the script. The final short story was thought to have a Creative Commons licence, but after the study recruitment was finished, it was realised that the story was attributed the licence in error. As a result, this story is not shared or named in the files. Word frequency, length, and average rating were captured for this story similarly to the eight other stories, but the code is not included in this script.
+
+For more information on the short stories refer to Table 1 in the manuscript.
+
+## Setup
+
+Load libraries, set working directory
+
+```{r, setup}
+library(dplyr)
+library(tidyverse)
+library(tm)
+library(gridExtra)
+getwd() # check that working directory is ~/Short_Story_Reading_Behaviour_Public
+```
+
+## Load Short Story Files
+
+We load each story from .txt files. Stories are referred to by their authors.
+
+Not a Day Over Twenty One by Edna Ferber
+
+```{r}
+EdnaFerber <- read_file(
+    "./Data/Stories/Not-a-Day-over-Twenty-One-by-Edna-Ferber.txt"
+)
+```
+
+Preparations and Alliances by Ryk E. Spoor
+
+```{r}
+RykESpoor <- read_file(
+    "./Data/Stories/Preparations-and-Alliances-by-Ryk-E.-Spoor.txt"
+)
+```
+
+The Boscombe Valley Mystery by Arthur Conan Doyle
+
+```{r}
+ArthurConanDoyle <- read_file(
+    "./Data/Stories/The-Boscombe-Valley-Mystery-by-Arthur-Conan-Doyle.txt"
+)
+```
+
+The Icebreaker by Maxim Gorky
+
+```{r}
+MaximGorky <- read_file(
+    "./Data/Stories/The-Icebreaker-by-Maxim-Gorky.txt"
+)
+```
+
+The Million Pound Bank Note by Mark Twain
+
+```{r}
+MarkTwain <- read_file(
+    "./Data/Stories/The-Million-Pound-Bank-Note-by-Mark-Twain.txt"
+)
+```
+
+The Most Dangeous Game by Richard Connell
+
+```{r}
+RichardConnell <- read_file(
+    "./Data/Stories/The-Most-Dangerous-Game-by-Richard-Connell.txt"
+)
+```
+
+The Thing on the Doorstep by H.P. Lovecraft
+
+```{r}
+HPLovecraft <- read_file(
+    "./Data/Stories/The-Thing-on-the-Doorstep-by-HP-Lovecraft.txt"
+)
+```
+
+The Yates Pride by Mary E. Wilkins Freeman
+
+```{r}
+MaryEWilkinsFreeman <- read_file(
+    "./Data/Stories/The-Yates-Pride-by-Mary-E.-Wilkins-Freeman.txt"
+)
+```
+ 
+## Create a dataset of stories
+
+In order to count the word frequencies, we first create a dataset that groups the stories together.
+
+```{r}
+StoryText <- rbind(
+    EdnaFerber,
+    RykESpoor,
+    ArthurConanDoyle,
+    MaximGorky,
+    MarkTwain,
+    RichardConnell,
+    HPLovecraft,
+    MaryEWilkinsFreeman
+)
+```
+
+```{r}
+AuthorList <- c(
+    "EdnaFerber",
+    "RykESpoor",
+    "ArthurConanDoyle",
+    "MaximGorky",
+    "MarkTwain",
+    "RichardConnell",
+    "HPLovecraft",
+    "MaryEWilkinsFreeman"
+)
+```
+
+```{r}
+StoryNameList <- c(
+    "Gigolo: Not a Day over Twenty-One",
+    "Preparations and Alliances",
+    "The Adventures of Sherlock Holmes: The Boscombe Valley Mystery",
+    "Through Russia: The Icebreaker",
+    "The Million Pound Bank Note",
+    "The Most Dangerous Game",
+    "The Thing on the Doorstep",
+    "The Yates Pride"
+)
+```
+
+```{r}
+AllStories <- data.frame(
+    Author = AuthorList,
+    Title = StoryNameList,
+    AverageWordFrequency = NA,
+    SDWordFrequency = NA,
+    NumberOfWords = NA,
+    Story = StoryText
+)
+```
+
+## Word frequencies
+
+Word frequencies are calculated by counting how many times each word occurs in the stories.
+
+```{r}
+for (story in 1:length(AuthorList)) {
+    # create a subset for one story:
+    temporary_df <- filter(
+        AllStories,
+        Author == AuthorList[story]
+    )
+    # clean the story file:
+    temporary_df$Story <- str_to_lower(temporary_df$Story)
+    temporary_df$Story <- gsub(pattern = "\\W", replace = " ", temporary_df$Story)
+    # create a vector
+    temp_story_vector <- Corpus(VectorSource(temporary_df$Story))
+    # create a matrix on the frequencies of words
+    temp_story_frequencies <- TermDocumentMatrix(
+        temp_story_vector
+    )
+    matrix <- as.matrix(
+        temp_story_frequencies
+    )
+    words <- sort(
+        rowSums(matrix),
+        decreasing = TRUE
+    )
+    temp_story_frequencies <- data.frame(
+        word = names(words),
+        freq = words
+    )
+    # save information about word frequency
+    AllStories[AllStories$Author == AuthorList[story], "AverageWordFrequency"] <- (
+        mean(temp_story_frequencies$freq)
+    )
+    AllStories[AllStories$Author == AuthorList[story], "SDWordFrequency"] <- (
+        sd(temp_story_frequencies$freq)
+    )
+    # save information about the number of words
+    AllStories[AllStories$Author == AuthorList[story], "NumberOfWords"] <- (
+        nrow(temp_story_frequencies)
+    )
+}
+```
+
+Word frequencies for the ninth story were calculated separately. We add this information to the AllStories dataframe:
+
+```{r}
+NinthStory <- data.frame(
+    Author = "Unnamed",
+    Title = "Unnamed",
+    AverageWordFrequency = 3.834,
+    SDWordFrequency = 14.2885,
+    NumberOfWords = 1608,
+    Story = NA
+)
+AllStories <- rbind(
+    AllStories,
+    NinthStory
+)
+```
+
+The average word frequency is `r round(mean(AllStories$AverageWordFrequency), 2)` and the average number of different words is `r round(mean(AllStories$NumberOfWords), 2)`
+
+```{r}
+ggplot(AllStories, aes(x = NumberOfWords, y = AverageWordFrequency, colour = Author)) +
+    geom_point() +
+    theme_classic()
+cor.test(AllStories$AverageWordFrequency, AllStories$NumberOfWords)
+```
+
+Number of words and average word frequency are not significantly correlated with each other.
+
+## Story indicators and length
+
+Next, we add information about the indicator used to refer to each story, and the length of stories in words and characters.
+
+First, we remove the 'Story' column from AllStories:
+```{r}
+AllStories <- dplyr::select(
+    AllStories,
+    -Story
+)
+```
+
+Add information about Story indicators, and the length of each story in characters and words.
+
+```{r}
+StoryInformation <- data.frame(
+    Author = c(
+        "ArthurConanDoyle",
+        "RykESpoor",
+        "Unnamed",
+        "EdnaFerber",
+        "HPLovecraft",
+        "MarkTwain",
+        "MaryEWilkinsFreeman",
+        "MaximGorky",
+        "RichardConnell"
+    ),
+    StoryId = c(1:9),
+    CharacterLength = c(
+        41557,
+        56567,
+        34355,
+        45629,
+        49436,
+        35285,
+        32363,
+        47377,
+        36148
+    ),
+    WordLength = c(
+        9639,
+        11956,
+        7590,
+        9790,
+        11012,
+        8398,
+        7253,
+        10353,
+        8006
+    )
+)
+```
+
+```{r}
+AllStories <- merge(AllStories, StoryInformation, by = "Author")
+```
+
+## Story Ratings
+
+Participants were assigned to read a short story based on their interest ratings. These interest ratings were gathered by asking participants to read through a descriptive summary of each story (see the manuscript for more information) and rate their interest in reading each one in full. Half of the participants were then assigned to the high-autonomy condition in which they were given the story that they rated as most enjoyable, whereas the other half were placed in the low-autonomy groud and given a story that they rated as least enjoyable.
+
+The ratings were done on a 5-point Likert-scale from *“not at all interested”* to *“very interested”*.
+
+We want to inspect how participants varied in their book ratings and compute average ratings for each story. First, we load data about book ratings:
+
+```{r}
+story_ratings_data <- read.csv(
+    "Data/story_ratings_data.csv",
+    header = TRUE,
+    sep = ";",
+    dec = ","
+)
+names(story_ratings_data)[names(story_ratings_data) == "BookId"] <- "StoryId"
+```
+
+The story_ratings_data includes excluded participants who did not finish the study. These participants' ratings are removed:
+
+```{r}
+story_ratings_data <-
+    filter(
+        story_ratings_data,
+        (UserId != "33") &
+            (UserId != "61")
+    )
+```
+
+Fix variable types:
+
+```{r}
+source("Functions/Functions_VariableTypeConversion.R")
+story_ratings_data[, c(
+    "UserId",
+    "StoryId"
+)] <- convert.magic(
+    story_ratings_data[, c(
+        "UserId",
+        "StoryId"
+    )],
+    "factor"
+)
+```
+
+Inspect variation in participants' ratings:
+
+```{r}
+ggplot(data = story_ratings_data, aes(x = StoryId, y = Rating, fill = StoryId)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    coord_cartesian(ylim = c(1, 5)) +
+    facet_wrap(~UserId) +
+    theme_classic() +
+    labs(
+        x = "Short story Id",
+        y = "Rating (1: Not at all interested, 5: Very interested)",
+        fill = "Short story Id"
+    )
+```
+
+Participants show considerable variance in their ratings. Whereas some participants only have a few stories that they were interested in, others were interested in most of the story descriptions.
+
+Next, we create two summary dataframes, one for each participant and another for each story.
+
+First - participant summary dataframe:
+
+```{r}
+average_ratings_participant <- story_ratings_data %>%
+    group_by(UserId) %>%
+    summarise(
+        AverageRating = mean(Rating),
+        SDRating = sd(Rating),
+        MedianRating = median(Rating),
+        MinRating = min(Rating),
+        MaxRating = max(Rating)
+    )
+```
+
+Participant summaries show that on average participants rated stories as `r round(mean(average_ratings_participant$AverageRating), 2)` which corresponds with the neutral option on the Likert scale.
+
+`r sum(average_ratings_participant$MinRating <= 2)` participants found at least one story description that they were not interested in reading, whereas `r sum(average_ratings_participant$MinRating > 2)` participants did not rate negatively any of the stories. If the latter were placed in the low-autonomy condition, they may have not been as strongly influenced by the manipulation as we would have expected. This is because these participants may have been interested in all of the story descriptions and so assigning them to read the least interesting one would not have had a strong impact on their situational motivation.
+
+`r sum(average_ratings_participant$MaxRating >= 4)` participants found at least one story description that they were interested in reading, whereas `r sum(average_ratings_participant$MaxRating < 4)` participant did not rate any of the stories positively. Similarly to above, this one participant may have not been as strongly affected by the manipulation if they were placed in the high-autonomy condition.
+
+```{r}
+average_ratings_story <- story_ratings_data %>%
+    group_by(StoryId) %>%
+    summarise(
+        AverageRating = mean(Rating),
+        SDRating = sd(Rating),
+        MedianRating = median(Rating),
+        MinRating = min(Rating),
+        MaxRating = max(Rating)
+    )
+```
+
+On average stories were rated `r round(mean(average_ratings_story$AverageRating), 2)` which corresponds with the neutral option on the scale. Variance in the story ratings was expected as construction of equally interested summaries was unrealistic. The story ratings ranged between `r min(average_ratings_story$AverageRating)` and `r max(average_ratings_story$AverageRating)`.
+
+Next, we merge the average_ratings_story into the AllStories dataframe:
+
+```{r}
+AllStories <- merge(AllStories, average_ratings_story, by = "StoryId")
+```
+
+## Publication year, type, and story genre
+
+Finally, we add information about each story's publication year and type, as well as story genre, in the AllStories dataframe:
+
+```{r}
+publication_year_data <- data.frame(
+    StoryId = 1:9,
+    PublicationYear = c(
+        1891,
+        2017,
+        2012,
+        1922,
+        1937,
+        1893,
+        1912,
+        1910,
+        1924
+    ),
+    PublicationType = c(
+        "PublicDomain",
+        "CreativeCommons",
+        NA,
+        "PublicDomain",
+        "PublicDomain",
+        "PublicDomain",
+        "PublicDomain",
+        "PublicDomain",
+        "PublicDomain"
+    ),
+    Genre = c(
+        "Mystery",
+        "ScienceFiction",
+        "Fantasy",
+        "LiteraryFiction",
+        "Horror",
+        "Humour",
+        "Romance",
+        "CulturalFiction",
+        "Action"
+    )
+)
+```
+
+The information is then merged with the AllStories dataframe:
+
+```{r}
+AllStories <- merge(AllStories, publication_year_data, by = "StoryId")
+```
+
+## Save dataframe
+
+The dataframe is saved for usage in other scripts.
+The data has already been saved, and so the below r code chunk is not run.
+
+```{r, eval=FALSE, echo=TRUE, save wrangled data}
+write.csv2(
+    AllStories,
+    "story_information_data.csv"
+)
+```

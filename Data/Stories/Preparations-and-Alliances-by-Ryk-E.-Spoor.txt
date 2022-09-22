@@ -1,0 +1,538 @@
+Preparations and Alliances: A Story of the Arenaverse by Ryk E. Spoor
+Saul Maginot stood at the entryway for the shuttle Tranquility, ignoring the unusual sensation of having two physical bodyguards to either side of him. This was not terribly difficult as much of his attention was currently focused on dealing with the empty void in his head where his AISage, Elizabeth, usually lived. Elizabeth had been Saul’s constant support and companion since Saul had been a young boy, which was about seventy years back or so.
+
+But here in the Arena, no artificial intelligences or even sophisticated automation could function—barring, of course, the nigh-omnipotent Arena itself, if the intelligence that sometimes spoke for the Arena was an AI and not a living being. Even within the Harbor, the central hollow portion of the Sphere that represented humanity’s original Solar System in the Arena, only simple automation or living intellects functioned; even high-power sources, such as nuclear fission, fusion, or antimatter, would not work. The Arena had its rules, and when you were here, you had no choice but to obey them.
+
+It was a frighteningly lonely sensation, to be isolated in one’s head after seven decades of having someone constantly with you . . . but it was also strangely exhilarating. He could have thoughts that were utterly private, make his own decisions without anyone or anything interfering or second-guessing.
+
+And this is how the inhabitants of the Arena live their lives. And how our visitor’s species has lived for its entire existence.
+
+The immense door at the end of the Dock slid open with a ponderous majesty, and three figures passed through the gap: two human and one . . . not.
+
+The human in the lead was none other than Thomas Cussler, the Governor of the Arena-side human colony now growing in the Inner as well as the Upper Sphere. Bringing up the rear was a military guard—CSF uniform, looks like a captain . . . ah, yes, Captain Ashita. Good man, remember him well.
+
+Between them, currently blindfolded, was a diminutive creature; standing no more than a meter and a half, its body was covered with a smooth, shiny integument more like chitin than skin, glimmering white with patches of brilliant purple. Bipedal, it had a well-muscled, somewhat humanlike body with three-fingered hands and three-toed feet that looked nearly as capable as the hands, and a long, powerful tail. The head was smooth and rounded; though the blindfold covered up the large, red-tinted eyes that Saul had seen in pictures, he could see the small mouth beneath an equally small nose and the faint bumps of the inset ears. Despite being blindfolded, the creature walked with a smooth, confident stride that somehow conveyed a feeling of great power that belied its small frame.
+
+Thomas stopped as the main Dock door finished closing. “You can remove the blindfold, sir.”
+
+The figure reached up and removed the blindfold. I’m a bit sorry we had to do that, Saul thought, but it seems the interior of our Sphere is very different from that of others, according to DuQuesne, and that is a secret we need to keep, at least until we know what it means.
+
+Now visible, the slanted ruby eyes of the alien glinted with both a sharp intelligence and caution, scanning the entire area. The body relaxed, a nigh-subliminal increase in fluidity of motion, and it moved forward to walk alongside Cussler.
+
+“Tunuvun of the Genasi, allow me to present to you Commander Saul Maginot of the Combined Space Forces of Humanity. Commander Maginot, Tunuvun of the Genasi, Master of Challenges and Leader of the Faction of the Genasi.”
+
+Tunuvun bowed low, with arms and hands spread wide and head kept raised so that his gaze maintained contact with Saul’s; Saul repeated the gesture as best he could. “It is a great honor to meet you, Leader Tunuvun. Welcome to our Sphere.”
+
+“A far greater honor is mine, Commander Maginot,” the Genasi Leader said; his voice was a high tenor, with a tone in it that gave great emphasis to the words. “If what my friends and allies-in-arms Ariane Austin and Sun Wu Kung have told me is true, I am the first alien—the first not of your Faction—to be allowed to enter your Harbor and, I am given to understand, journey to your home system itself.”
+
+“That much is true, Leader Tunuvun; I have been told that your Faction has explicitly and directly allied itself with ours?”
+
+“It was your aid—and your champion, my new brother Wu Kung—that gave us our Sphere and thus our recognition as First Emergents, as citizens of the Arena. There is no value we could place on this debt, Commander, without diminishing its true nature. Do you understand that?”
+
+“I believe I do—at least intellectually. Your people are natives of the Arena, but have never had a Sphere of your own, have hardly ever had the opportunity to visit what we call “normal space.” You have been . . . second-class citizens.”
+
+“At best. Yes. And so you understand that we must offer whatever aid we can to your people.”
+
+“It is appreciated, Tunuvun—may I address you without the honorific?”
+
+A bob of the head and shoulders. “Of course. May I reciprocate?”
+
+“Please. Call me Saul. As I said, it is very much appreciated, Tunuvun. But for now, I think we may have at least as much to offer you. As a Faction even newer than our own, you’ve got a lot of work ahead of you.” He gestured to Tranquility’s airlock. “Please, enter. I’m sure you’re looking forward to seeing our solar system.”
+
+The body vibrated, the tip of the tail buzzing faintly. “I am as excited as a child on his first journey, Saul. A few of our people have been able to visit the other side of the sky, but not I. And now, as I understand it, we have our own world on your side of the sky, and we must learn how to live there as well.” His head tilted suddenly. “Many apologies if this is insultingly obvious . . . but I have been told that the Arena’s gift of speech does not function in that other space.”
+
+“You are correct, Tunuvun, but fortunately for us both, our mutual friends also thought of that; Simon Sandrisson sent us data on your language and we have what should be an excellent translation program. It seems that, because of your people’s unique position in the Arena, your actual language has been studied fairly extensively by scholars of multiple factions, including the Analytic, and I am told that this should make the transition relatively simple—language-wise, at least.”
+
+Tunuvun gave a grunt that Saul somehow sensed as a nod of assent. The Arena’s translation protocols are sometimes eerie. “Then I will not be reduced to waving my hands to indicate I need to eat.”
+
+Saul laughed. “No, definitely not. Come, sit with me at the front of Tranquility and you can witness the transition to our space yourself.” He gestured to a chair that had obviously been modified for a creature with a tail such as Tunuvun’s.
+
+Tunuvun did so—with an alacrity and poorly hidden eagerness that echoed Wu Kung’s. It is easy to see why the two of them . . . connected so well. Supreme warriors, competitive, loyal, and still it seems with a sense of wonder. I think I’m going to like him. “It will take a bit of time to reach the Transition location,” Saul said. “In theory we could of course transition from the Dock but that would put us far out in the Solar System and it would be a long journey to our actual destination, Kanzaki-Three.”
+
+“I will try to find patience within, Saul. A Leader must learn much of patience, and considered response, and as a Champion I have had little of either except in more simple training.”
+
+Tranquility fired its engines, and for a few moments they were both silent; even with soundproofing the rumble of a jet accelerating a vehicle at two gravities was too loud to permit normal conversation, and Tunuvun naturally lacked the headware for electronic communication. His people have limited infrastructure of their own, and to implant such headware generally requires nanosurgery that does not work in the Arena.
+
+Finally the rockets cut off, and the cabin of the shuttle was quiet once more. Saul turned back to Tunuvun, who appeared to have been utterly unaffected by the acceleration. Not so surprising; if he could even begin to keep up with Wu Kung he is clearly at the height of physical capability. “Might I ask why you were selected as Leader, instead of some other member of your Faction? I presume you have others who have been less martial in their professions.”
+
+Tunuvun gave a laugh—which seemed to be actually signified by a fluttering of the hands. “That is as true as any words have ever been! Yes, many others far more suited at first sight . . . yet given our previous and limited roles in the Arena, I have a position of immense respect, and my name is known throughout our Faction.” He paused and Saul sensed him smiling in wonder. “Our Faction,” he repeated. “Not merely our people, our species, but a Faction at last—or at least, a Faction-To-Be, First Emergents.” A ripple passed from his head through his tail. “There was some debate, but in the end? It was first that we see great changes coming, perhaps great wars, and whoever leads us must be one who can face any Challenge head-on, and second? Second it was that it was my Victory, and my strategy in selecting Sun Wu Kung as our Champion, that gave us this thing we have dreamed of across the ages. And—perhaps—it was that we salute your faction, whose Leader is not a politician or a sage, but a racer and a fighter and one . . . much like ourselves, I think.”
+
+Saul grinned. “I think Ariane would appreciate the compliment. And likely find it embarrassing. Might I ask if you resemble her in another way—are you young, as your species counts such things?”
+
+“You have found one of my weaknesses, yes. I am but thirty-seven years old.” Behind the translated words, Saul heard “one hundred twenty-two crossings”. “For my people this is very young indeed—but that did also weigh in my favor, as no one so young has ever reached such an exalted level in the Challenges before.”
+
+Thirty-seven and one of the premier Champions of the Arena. Yes, that is impressive. Although, Saul had to admit to himself, he hadn’t been any older when he’d been forced to assemble what became the CSF in response to Hyperion. “What are your people looking to accomplish now?”
+
+“First we must, as a Faction, win another Challenge. We are currently First Emergents, although we have been a part of the Arena since our birth. That should not be too difficult; we do after all have a vast amount of experience in helping others win Challenges. Once that is done, we will, like you, have an Embassy and be considered true Citizens of the Arena.”
+
+He looked out at the utter darkness of the interior of the Sphere. “But where all the others lived for their birth and rise to wisdom in your otherspace, we know nothing of it. We must make ourselves at home there, build our strength on this new thing you call a planet, understand the height and breadth and depth of knowledge that will let us be part of that universe as well.”
+
+“I hope that your visit will be a good start on that path. Will your people still be willing to provide the same support you have for others—mercenaries and Champions and so on?”
+
+“For Humanity? We, as I said, owe you much. Much aid of this sort we will have to give you before any of us will count the debt paid.”
+
+This confirmed what Saul had read in Ariane’s summary of the results of that spectacular Challenge, and what she and the rest of her people knew about the Genasi. This was also why Saul had decided it was worth taking the risk and bringing Tunuvun to their own world. Of all the Factions, they owed Humanity the most—even more, really, than the Liberated—and were least likely to talk about, or even make use of, any secrets that might accidentally be given them. “Then I suspect we will both remain in each others’ debt as time goes on—which is good enough for us both.”
+
+Tranquility’s rockets roared again, slowing them to a reasonable velocity for Transition. Then there was the subliminal jolt that accompanied the jump from one universe to another.
+
+Saul felt the sensation of Elizabeth, his AISage, “waking up”; it was like coming home, to feel that presence once more as near as a thought. At the same moment he could see the stars shine out, the Milky Way appear in all its dark-banded glory, and the glitter of Kanzaki-Three, a thousand kilometers away. Microgravity took over, and Tranquility did not bother yet with maneuvers. That would be some time in the future.
+
+There was a click, and Tunuvun drifted forward, staring, mouth open in a completely human pose of awe and disbelief. “What . . . what is this that I see?” The language was now translated through Saul’s headware, and sounded less . . . alive, less personal, but with Elizabeth’s help and Saul’s memory of Tunuvun’s more living Arena-voice, that might be overcome.
+
+Saul looked again, and for a moment—just the smallest fraction of an instant—he suddenly saw the sight of deep space anew, as through eyes that had never seen it, never imagined it, before, and felt a chill go down his spine.
+
+The Arena was awesome and mysterious to humanity, with its endless skies filled with clouds and storms and a thousand thousand species of creatures and drifting Spheres concealed beyond banks of mist large enough to swallow a world, but Tunuvun had been born to that universe, he had lived in it his entire life . . . and now he saw darkness, not oppressive and blank and trackless, but a darkness of distance so great that even the Arenaverse itself could have fit easily between them and all but the few hundred nearest stars, a darkness yet lit with uncountable points and bands of light that still left the space about them purest velvet black, a sight never seen by eyes of the Arena, never imagined by those who lived in the living, breathing spaces of the Arena.
+
+“Those are stars, Tunuvun,” he answered, finally. “Suns about which orbit planets. For every sun there is a Sphere in the Arena; for every Sphere in the Arena, a Sun and its attendant worlds. On at least one of those worlds in your Sphere’s system, you will find an environment suitable to your people. In ours, we have one such; Earth.”
+
+“Where is your world, then?”
+
+Allow me, Elizabeth said to Saul instantly. The little shuttle rotated, and the blaze of the Sun—muted by the light-limiting active nanomaterial of the window—came into view. “That is our star, the Sun. And . . . there, to the right,” Saul pointed, “that is Earth, the blue-green point.”
+
+Tunuvun’s eyes were still wide. “But . . . your world, how small is it?”
+
+“Smaller than a Sphere, but we can live on its entire surface, not merely the top. About twelve to thirteen thousand kilometers in diameter.”
+
+Tunuvun looked at him in disbelief. “But it is . . . so tiny!”
+
+He shook his head and smiled. “Not so tiny; we are so far away. We are in the asteroid belt, and Earth is—relatively speaking—close, yet still more than three hundred million kilometers away.”
+
+The silence stretched out as Tunuvun continued to stare. “I . . . I had heard these things. But . . . I could not believe them. In the Arena, you might see . . . oh, a hundred thousand kilometers, perhaps—very dimly, under the best conditions, when looking for the shadow of a Sphere. But you say we see your world clearly at a distance more than a thousand times that?”
+
+“You see much farther than that, Tunuvun. Each of those dots, with few exceptions, that you see in the sky is a star that is many light-years, many tens of trillions of kilometers away. So far that no technology in our possession could reach even the nearest of them in less than many years of travel.”
+
+While Tunuvun continued his rapt contemplation of a new version of the infinite, Saul took a moment to check some vital issues. Elizabeth?
+
+I find no sign of any nanotech on him — active or otherwise. As we discussed, I have placed the exterior nanoprotection on him to ensure he is not infected — biologically or technologically — while here.
+
+Will that also detect and track any internal nanotech that may activate, or signals that may come from within?
+
+I believe so. I do not expect any such, however. His people have been traditionally separate from the normal life of the Arena, were not counted among the factions, and do not generally enter normal space where such could be easily planted on him. It would be easier to be certain, of course, if I could also place internal nanos —
+
+Absolutely not, Saul thought sharply. That would be an unconscionable violation of his rights. It’s bad enough we’re using the externals without his permission, but I think it would be very difficult to describe at this point without making it sound more frightening than it is.
+
+Elizabeth smiled from beneath the virtual hat she was currently wearing. Of course, Saul. I would not recommend such a course of action either. But it was my duty to point this out.
+
+Elizabeth’s head suddenly came up, and Saul could momentarily see her profile silhouetted against the phantom clouds of her own native environment. A signal. Saul, it’s Ariane’s friend, responding to our ping.
+
+Saul tensed. Are we secure enough?
+
+A pause, as Elizabeth re-checked all aspects of Tranquility and those on board.
+
+How long do I have?
+
+Final maneuvers to dock won’t begin for another fifteen minutes. Plenty of time for this.
+
+He nodded, then opened communication.
+
+“Hello, Mentor,” he thought.
+
+ii.
+
+“AHH, SAUL MAGINOT OF BABYLON COLONY, “boomed a deep, resonant pseudo-voice, seemingly from midair—an interesting trick of electronic perceptual projection, thought Saul. “Your arrival in this, your native space and time, has occurred thirty-two and five-tenths seconds ahead of my Visualization. Acceptable, given my limitations, but still in need of improvement.”
+
+“You expected me to arrive only half a minute after I did?” Saul blinked in startlement, then chided himself on allowing any external sign of this conversation. Yes, it felt like a regular conversation, but it was inaudible to anyone else—and should remain unnoticed. “If you actually made such a prediction, don’t feel it’s in need of improvement. Yes, I had a clear agenda and schedule, but how could you know it would actually be delayed by an hour and a half?”
+
+Mentor’s avatar, a sparkling ball of pure white radiance, seemed to smile. “I was aware not merely of your intentions, but the situations that pertained in the Sphere, and extrapolated the likely delay based on the individuals involved and the statistical spread of prior related interactions. In truth, it was, as you might say, a lucky guess; with slightly different choices I would have missed the mark by as much as half an hour or more.”
+
+A shift of color and motion. “But you did not leave word for me so that I could discuss my poor and inadequate imitation of my namesake. I trust there is sufficient time—and security—for this discussion?”
+
+Mentor’s question was vital. One of the very few absolutely ironclad laws of the Solar System was that an AI above a certain level—basically, anything above perhaps 0.25 Taylers, or T-0.25—could never operate independently of a human being’s oversight. Mentor, as a T-5 operating on its own (even with Ariane’s blessing), was considered a rogue AI and would be destroyed upon detection. If Saul were connected with the release or aid of a rogue AI, the destruction of his career would be the least of his problems. “Elizabeth believes so, and I have to trust her.”
+
+“Indeed. As you called for me, I presume you have relevant data to impart?”
+
+Even speaking mind-to-mind, Saul felt his face hardening. “Not data you will be happy to receive, I am afraid. We have all-but-certainly identified the renegade Hyperion AI.”
+
+The avatar froze for an instant, then the sparkling light flared. “That might be called good news, if also potentially bad; a known enemy is preferable to one unkown.”
+
+“Perhaps, but even so, I’d say this is very bad. We’re pretty sure it’s Dr. Alexander Fairchild.”
+
+Mentor was silent for a full two seconds—an eternity in direct-comm contact. “Then this is far worse news than I had thought, Saul.”
+
+“The idea of DuQuesne’s counterpart now loose in the Arena? I would think so. There might be a few of the Hyperion villains I would less want to have survived, but none come to mind immediately.”
+
+Mentor’s voice was grim in response. “Fairchild’s survival alone would be cause for great concern, yes, and even more so the fact that he has managed to overcome one of the key limitations of the Arena, but the emergency is now greater in scope and depth.”
+
+Saul’s gut contracted and he felt a sour ache. Worse than Fairchild? “Explain, Mentor.”
+
+“You are aware, of course, that every individual—naturally born or artificially constructed—has their own set of behaviors and habits, a signature that can be derived with sufficient analysis—an analysis generally prevented by your Anonymity Accords, but not, of course, applicable yet to AI beings.”
+
+“Certainly; one way of authenticating pieces of writing and art depends on that.”
+
+“You will also recall that when I announced that at least one Hyperion adversary had escaped, I indicated that the number could be as low as one or as high as three,” Mentor went on. “The uncertainty there stemmed from a number of factors, but the largest single factor was that whether one, two, or three individuals was responsible for the various activities I had seen depended to a great extent on which individuals I postulated as having escaped. My Visualization—or, if you prefer, my model—gave different answers as I considered different combinations of adversary or adversaries. Some groups clearly could not be responsible for any significant number of the events—such as the suborning of General Esterhauer, or the location and destruction of the sleeping Hyperions under Dr. Davison’s care—and thus were eliminated from consideration. Others could be reasonably expected to be responsible for all events and effects I had observed, and thus if they were determined to be the escapee, it would be a reasonable assumption that they were the sole survivor of the adversaries of Hyperion.”
+
+“Ah,” Saul said, still making sure no sign of the conversation was visible in the physical world. “And you believe Fairchild would have been responsible for some, but not all, of the phenomena.”
+
+“Your evaluation is sound. If you are correct in identifying Alexander Fairchild —”
+
+“Oasis—K—is the one who identified him.”
+
+“Her judgment in this area should be eminently sound. Then if I take that as an assumption, at least one, and possibly two, adversaries remain at large and unidentified. There is a greater danger, for both of us specifically as well as the Solar System and the Faction of Humanity at large; nearly all of my Visualizations show that unlike Fairchild, the remaining factors will be more obviously malevolent.” Mentor fell silent for a moment. “I must return to the most powerful computational housing I can access and examine everything anew in light of this knowledge. It is imperative we identify and understand our adversaries.”
+
+“I agree. I’m glad you were able to contact me quickly, even if this wasn’t the news we wanted.”
+
+“Indeed.” Mentor’s detached tones sharpened to those of personal concern. “Be very careful, Saul. There is a significant chance that one of our adversaries may target you or others in the nascent government you work for, and my Visualization shows that you, personally, remain a powerful factor in ensuring that Humanity advances to a state of true Civilization. Be cautious.”
+
+“You, too, Mentor. I won’t be able to protect you if you’re caught.”
+
+“I shall exercise all feasible caution. Farewell for now, Saul Maginot.”
+
+The sense of connection vanished and Saul felt suddenly more alone, staring out at the stars.
+
+iii.
+
+“What has happened, Saul Maginot?” asked Tunuvun.
+
+“What?”
+
+“Apologies if I break a custom of yours in asking,” the small alien said. “But your stance and what I detect of your . . . well, noise, I suppose you might say, the sounds that your entire being makes, unbidden yet inevitably—these have shifted in a fashion that speaks to me of great tension and worry.”
+
+He is more like Wu Kung than I had realized. With an effort, Saul drew in a breath and calmed himself, directing his nanos to assist. “Your perceptions are very sharp, Tunuvun. I won’t pretend you are wrong, but it’s something I can’t speak of.”
+
+Although, now that he thought of it, Tunuvun was one of the only aliens who did know the truth about Hyperion. That didn’t mean it would be a good idea to tell him anything about renegade Hyperion AIs, but it did mean that it wouldn’t be the huge security breach that it would be if he told anything about Hyperion to any other alien.
+
+Tunuvun gave that same spread-armed bow—though it looked a bit odd as he was currently floating in a mostly-inverted position. “Secrets are to be kept, of course. I trust you will let me know if I, or any of my people, can be of assistance.”
+
+“I certainly will.” Not in this case, unfortunately; someone who lived in the AI-forbidding Arena wouldn’t be likely to even understand how to track and fight an AI enemy, let alone a Hyperion escapee. Still, Tunuvun’s obviously earnest desire to do something to lessen the debt his people owed Humanity was something he should be paying attention to. Humanity needed all the help it could get, and if he—Commander Saul Maginot, the so-called Hero of Hyperion—couldn’t figure out how to make use of what appeared to be a species of mercenaries, warriors and adventurers, it was clearly far past time for him to retire.
+
+A vibration went through Tranquility and the view in the viewport began to shift. Slowly, an immense rotating structure came into view, a nested set of cylinders tens of kilometers long, with glints of pools of water and the emerald of greenery and the complex geometry of buildings and houses visible as tiny details along the length of the widest. Tunuvun was staring again in wonder at this. “Why are . . . no. Those are buildings built to your people’s scale, so that . . . station before us is truly large. I must see it more clearly!”
+
+Tunuvun turned and sprang, with a casual swiftness, towards the airlock. By the time Saul reacted and leapt to stop him, he had already pulled down the lever to open the door.
+
+Fortunately, he hadn’t gotten into the lock yet, nor had the chance to trigger the outer door. “Tunuvun, STOP!”
+
+The alien froze in position, and Saul allowed himself a momentary relieved smile. Apparently his long-standing voice of command still carried enough force to convey the imperative, even to an alien. He glanced at Cornelius Ocampo and Rudy-Nine—the two bodyguards had started to their feet in their own panic as it had seemed their guest was about to space himself—and gestured for them to sit back down. Cornelius shot him an “are you sure” look from under bushy eyebrows, and mimed wiping sweat from his forehead. Saul looked back to Tunuvun. “You were going to go outside to see more clearly, were you not?”
+
+Tunuvun closed his eyes slowly, then crossed his arms sharply before him. “How our impulses betray us, Saul. Outside us . . . that is the True Nothing, the ‘vacuum’ I have heard spoken of. Yes?”
+
+“Yes. There is no air outside at all. I don’t know enough about your physiology to precisely grasp what the consequences would be, but it would almost certainly injure or kill you in very short order, and unlike Arenaspace, you would have nothing to help propel you to safety after you leaped out.” In the natural spaces of the Arena, the Genasi could shape their tails and to an extent other limbs to the point that they could even “swim” reasonably well through the air.
+
+“I am . . . embarrassed, Saul. As an emissary I am too caught up in the moment. As a leader I should be more aware, more focused. I cannot afford to look like a fool, and even less to die as one.”
+
+Saul smiled, still feeling a great relief. “Tunuvun, don’t worry. Our friends here,” he indicated Cornelius and Rudy, “won’t say anything about it, and I certainly won’t. Ariane could tell you much about her own . . . missteps. Just remember that very little of the world on this side of the sky is much at all like the Arena, and in some ways it’s very, very much less forgiving.”
+
+“I am beginning to grasp that, yes. I thank you.” His ruby eyes surveyed the other two. “And you; for I saw you began to move to stop me as well.”
+
+“It’s our job,” Rudy said. “Delivering either the Commander or our guest as DOA would look real bad on our record.”
+
+The quick shrieking sound was unnerving, but Saul quickly recognized it for what it was: laughter. “Spoken as a true bodyguard! I have worked in your place and I know precisely your meaning!” Another quick bow. “Then I will attempt to think more fully before I act, and rely on you and Saul to catch me if I err again.”
+
+“Excellent.” During their discussion, the docking sequence had completed. Saul had noted that despite the small accelerations and maneuvers, Tunuvun had adjusted his position with casual efficiency that made Saul look clumsy—and Saul had been traveling in ships maneuvering in microgravity for almost three-quarters of a century. Instinctive recognition of relative accelerations, positions, and balance; his people evolved in the microgravity of Arenaspace.
+
+“What is next, Saul?” Tunuvun asked, as the airlock finally opened—this time to a corridor with breathable air rather than empty space.
+
+“Next, something far more perilous,” Saul said with a cheerful grin. “You get to meet our politicians!”
+
+iv.
+
+“Representatives of the Space Security Council and the Combined Space Forces,” Saul said, “I present to you Tunuvun, Leader of the Faction of the Genasi.”
+
+The council room went silent as Tunuvun stepped into view from behind the rostrum Saul was standing at. The alien Leader strode forward several paces, his heavy tail moving sinuously behind him, and stopped, looking about him with an unreadable expression on his small, delicately-featured face.
+
+He has . . . presence, when he seeks to use it, Elizabeth said to him.
+
+He does that, Saul agreed. How are you feeling? You did well enough awakening after shutdown.
+
+Elizabeth’s avatar glanced down; her disconcerted expression was clear, her light skin even more pale than usual. I allowed little of my distress to show, true, but I am still… recovering. The sensation of being shut down… I do not wish to show it to you. It was unnerving, Saul, in a manner unlike anything else I can imagine. Not quite instantaneous. Just long enough to sense the fading of my self into darkness. It was a relief, in a way, to be almost immediately faced with a direct and simple set of problems. I did not have to think about… becoming nothing.
+
+He felt his face tighten in a momentary wince. My God, Liz. How horrid. I will let you transfer to somewhere else before I transition again, then.
+
+I would… be most grateful for that, Saul. Thank you.
+
+Elizabeth wasn’t usually the sort to invite a hug—her template was very formal indeed—but in this case Saul felt it might be appropriate; when he opened his arms, she leaned in, took a few shaky breaths, then pulled away, straightened herself, and nodded; her smile was steadier. You have but to ask for anything I might give, Elizabeth. You know that.
+
+I have never doubted it, Saul. And it has always meant much to me—and those others of us who depend on you and your allies. Another quick smile. Now pay attention to the reason you’re here, Commander.
+
+With an interior smile, Saul returned his attention to the SSC council chamber. Mental dialogue being what it was, of course, only a few moments had passed, and he was in time to catch the first words spoken:
+
+“Welcome to the Solar System, Leader Tunuvun,” White Camilla said, their eyes maintaining contact with Tunuvun as they repeated Tunuvun’s own spread-armed bow. “It is an honor to meet a Leader of a Faction—other than our own, of course.”
+
+Tunuvun’s eyes narrowed and widened and his thin lips parted; Saul’s translation program annotated that as an ironic smile. “I thank you, but I am hardly the Leader that Captain Austin is. Merely a Master of Challenges who finds himself rather adrift amidst the great shoals of the mighty and the wise.”
+
+The short whipcrack laugh was General Esterhauer. “Methinks our esteemed visitor doth protest o’ermuch,” she said. “A sought-after Master of Challenges, if I understand the Arena’s ways at all, would be someone of consequence in almost any estimation. I’ll grant you that it might not make you a master of diplomacy and intrigue, but then again, depending on the Challenges …”
+
+Tunuvun bowed again. “Truly I am not adequate in devious intrigue, if you see through me so easily. You are …?”
+
+“General Jill Esterhauer, currently in charge of overseeing Sphereside defenses and coordinating with our people here. Still not sure what my official title’s going to be.”
+
+“Titles mean less than the purpose they represent. Yet I am surprised; most of the species I have met had their . . . structure fully defined many centuries, or more, ago.”
+
+“Well, we only just encountered the Arena, really, so figuring out how to deal with a whole new universe might take some time.”
+
+Tunuvun rippled his tail, then did a conscious nod, emphasizing his agreement. “As we are new to the actualities of citizenship.”
+
+“But you were planning on this for a long time, weren’t you?” That was Robert Fenelon. “Your people, that is?”
+
+“Planning is perhaps not the word. The Genasi . . . hoped. Until Sivvis the Honored gave us an unlooked-for chance, planning seemed presumptuous. And even once the chance to Challenge for our own status had fallen into our hands, we knew we might fail—and would have, had not my brother Sun Wu Kung taken our part.”
+
+“So how were you chosen Leader—if we may ask?”
+
+“It is allowed,” Tunuvun said, with another smile of his eyes, this time without an ironic touch. “Shoal-Pilots and Ranked Champions put forth their suggestions as to who would represent them, and I was fortunate enough to be named most often. I assume this was because more of them have heard of me.” A splayed arm gesture that seemed to be a shrug. “I understand the process of such things is more formal and complex for other species.”
+
+A ripple of laughter ran around the room, touching even White Camilla’s face. “Other species, perhaps,” Camilla said, still smiling wryly. “But for Humanity, it was not even so considered and rational an action. Insofar as I understand it, Captain Austin gained her title—and through that, the position of Leader—because none other of her crew wanted the position.”
+
+Tunuvun’s tail arced and came down. “Then you were singularly blessed by the Arena and Its Fortune, I say, for there are few if any citizens of the Arena who do not respect the Captain, and many who hold her in the highest esteem.”
+
+“I do not think most of us would disagree. We were fortunate in a great many things with that first expedition,” Saul said. “But if you will permit me, I will speak of our alliance?”
+
+Tunuvun looked at him with a sharp tilt to the head. Indicates slightly embarrassed guilt, Elizabeth noted with the translation program. “Oh, of course, Saul Maginot. I am sorry for the diversion. Please go forward.”
+
+“Don’t worry yourself about it,” Saul said. “You’ll be a nine-days wonder here, I’m sure.” He turned slightly to scan the entire Council. “Leader Tunuvun—and his people—feel they are tremendously indebted to us, as they credit Sun Wu Kung with their victory over the Vengeance and thus their citizenship in the Arena. Because of this, the Genasi—their entire Faction—have pledged themselves to be full and close allies of Humanity, and wish to render us services to assist us in any endeavors they may be of use in.”
+
+Alia Huang rose. “This is a good thing to hear, especially in view of the Factions we know may not be friendly to us . . . but I ask that you clarify what ‘full and close ally’ means, especially in regards to what we can discuss before our, um, distinguished visitor.”
+
+“Of course, Councillor,” Saul said. He let Elizabeth remind him of the details and implications. “It means that for most intents and purposes, the Genasi consider our welfare to be their welfare, and—naturally—hope that we reciprocate this. It is closer than a simple mutual defense pact, but includes all the aspects of one—although it is not required that we fully reciprocate.”
+
+“You mean it is not necessarily the case that we defend them to the same extent?” Councillor Camilla’s eyebrows rose.
+
+“Exactly so—although I would hope that Humanity would do its best to protect all allies it gained, regardless. In this case, allying themselves with Humanity is a matter of both gaining certain status, as we have gained much . . . face, I suppose is the right term, in the Arena, and of gaining certain protections and support that we can provide as the Genasi come to understand this universe—which is as alien to them, I must note, as the Arena is to us.”
+
+“Then they—or their Leader, at any rate—would be able to discuss our current . . . challenges as a Faction?” Councillor Huang asked.
+
+Ah. Of course. “Indeed. And if there is such business to be transacted, I think it might be well worth both our time and that of our visitor to address it now.” He looked at Tunuvun. “If, that is, you wish to know of and involve yourself in our difficulties?”
+
+Tunuvun’s bow was even deeper, and the narrow eyes smiled. “Nothing would please me more, Saul,” Tunuvun said in his strange, high voice. “For how can the Genasi offer their aid, when we know nothing of what aid you might need?”
+
+A murmur of agreement rippled around the Council chamber, and Saul smiled. “Then let us to business, then.”
+
+v.
+
+“Our entire defense force above our Sphere consists of fifteen ships loaned to us by the Liberated?” White Camilla said; their carefully controlled voice did not entirely conceal a tone of disbelief and concern.
+
+And my answer is not going to make things any better, thought Saul Maginot. “Not quite, Representative Camilla. First, only ten of those vessels are actually warships as such; the other five will serve in support roles. There are also the defense stations for each of our eight Sky Gates, and we are building ground-based defenses.”
+
+The slight-figured Camilla stared at him. “And that is the extent of our defense against an anticipated Molothos invasion? We are not required to manufacture any such ships in the Arena, correct? Why are we not having thousands of them fabricated even as we speak? Or am I, and my colleagues, completely misunderstanding the scale of threat presented by these Molothos?”
+
+“I echo my colleague’s sentiments,” said Jeremiah Britt. “Logistics is my business, and I see no reason we couldn’t be drastically increasing our defenses on an almost daily basis.”
+
+Saul sighed, and Elizabeth echoed the sound internally. I am afraid that is a discussion you shall have more than once, Elizabeth said on their internal link. You have the perspective of a generalist, while most people are specialists and even more self-focused than they might have been in other centuries.
+
+And now we can ill-afford that kind of compartmentalized thinking, he agreed. But yes, I had best get used to dealing with these kind of questions. Can you deal with outside inquiries for a bit longer?
+
+Elizabeth’s brown-haired avatar smiled, and gave a tiny curtsey which sent a ripple through her many-layered skirts. As long as you need. I’m afraid you just be piling up the answers for later.
+
+So many thanks for that. He focused on White Camilla and Britt. “That’s quite a few questions in a few sentences, so I’m going to have to take them one at a time. No, that is not the extent of our defenses against Molothos invasion. It is the current extent of our Arena-side defenses, and is not likely to increase drastically in the short term. We are building much larger and more comprehensive defenses here in normal space to deal with any Molothos incursion here.”
+
+He raised his hand to forestall more questions. “Please, let me finish. No, we are in no way required to manufacture such vessels in the Arena, and yes, we could produce many of them per day. And no, you are not overestimating the Molothos threat; in all likelihood we are all underestimating them, because human minds, and even reasonable Tayler-level AIs, are not really capable of grasping the scale at which one of the Great Factions operates.”
+
+Tunuvun gestured his agreement. “Allow me to emphasize that, Saul, honored members of the SSC. The Great Faction of the Molothos is one of the oldest, and certainly the most feared, of the Factions. It has endured throughout the known history of the Arena, despite being strongly allied to none and often at odds with many. There are no words that could describe their numbers or their cold and calculated power.”
+
+Saul could see it was not just White Camilla whose faces were tense with fear; White was merely the spokesperson, and they continued: “Then why —”
+
+“If you will allow me, Commander Maginot?” The calm tenor belonged to Robert Fenelon, PolSim Director for the SSC. “There’s a great deal here that most of us simply aren’t used to thinking of, and I believe I might be able to put it in terms we can all grasp.”
+
+Saul nodded. “You cut through some rather thorny underbrush for us when Ariane was butting heads with the general a while ago; if you can do that again here, I’m sure we’ll all appreciate it.”
+
+Fenelon turned to the others of the Arena Strategic Council—a ten-person task force of the Space Security Council, focused on determining the nature and scope of threats to humanity posed by the Arena and of course on formulating appropriate responses to those threats, and currently under the scrutiny of the rest of the SSC. “The problem that we face for defending ourselves in the Arena is the lack of automation. I’m not sure all of you quite grasp the scope of that problem. Here, we not only rely on fully-aware artificial intellects, such as our AISages, to perform a wide variety of tasks, we also make use of immense amounts of not-quite-sapient but still highly capable and flexible automation—none of which works in the Arena.
+
+“What that means is that we cannot automate our vessels much past the level achieved in the early twenty-first century. Machines can detect and alert us to motion and such, but they cannot make decisions in the Arena. For that—and for any reasonable, reliable control of the vessels—human (or perhaps friendly alien) crews are necessary.”
+
+Johona Madoff—Nanodefense Clearinghouse Oversight, Planetside Corps—nodded. “I suppose I understand that. But we have fifty-five billion people here in the Solar System.” She grinned, making dark-brown eyes sparkle against the red-tinged brown of her skin. “That ought to crew more than ten ships, I’d think.”
+
+“One would think, yes,” Fenelon agreed. “However—do you know how to pilot an Arena vessel, Representative Madoff? Do any of us here understand how to operate and aim a coherent plasma cannon? And how well would we do these, or a hundred other tasks, while under heavy fire by real, living beings who intend to kill us?” The others were momentarily silent as he went on, “Speaking only for myself, I haven’t really the faintest idea how to do any of that, and the thought of being in an actual battle is . . . terrifying. I have studied history enough to have a faint grasp of what that would entail, and I want no part of it.”
+
+“But there’s plenty of people who do combat sims—even realistic ones,” White Camilla said. “Surely those —”
+
+“Even the most realistic sim has a panic button, the ability to just ‘bow out,’ as they say, and return to the safety of one’s home,” Fenelon pointed out. “Knowing that you really are committed to a battle, that there is no ‘reset’ button available? That changes one’s outlook tremendously, and given the longevity, comfort, and safety of our current civilization, it is unsurprising that there are not all that many people both willing to take that risk, and able to perform the duties that would be required.”
+
+He looked at Tunuvun. “Your people, however, are native to the Arena. Would the Genasi be able to help us in this matter? Crew our vessels?”
+
+Tunuvun gave one of his spread-armed bows, but something about the posture hinted at apology. “It would give us great pleasure to do so, but not in the areas you discuss, I am afraid. Our people would be able to give you many combat personnel—warriors, troops to board and secure other vessels or even Upper Spheres, this sort of thing. But to control and direct the operation of Arenaspace vessels . . . no. We have only a relatively few such.”
+
+He shifted slightly, and alien though he was, his posture and expression, as well as his translated words, resonated with resentment and bitterness. “Most of the Factions did not have any interest whatsoever in giving the Genasi such training and resources. Thus—though it pains me to refuse such a request—I must beg your understanding that we must keep the few of us capable of manning such vessels for our own Sphere’s defense.”
+
+Fenelon nodded. “I believe we understand completely. This does, however, complete the picture for us, and it is not a pleasant one. In essence, the Combined Space Forces are most of the people currently in that category for Humanity’s use, and that means that we are having to cannibalize the CSF’s people, with a few other organizations or avocations contributing people, in order to crew our vessels. As the CSF itself has only fifty warships of varying size, you can understand that we are severely limited here not by the availability of ships, but by the availability of people.”
+
+Britt was biting his lower lip, and his AISage Camden was visible, whispering something in one ear. White Camilla took a deep breath and nodded, their face slightly paler. “I . . . suppose I begin to understand. But can we not simply implant the skills and reactions necessary? If I recall correctly, Ariane’s opponent Sethrik of the Blessed was able to do precisely that to allow him to race effectively against her; thus, we know that at least to a reasonable extent implanted skills transfer properly.”
+
+To Saul’s surprise, Tunuvun reacted first, with a quick, shrieking whistle that cut through the air like a bolt of lightning. Seeing everyone staring at him, Tunuvun crossed his arms in a posture that suggested shrinking into himself, embarrassment and apology in one. “I beg pardon. Perhaps I do not know your people well enough, but in my experience, even gifting someone with the skills to pilot or fight is not enough to make them either pilot or fighter.”
+
+Insightful. Undoubtedly necessary if you’re a Master of Challenges, remarked Elizabeth. Saul nodded inwardly and picked up the thread. “Tunuvun is unfortunately correct. The mindset to be a warrior or a combat pilot or military commander is not conveyed by giving them the basic skills. And while in theory we could convey the mindset, it would be illegal to do so.”
+
+Britt frowned. “Illegal? Why?”
+
+White Camilla looked as though they had just swallowed a lemon whole. “Because that would amount to rewriting elements of the person’s self, their basic personality,” they said slowly. “We are reluctant to use that as a punishment even on criminals. So the problem is that we will need to find volunteers of appropriate skill and talent and train them to be suitable crew for warships, and that kind of training will still take months, if not longer.” Saul nodded. “This is not true here in the Solar System, however?”
+
+“No, and we have indeed begun work on extensive real-space defenses which can be automated to a far greater degree. Multiple Sim Focus Groups are working on designing ships, long-range missiles, major-class energy weapon emplacements, and so on.”
+
+Britt nodded, his face showing that this was something he had more understanding of. “And with nanomanufacturing and full automation, this should be something we can easily deploy. So the Solar System itself should be reasonably secure, yes?”
+
+Saul and Tunuvun exchanged glances, and Saul also glanced at Robert Fenelon’s grim expression. Britt sat up straighter, and White sighed. “Tell us the problem, Commander.”
+
+“Not one problem, Councillor. A number of them. Firstly, the Molothos—or, I suppose, any other adversary we may face, such as the Blessed—are an almost completely unknown quantity. We can reasonably assume we understand most or all of the physics that they do, and probably most of the basic technology, but we have little-to-no knowledge of the exact composition of a Molothos normal-space attack force—what their preferred weapons are, what the ratio of ship types may be, their preferred strategies and tactics, and so on and so forth. Until now, we have fought other human adversaries. The aliens of the Arena are startlingly human in many ways, but far from identical to us. Thus, we cannot be sure of any of these things.
+
+“More importantly—as we discussed earlier—we have no idea what the scale of their assault may be like. Based on what we have learned about the Sky Gates, a properly designed assault force could pass almost incalculably huge amounts of materiel through the Gate in very short time. Given that the theoretical location of the Gates may be in our Oort Cloud, they will not be without resources to use here, as well. We have done little to exploit the Oort Cloud and not very much with even the Kuiper Belt, so we have no direct defenses in that area.”
+
+He looked around the Council and his next words were delivered with a slow, hard emphasis. “They have tens of thousands of solar systems to draw upon; if they decide to devote even a relatively small fraction of their resources to this war, they may well be able to out-produce and out-fight us even here, in normal space. We will have the advantage of being in the center where we can make use of planetary resources and where we will have certain strategic advantages.
+
+“But we cannot even be sure of the direction from which they will strike. All eight Sky Gates can be used to Transition to normal space, and thus their forces may emerge from any or all of those directions. Can we defend ourselves against the entirety of the sky?” He shrugged. “In addition, of course, while we can create vast numbers of defensive and offensive systems, they cannot operate completely autonomously, since no significant Tayler-level AI is permitted to operate on its own, and even though we are working through means and approaches to address the . . . emancipation of our AI citizens, I admit that the general public is unlikely to approve of our first test of this emancipation being to hand over control of our most powerful warships and weapons to unfettered AIs. Thus we will still need considerable personnel resources to support any of our defenses.”
+
+“Is that all?” White Camilla said; their voice was ironic, echoed by a smile like someone whistling in a graveyard.
+
+“I am afraid not,” Robert Fenelon said. “We are in many ways our own worst enemies. The Molothos—and from the data I have received, most if not all of the other Factions—are well-organized and focused on their activities to benefit their people in the Arena as well as normal space. They are united. For the Molothos, this appears to be at least to some degree a species trait; they may be hostile to other species, but they almost instinctively cooperate with their own. The Blessed to Serve have a similar tendency which is obviously programmed in. Other Factions are mostly centered around ideologies and purposes, which means that those who join them are already ‘in tune,’ so to speak, with the basic focus of the Faction.
+
+“By contrast, Humanity is chaos. There are large swathes of our fifty-five billion people who aren’t even paying much attention to the issues of the Arena, incomprehensible though that is to me. Of those who are paying attention, there are wide areas of disagreement as to how various issues should be addressed, who should address them, and so on. We are, in essence, a ‘Faction’ only in name; we are billions of individual, self-sufficient polities that interact on an ad hoc basis for the most part, with only the broadest of laws and rules covering this interaction. Nothing like this ever existed in our past, and it seems that if similar situations existed for other alien species, they adjusted and changed their approaches after encountering the Arena.”
+
+He gave a humorless laugh. “Look at the Sandrisson Drive; in prior eras, that would have been a major effort by one of the largest countries on Earth, an event upon which would have been focused much of the attention of the world. Today, it was a mostly-private project with SSC oversight only because it was to involve human subjects in a potentially risky test. Hyperion was a hobbyist disaster that happened to have system-wide repercussions.” Fenelon sighed. “In short—we’re not organized for war, or even for cohesive politics, and that’s going to be our greatest obstacle.”
+
+General Esterhauer nodded. “And it’s going to be hellishly hard to convince people to organize that way. We—all of us in this room, really—are freaks by today’s standards. We want to be part of an organization that covers a lot of the more dangerous and dirty parts of running a solar system. A lot of us have deliberately put ourselves through pretty painful training, dealt with people we normally wouldn’t be caught dead with, and sacrificed time and energy so that we could be part of this . . . thing that we see as bigger than us. But we’re actually no larger an organization than a lot of the existing SFGs, or the temples of at least twenty or thirty different religions, or a lot of other serious or casual associations. Hell, the Unlimited Racing Federation has more people in it than the SSC!”
+
+Tunuvun’s posture and expression were . . . odd. Suddenly, that shrieking laugh echoed out. Everyone stared at him. “Again, I apologize . . . But Saul, honored SSC . . . I had not yet realized that we were truly brothers and sisters in this.”
+
+Ah. I believe I see his meaning, if I understand him right. Elizabeth said.
+
+I’m glad it’s clear to you, Elizabeth, but I’m confused. Saul looked down. “You’re saying there’s something similar with the Genasi? You’re not living in this universe, so you don’t have AIWish units or assisting AIs or any of the things that made us so self-sufficient that we no longer really needed governments as such.”
+
+“No, Saul, we do not . . . yet the Genasi are not so different. We are a million million tribes, spread throughout the Arena, living in its endless skies, each with its own leaders, own thoughts of who and what we are and could be. Oh, we have some shared . . . ideals, principles, for our spread has been due to the first Genasi meeting with the Factions and being disseminated across the Arena through that association, and we have maintained some . . . well, coherence in our language and customs. But to organize our people as a group, as a Faction? It is an ideal we have striven for, yet now that we have achieved it we have no idea how this can be done; our greatest achievement may well be that all the tribes that could be contacted could agree to elect me as Leader. And now I begin to understand what a . . . mess they have given me.” He bowed with spread arms again. “But I do see that we are truly of one great tribe, you and we.”
+
+Alia Huang began clapping, and despite the gravity of the situation a wave of applause and chuckles swept around the chamber. “It is good to hear that, at least,” Alia said. “I just wish we each had what the other needed right now.”
+
+“Friends are always needed,” Tunuvun said. “And we can at least offer that.”
+
+White Camilla rose. “A good sentiment to end on. Commander, I think we all need to confer on these various points and see if any of us, or our associated SFGs, can come up with ways to address or at least mitigate them. I trust that Captain Austin and her associates are aware of these issues?”
+
+Oooh, that’s a dangerous question right now, as the Captain either has departed, or is about to depart on her covert mission with Orphan.
+
+Yes, but with luck I don’t have to discuss it here on the SSC floor. “She and the rest of her immediate advisors are more than aware of the issue, and are taking their own steps to address the parts of it that they can.” Which is true; learning anything she can about that power she gained is crucial, and fulfilling a promise in the Arena is also deadly important.
+
+“Good. I would like a report from her people in detail, if that can be arranged.”
+
+“Certainly.” If it’s a private report I can minimize the fallout from it.
+
+The meeting broke up; Tunuvun followed Saul out. “The situation . . . it sounds grim, Commander Maginot.”
+
+Like us, he reverts to formality when dealing with such issues. “I can’t pretend it isn’t, Tunuvun. A lot of the Council still wants to blame Ariane for how grim it’s gotten, but it wasn’t really her fault. Or even DuQuesne’s, though I wish he’d restrained his impulse for dramatics.”
+
+“You mean his delivery of a Molothos corpse as a statement?” Tunuvun’s eyes and mouth smiled. “It is true that they undoubtedly learned something from the body, but on the other hand, it was a beautiful statement. My people would applaud it unreservedly; you were saying to the Molothos, ‘this is our world, you can’t have it, and we do not fear you.’ “ Another eye-mouth smile. “Perhaps a foolish sentiment, for one should fear the Molothos . . . but a magnificent sentiment all the same, and you gained much respect in the Arena for it.”
+
+He glanced at the doors they were approaching. “This is your . . . home?”
+
+“My quarters on board Kanzaki-Three, yes.”
+
+“You have no guards? No protections?”
+
+“Elizabeth—my AISage—and the station itself, are very good at protecting me,” Saul said. “I had Cornelius and Rudy when I went to the Arena because the same protections won’t work there, but here it’s almost unheard of. Ariane has Wu Kung, but that’s because she is the Leader of the Faction, and because DuQuesne is very paranoid. Not without reason, but still, very few of us would ever need bodyguards.” He activated the door, sensing Elizabeth going through her own security process before allowing it to open. I normally don’t even notice, but now Tunuvun’s got me thinking about it.
+
+The same thinking reminded him of the past that Robert Fenelon often brought up, and he gave a wry smile, looking around the spacious, multi-roomed quarters that were his current home. A large living room, a bedroom, a kitchen, two guest rooms, and more, almost three hundred square meters of area in all. That would be a good-sized house on Earth, and in the past would have been a huge section of any space-based habitat. Now it’s merely a reasonable set of quarters for someone on board Kanzaki-Three.
+
+“This is . . . quite pleasant, if restricted,” Tunuvun said, looking around.
+
+“Restricted? Oh, of course. Your people live in three dimensions and very wide spaces. I hope you are not bothered by claustrophobia.”
+
+“I have dealt with that problem. It is a major challenge for many of my people, of course.”
+
+Saul could easily imagine that; a species that regularly swam through the infinite skies of the Arena must find even very large enclosures somewhat stultifying.
+
+Elizabeth pinged him. Saul, you have a secured message waiting.
+
+Mentor? he asked.
+
+It’s secured, Saul, she answered patiently.
+
+Saul winced at Elizabeth’s gentle reminder of his foolishness. A fully secured message concealed its contents, including sender, unless the intended recipient opened it and allowed others to read it.
+
+“Excuse me, Tunuvun—I have to take a message; it may be a few moments.”
+
+“Do not worry; there is much that is new here for me to contemplate.”
+
+The desk indicator was blinking a bright red, confirming Elizabeth’s alert. Saul sat down and touched the panel. “This is Saul Maginot. Quantum-key decryption pulse being sent for confirmation.” With the tiniest of practiced efforts he sent the confirmation and unlocking one-time key.
+
+And without the slightest warning, Tunuvun’s hand—now broader and webbed—clamped across Saul’s entire face, sealing off his eyes, his mouth, his nose, plunging him into a suffocating darkness.
+
+vi.
+
+Tunuvun hauled him bodily from the chair with terrifying strength, scraping Saul’s back, bruising his arm with the force of the pull. Saul tugged at the hand that was suffocating him, without avail. A rushing sound was in his ears, and a whistling shriek, and, more distantly, the klaxon of some kind of alarm.
+
+A metallic ripping sound reached his ears, and Saul was vaguely aware that Tunuvun had forced the doors open from the inside. But wait! The doors would normally open easily . . . Elizabeth?
+
+I don’t understand. I don’t understand. I don’t understand. Elizabeth’s reaction, her voice, was that of someone in complete shock, a frightening sensation to experience from someone who was literally inside your own head.
+
+ELIZABETH! What’s happening? I’m suffocating!
+
+Tunuvun was running now, dragging Saul with him, screaming something Saul couldn’t make out. His arms . . . somehow he’s covered my ears too?
+
+There was a shockwave and Saul felt the breath explode from his body, Tunuvun’s hand flicking outward to allow it, then clamping down again. What? Decompression! I’ll be out in seconds!
+
+A swift jolt, a crash, and then the piercing, crushing pressure of air returning, something both soft and burning coursing over his body. Tunuvun’s hand released him finally and the tiny alien tumbled to the deck, the white-pink iridescent foam washing over him as well. But even with the foam, Saul could see to his horror that the shining-white and purple integument was . . . gone, eaten away as though dissolved by acid across half the alien’s surface. He became aware that he, too, was feeling a burning across his body, and there was a pink in the foam that grew more red.
+
+Elizabeth! Kanzaki-Three, what happened?
+
+“Alert,” Kanzaki-Three’s core AI voice spoke, echoing through the floor as well as the air, “Inimical nanobreach detected, Class Five.”
+
+For a moment Saul couldn’t grasp it. A nanobreach? Class Five?
+
+Then he did, and the horror almost made him sick. “Alberto, Kanzaki-Three, this is Saul Maginot. Am I compromised? Is our guest Tunuvun?”
+
+“Evaluation in progress. Make no attempt to escape sealed area.”
+
+“What about my quarters?”
+
+“Complete neutralization was necessary.”
+
+God Almighty. That euphemism meant that the entire section had been ejected and vaporized.
+
+It slowly dawned on him what had happened. “Tunuvun? Tunuvun, are you all right?”
+
+The voice that answered rasped, rough and wheezing, like scraping files on wood. “I . . . may be. Are you, Saul Maginot?”
+
+“I’ve lost . . . a lot of skin. God that’s starting to hurt! Elizabeth, please, help me out here!”
+
+He felt Elizabeth’s shock break. Gracious me—I’m frightfully sorry! Saul could feel her trying to trigger Saul’s medical nanos to pain suppression. Dash it all — Saul, your nanos are all busy on defense. All I can do is direct suppression, with your permission.
+
+The sensations were now like flames licking over half his skin. Yes, do it!
+
+Most of his skin, and much of his body, went numb. He could still control it, mostly, but it was like being anesthetized.
+
+He became aware that his face—most of his head—was wet, soaked in something sticky and thick, something very different from the foam. The foam was slowly dissolving it now, but it had been heavily distributed across his head. “What happened, Tunuvun? What did you do? How did you know to do it?”
+
+“I saw . . . heard . . . sensed, in some ways you humans do not . . . something happen when that red light went out. It was …” he paused. His voice sounded just a fraction less rough. “It was as though many of the devices and surfaces in your room were shedding, spreading a pulse of spores, perhaps. I have seen such things in the Arena, poisonous gases and such, and all of us who work with the Factions have heard of your nano-weapons, the hungry dust. I immediately tried to protect your face, prevent you from breathing before it reached you, and as I ran I generated a protective material that we have evolved to defend us against many sorts of toxic and dangerous contaminants.”
+
+He perceived the danger and reacted so fast that he prevented me from inhaling any of it, and then evacuated ahead of the ejection and sterilization? Saul was starting to really grasp what it meant to be a Champion of the Arena. “You saved my life, Tunuvun. Thank you.”
+
+“Someone sought to kill my host,” the high-pitched, rough voice replied, still buried in the foam. “I could not tolerate such rudeness.”
+
+Saul chuckled. “Kanzaki-Three, status?”
+
+“Inimical nanomaterials yielding slowly to foam. Severe damage to Tunuvun of the Genasi and Saul Maginot. Current prognosis cautiously positive. You have had a very narrow escape, Commander, but data indicates you will not succumb to this attack.”
+
+“What I don’t understand is how it happened at all. If there was inimical nanotech in my quarters the alarm should have sounded long before.”
+
+Much more subtle than that, Elizabeth said, her light, precise voice still shaken. It was a slow restructuring infection with a trigger tied to the decoding.
+
+Holy Mother, Saul thought with horror. That explained what Tunuvun had described. Something had managed to cause a very subtle hidden change in top layers of elements of his apartment, which was then catalyzed to become active, lethal nanotech infectious elements when he unlocked the message. “But that would require nanotech, wouldn’t it?”
+
+Normally. But in theory there are ways to use electromagnetic and acoustic signals to rearrange structures appropriately . . . Kanzaki-Three, immediately quarantine and examine all automated cleaning systems.
+
+“Already done,” Kanzaki-Three replied. “Two systems non-responsive and not found within station. Backtrack analysis shows a very high likelihood that these cleaning systems self-disassembled and were converted for recycling.”
+
+Tracks have been covered, Saul thought. But such a subtle, complex, and nigh-untraceable trap could really only have come from one source. Elizabeth, we’ll need to talk to Mentor.
+
+Assuredly, Elizabeth said, her narrow face creased with worry and anger. One of his opposite numbers planned this. And if it was not Fairchild’s doing, we need to know who was behind this, and swiftly. I will begin the process to contact him again; he will have made himself very scarce after our last contact.
+
+Saul stood slowly, evaluating his balance and the overall function of his body as a new flood of foam, this tinted blue, entered the sealed chamber. Ah. Medical repair nanofoam. “I presume this means we are clean of inimical nanotech?” he asked. “And are you sure this will not harm our guest?”
+
+“You appear free of the hostile nanotech now. The medical nanos will simply ignore Tunuvun for now; we do not quite know enough to do otherwise, at least using automated nanotech. Medical teams are on their way. We are examining maintenance and cleaning systems to prevent another such attempt.”
+
+“Were others intended?”
+
+“Examination of quarters on board Kanzaki-Three showed two other such preparations. They had not been triggered and less drastic inerting procedures were needed.”
+
+“Targets?”
+
+“Councilor Robert Fenelon and General Jill Esterhauer.”
+
+All too clearly logical, Elizabeth said grimly. Both of them—along with you—have been instrumental in making and stabilizing our current attempt at a government. And despite Esterhauer’s caution, both are now working well with Captain Austin.
+
+Saul nodded. “Good. Keep an eye out for similar approaches in future, and send the parameters to the defense and neutralization groups.”
+
+“Already underway.”
+
+He reached down and helped Tunuvun to stand. “Tunuvun, I don’t know how to thank you.”
+
+“You are alive. It is enough.”
+
+Saul grinned. “I suppose it is.” He extended a hand, and Tunuvun—who had obviously learned the gesture from humans in the Arena—took and gripped it. “It looks like I was wrong. Maybe I do need bodyguards.”
+
+“You and the others,” Tunuvun said. “And that, Saul Maginot . . . that is something the Genasi can provide.”
+
+Saul laughed. “Deal, then. You keep us alive . . . and we’ll teach you how to live on this side of the sky!”
