@@ -1,0 +1,314 @@
+---
+title: "Prep_ReadingFrequencyMeasure"
+author: "Pauliina Vuorinen"
+date: "26/09/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to create a measure of reading frequency. This measure is analysed by modelling in Analysis_ReadingFrequencyModel.rmd in Analysis folder.
+
+Reading frequency refers to how often participants engaged in reading during the study. In order to capture variance in between reading sessions, we measure reading frequency as the amount of time in between reading sessions, rather than simply by counting the number of reading sessions. Short durations in between reading sessions indicate of more frequent reading, whereas longer durations indicate that the participants read the short story less often.
+
+The stories ranged in length between 15 and 25 A4 pages, and thus a story could be read until completion in one reading session. Any participants who only had one reading session during the study are given a reading frequency of 0.
+
+**Information on hypotheses:**
+
+We expected situational autonomous motivation (high-autonomy condition) to be connected to a higher reading frequency. Therefore, participants who were situationally motivated to read the story should return to it with less time in between their reading sessions.
+
+Similarly, contextual autonomous motivation was expected to be connected to shorter times in between reading sessions. Avid readers' enjoyment of reading as an activity should encourage them to read more frequently than non-frequent readers.
+
+Finally, task-relevant electronic reading experience was expected to be connected to more frequent reading sessions. Participants who are more familiar with using the electronic reading platforms should feel more at ease about reading on the e-reader, and thus, they should be more likely to read on the platform more often.
+
+## Setup
+
+```{r 'setup'}
+library(tidyverse)
+library(dplyr)
+library(gridExtra)
+```
+
+## Load data and check variable types
+
+We use a dataset that was created and saved at the end of Prep_TrackingDataWrangling.rmd:
+
+```{r 'load data'}
+tracking_data <-
+    read.csv(
+        "Data/wrangled_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+tracking_data <- select(tracking_data, -X)
+```
+
+
+```{r 'change variable types'}
+str(tracking_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+tracking_data[, c(
+    "UserId",
+    "StoryId",
+    "Direction",
+    "NavigationBlockDirection"
+)] <- convert.magic(
+    tracking_data[, c(
+        "UserId",
+        "StoryId",
+        "Direction",
+        "NavigationBlockDirection"
+    )],
+    "factor"
+)
+## fix numeric columns that were automatically categorised as character
+tracking_data[, c(
+    "BaselineSpeed",
+    "DurationMinutes",
+    "ReadingBlockDuration",
+    "EngagedReadingDuration",
+    "EngagedReadingSpeed",
+    "NavigationBlockDuration",
+    "TimeBeforeDeadlinesDays"
+)] <- convert.magic(
+    tracking_data[, c(
+        "BaselineSpeed",
+        "DurationMinutes",
+        "ReadingBlockDuration",
+        "EngagedReadingDuration",
+        "EngagedReadingSpeed",
+        "NavigationBlockDuration",
+        "TimeBeforeDeadlinesDays"
+    )],
+    "numeric"
+)
+## turn reading block (page view) number,
+### reading session number, and
+#### navigation block number into ordered factors
+tracking_data[, c(
+    "ReadingBlockNumber",
+    "ReadingSessionNumber",
+    "NavigationBlockNumber"
+)] <- convert.magic(
+    tracking_data[, c(
+        "ReadingBlockNumber",
+        "ReadingSessionNumber",
+        "NavigationBlockNumber"
+    )],
+    "ordered"
+)
+## fix logical variables
+tracking_data[, c(
+    "IsBlurred",
+    "IsDialogOpen",
+    "IsMenuOpen",
+    "IsInactive",
+    "IsReading",
+    "IsPageOpen"
+)] <- convert.magic(
+    tracking_data[, c(
+        "IsBlurred",
+        "IsDialogOpen",
+        "IsMenuOpen",
+        "IsInactive",
+        "IsReading",
+        "IsPageOpen"
+    )],
+    "logical"
+)
+
+## fix date and time variable types
+tracking_data$Date <-
+    as.Date(
+        tracking_data$Date,
+        format = "%Y-%m-%d"
+    )
+TempTimeObject <- strsplit(tracking_data$Time, " ")
+TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+tracking_data$TempTimeObject <- TempTimeObject
+tracking_data <- dplyr::select(tracking_data, -Time)
+names(tracking_data)[which(colnames(tracking_data) == "TempTimeObject")] <- "Time"
+tracking_data$DateTime <- paste(
+    tracking_data$Date,
+    tracking_data$Time
+)
+op <-
+    options(digits.secs = 3)
+tracking_data$Time <-
+    strptime(
+        tracking_data$Time,
+        format = "%H:%M:%OS"
+    )
+tracking_data <- tracking_data %>%
+    mutate(DateTime = as.POSIXct(DateTime, format = "%Y-%m-%d %H:%M:%OS"))
+```
+
+## Reading frequency measure
+
+Sort the dataset:
+
+```{r 'order df'}
+# order by User, date, time and event id
+tracking_data <-
+    tracking_data[
+        with(
+            tracking_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
+```
+
+Create tests to check if an event is part of a new reading session or from a new user:
+```{r}
+tracking_data$IsNewUser <- (tracking_data$UserId != lag(tracking_data$UserId, 1))
+tracking_data$IsNewReadingSession <- (
+    (tracking_data$IsNewUser == TRUE) |
+    (tracking_data$ReadingSessionNumber != lag(tracking_data$ReadingSessionNumber, 1))
+)
+# change any NA to TRUE
+tracking_data$IsNewUser[is.na(tracking_data$IsNewUser)] <- TRUE
+tracking_data$IsNewReadingSession[is.na(tracking_data$IsNewReadingSession)] <- TRUE
+```
+
+Check how many reading sessions each participant has:
+
+```{r}
+reading_session_count <- tracking_data %>%
+    group_by(UserId) %>%
+    summarise(
+        NumberOfReadingSessions = sum(IsNewReadingSession == TRUE)
+    )
+```
+
+`r sum(reading_session_count$NumberOfReadingSessions == 1)` have only one reading session, and so these participants' reading frequency is set to 0. Only `r nrow(reading_session_count)-sum(reading_session_count$NumberOfReadingSessions == 1)` participants have multiple reading sessions, allowing us to measure time in between them.
+
+Calculate a start and end time for each reading session:
+
+```{r}
+# info on reading sessions
+reading_session_durations <- tracking_data %>%
+    group_by(UserId, ReadingSessionNumber, StoryId) %>%
+    summarise(
+        FirstEventStartTime = first(DateTime),
+        LastEventStartTime = last(DateTime),
+        LastEventEndTime = (LastEventStartTime + (last(DurationMinutes) * 60)),
+        LastDaysUntilDeadline = last(TimeBeforeDeadlinesDays)
+    )
+reading_session_durations <- as.data.frame(reading_session_durations)
+```
+
+Then create TimeBetweenReadingSessions by comparing a participant's reading session start and end times. The final amount of TimeBetweenReadingSessions for participants with one reading session = 1, and for participants with multiple reading sessions = total number of reading sessions - 1
+
+```{r}
+# create a df to save TimeBetweenReadingSessions:
+reading_frequency_measure <- data.frame(
+    UserId = character(),
+    ReadingSessionNumber = numeric(),
+    TimeBetweenReadingSessions = numeric(),
+    StoryId = character(),
+    DaysUntilDeadline = numeric()
+)
+# calculate TimeBetweenReadingSessions by:
+## deduct previous reading session's end time from current session's start time, if
+### participant has more than 1 reading session and
+#### the current session is not the participants' first reading session
+reading_session_durations$ReadingSessionNumber <- as.numeric(reading_session_durations$ReadingSessionNumber)
+reading_session_durations$StoryId <- as.character(reading_session_durations$StoryId)
+y = 1
+for (user in levels(reading_session_durations$UserId)) {
+    subset_user <- subset(
+        x = reading_session_durations,
+        subset = UserId == user
+    )
+     for (row in 1:nrow(subset_user)) {
+        if (nrow(subset_user) > 1) {
+            if (row != 1) {
+                reading_frequency_measure[y, "UserId"] <- user
+                reading_frequency_measure[y, "ReadingSessionNumber"] <- subset_user[row, "ReadingSessionNumber"]
+                reading_frequency_measure[y, "TimeBetweenReadingSessions"] <- difftime(
+                    subset_user[row, "FirstEventStartTime"],
+                    subset_user[row - 1, "LastEventEndTime"],
+                    units = "mins"
+                )
+                reading_frequency_measure[y, "StoryId"] <- subset_user[row, "StoryId"]
+                reading_frequency_measure[y, "DaysUntilDeadline"] <- subset_user[row, "LastDaysUntilDeadline"]
+                y = y + 1
+            } else {
+                reading_frequency_measure[y, "UserId"] <- user
+                reading_frequency_measure[y, "ReadingSessionNumber"] <- subset_user[row, "ReadingSessionNumber"]
+                reading_frequency_measure[y, "TimeBetweenReadingSessions"] <- NA
+                reading_frequency_measure[y, "StoryId"] <- subset_user[row, "StoryId"]
+                reading_frequency_measure[y, "DaysUntilDeadline"] <- subset_user[row, "LastDaysUntilDeadline"]
+                y = y + 1
+            }
+        } else {
+                reading_frequency_measure[y, "UserId"] <- user
+                reading_frequency_measure[y, "ReadingSessionNumber"] <- subset_user[row, "ReadingSessionNumber"]
+                reading_frequency_measure[y, "TimeBetweenReadingSessions"] <- 0
+                reading_frequency_measure[y, "StoryId"] <- subset_user[row, "StoryId"]
+                reading_frequency_measure[y, "DaysUntilDeadline"] <- subset_user[row, "LastDaysUntilDeadline"]
+                y = y + 1
+    }
+}
+}
+```
+
+### Inspect reading frequency
+
+The reading frequency measure includes `r sum(!is.na(reading_frequency_measure$TimeBetweenReadingSessions))` observations (including zeros for participants with only one reading session) from `r length(unique(reading_frequency_measure$UserId))` participants.
+
+
+```{r}
+hist((reading_frequency_measure$TimeBetweenReadingSessions), breaks = 100)
+```
+
+The distribution of TimeBetweenReadingSessions is strongly skewed towards lower values.
+
+```{r}
+source("Functions/Functions_AddLine.r")
+AllEventsDays <- ggplot(reading_frequency_measure, aes(x = UserId, y = TimeBetweenReadingSessions/60/24)) +
+    geom_point() +
+    ylab("Time between reading sessions (days)") +
+    ggtitle(" A) All observations") +
+    theme_classic()
+ZoomedIntoAWeek <- ggplot(reading_frequency_measure, aes(x = UserId, y = TimeBetweenReadingSessions/60/24)) +
+    geom_point() +
+    coord_cartesian(ylim = c(0, 8)) +
+    ylab("Time between reading sessions (days)") +
+    ggtitle(addline_format("B) Zoomed:,0-7 days since previous session")) +
+    theme_classic()
+ZoomedIntoDay <- ggplot(reading_frequency_measure, aes(x = UserId, y = TimeBetweenReadingSessions/60)) +
+    geom_point() +
+    coord_cartesian(ylim = c(0, 24)) +
+    ylab("Time between reading sessions (hours)") +
+    ggtitle(addline_format("C) Zoomed:,0-24 hours since previous session")) +
+    theme_classic()
+ZoomedInto4Hours <- ggplot(reading_frequency_measure, aes(x = UserId, y = TimeBetweenReadingSessions)) +
+    geom_point() +
+    coord_cartesian(ylim = c(0, 240)) +
+    ylab("Time between reading sessions (minutes)") +
+    ggtitle(addline_format("D) Zoomed:,0-240min (4hrs) since previous session")) +
+    theme_classic()
+grid.arrange(
+    AllEventsDays,
+    ZoomedIntoAWeek,
+    ZoomedIntoDay,
+    ZoomedInto4Hours,
+    nrow = 2)
+```
+
+The average TimeBetweenReadingSessions is `r round(mean(reading_frequency_measure$TimeBetweenReadingSessions, na.rm = TRUE), 2)` minutes (corresponding to `r round(mean(reading_frequency_measure$TimeBetweenReadingSessions, na.rm = TRUE)/60/24, 2)` days), *SD* = `r round(sd(reading_frequency_measure$TimeBetweenReadingSessions, na.rm = TRUE), 2)`minutes (*SD* = `r round(sd(reading_frequency_measure$TimeBetweenReadingSessions, na.rm = TRUE)/60/24, 2)` days). TimeBetweenReadingSessions values range from `r min(reading_frequency_measure$TimeBetweenReadingSessions, na.rm = TRUE)`minutes - `r round(max(reading_frequency_measure$TimeBetweenReadingSessions, na.rm = TRUE)/60/24, 2)`days.
+
+## Save reading frequency for use in analysis
+
+reading_frequency_measure is saved for usage in analysis (see Analysis_ReadingFrequencyModel.rmd in Analysis folder). The data has already been saved, and so the following code is not run:
+
+```{r 'save reading frequency data', eval=FALSE, echo=TRUE}
+write.csv2(reading_frequency_measure,
+    "reading_frequency_data.csv"
+)
+```
