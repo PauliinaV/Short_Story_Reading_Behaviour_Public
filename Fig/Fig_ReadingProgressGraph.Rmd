@@ -1,0 +1,1223 @@
+---
+title: "Fig_ReadingProgressGraph"
+author: "Pauliina Vuorinen"
+date: "26/09/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+# Introduction
+
+The purpose of this script is to create graphs about participants' reading progress during the study. We plot reading location in text on the x-axis and time on the y-axis, with participants' reading locations connected with lines in the graph. These graphs can tell us how linearly participants read the short story during the study and how far in the text the participants read.
+
+## Setup
+
+```{r 'load packages'}
+library(dplyr)
+library(tidyverse)
+library(gridExtra)
+```
+
+## Load data
+
+To create the timelines we use tracking data in which navigation blocks have been grouped together. This dataset was created and saved in Prep_TrackingDataWrangling.Rmd in Prep folder.
+
+```{r 'load data'}
+grouped_navigation_blocks_data <-
+    read.csv(
+        "Data/wrangled_grouped_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+grouped_navigation_blocks_data <- select(grouped_navigation_blocks_data, -X)
+```
+
+
+```{r 'change variable types'}
+str(grouped_navigation_blocks_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+grouped_navigation_blocks_data[, c(
+    "UserId",
+    "StoryId",
+    "Direction",
+    "NavigationBlockDirection"
+)] <- convert.magic(
+    grouped_navigation_blocks_data[, c(
+        "UserId",
+        "StoryId",
+        "Direction",
+        "NavigationBlockDirection"
+    )],
+    "factor"
+)
+## fix numeric columns that were automatically categorised as character
+grouped_navigation_blocks_data[, c(
+    "BaselineSpeed",
+    "DurationMinutes",
+    "ReadingBlockDuration",
+    "EngagedReadingDuration",
+    "EngagedReadingSpeed",
+    "NavigationBlockDuration",
+    "TimeBeforeDeadlinesDays",
+    "NBEndLocation",
+    "NBDuration"
+)] <- convert.magic(
+    grouped_navigation_blocks_data[, c(
+        "BaselineSpeed",
+        "DurationMinutes",
+        "ReadingBlockDuration",
+        "EngagedReadingDuration",
+        "EngagedReadingSpeed",
+        "NavigationBlockDuration",
+        "TimeBeforeDeadlinesDays",
+        "NBEndLocation",
+        "NBDuration"
+    )],
+    "numeric"
+)
+## turn reading block (page view) number,
+### reading session number, and
+#### navigation block number into ordered factors
+grouped_navigation_blocks_data[, c(
+    "ReadingBlockNumber",
+    "ReadingSessionNumber",
+    "NavigationBlockNumber"
+)] <- convert.magic(
+    grouped_navigation_blocks_data[, c(
+        "ReadingBlockNumber",
+        "ReadingSessionNumber",
+        "NavigationBlockNumber"
+    )],
+    "ordered"
+)
+## fix logical variables
+grouped_navigation_blocks_data[, c(
+    "IsBlurred",
+    "IsDialogOpen",
+    "IsMenuOpen",
+    "IsInactive",
+    "IsReading",
+    "IsPageOpen"
+)] <- convert.magic(
+    grouped_navigation_blocks_data[, c(
+        "IsBlurred",
+        "IsDialogOpen",
+        "IsMenuOpen",
+        "IsInactive",
+        "IsReading",
+        "IsPageOpen"
+    )],
+    "logical"
+)
+
+## fix date and time variable types
+grouped_navigation_blocks_data$Date <-
+    as.Date(
+        grouped_navigation_blocks_data$Date,
+        format = "%Y-%m-%d"
+    )
+TempTimeObject <- strsplit(grouped_navigation_blocks_data$Time, " ")
+TempTimeObject <- sapply(TempTimeObject, "[[", 2)
+grouped_navigation_blocks_data$TempTimeObject <- TempTimeObject
+grouped_navigation_blocks_data <- dplyr::select(grouped_navigation_blocks_data, -Time)
+names(grouped_navigation_blocks_data)[which(colnames(grouped_navigation_blocks_data) == "TempTimeObject")] <- "Time"
+grouped_navigation_blocks_data$DateTime <- paste(
+    grouped_navigation_blocks_data$Date,
+    grouped_navigation_blocks_data$Time
+)
+op <-
+    options(digits.secs = 3)
+grouped_navigation_blocks_data$Time <-
+    strptime(
+        grouped_navigation_blocks_data$Time,
+        format = "%H:%M:%OS"
+    )
+grouped_navigation_blocks_data <- grouped_navigation_blocks_data %>%
+    mutate(DateTime = as.POSIXct(DateTime, format = "%Y-%m-%d %H:%M:%OS"))
+```
+
+Sort the dataset:
+
+```{r 'order df'}
+# order by User, date, time and event id
+grouped_navigation_blocks_data <-
+    grouped_navigation_blocks_data[
+        with(
+            grouped_navigation_blocks_data,
+            order(UserId, Date, Time)
+        ),
+    ]
+```
+
+## Create a new dataset for the graph
+
+To create the plot, we remove all events that don't show engaged reading. Therefore, any events with no visible characters, and of which engagement type is 'Disengagement' or 'Dialog', are removed. We then calculate the cumulative engagement duration for these events and transform the dataset into longer format.
+
+First, we create a variable that shows location in percentages at the beginning and end of each navigation block.
+
+```{r}
+grouped_navigation_blocks_data$NBFirstPercentage <- (
+    grouped_navigation_blocks_data$NBFirstStartLocation
+        / grouped_navigation_blocks_data$ChLength
+)
+grouped_navigation_blocks_data$NBLastPercentage <- (
+    grouped_navigation_blocks_data$NBEndLocation
+        / grouped_navigation_blocks_data$ChLength
+)
+```
+
+Next, we create the subset dataset. We want to remove events with no visible characters and events that are disengagements or dialog events. We then count cumulative duration for these events. The dataset is then reorganised into a longer format in which the first location in a navigation block is differentiated from the last location in a navigation block. Therefore, each navigation block is turned into two events.
+
+```{r 'dataset for graph'}
+graph_subset_data <- grouped_navigation_blocks_data %>%
+    filter(
+        (VisibleCharacterCount != 0) &
+            (Engagement != "Disengagement") &
+            (Engagement != "Dialog")
+    ) %>%
+    group_by(UserId) %>%
+    mutate(
+        CumulativeDuration = cumsum(NBDuration)
+    ) %>%
+    pivot_longer(c(NBFirstPercentage, NBLastPercentage),
+        names_to = "Point",
+        values_to = "Per"
+    ) %>%
+    select(
+        UserId,
+        StoryId,
+        DateTime,
+        NavigationBlockNumber,
+        Condition,
+        Date,
+        Time,
+        Point,
+        Per,
+        CumulativeDuration,
+        ChLength
+    )
+```
+
+We then create tests that will be useful:
+
+```{r 'add tests'}
+# order by User, date, time and event id
+graph_subset_data <-
+    graph_subset_data[
+        with(
+            graph_subset_data,
+            order(UserId, Date, Time)
+        ),
+    ]
+# create tests
+graph_subset_data$IsNewUser <- (
+    graph_subset_data$UserId != lag(graph_subset_data$UserId, 1)
+)
+# set the first IsNewUser value to TRUE
+graph_subset_data[is.na(graph_subset_data$IsNewUser), ]$IsNewUser <- TRUE
+```
+
+Finally, we create a duration variable that is used in the plot.
+
+```{r}
+# order by User, date, time and event id
+graph_subset_data <-
+    graph_subset_data[
+        with(
+            graph_subset_data,
+            order(UserId, Date, Time)
+        ),
+    ]
+# Calculate durations for graph
+graph_subset_data$GraphDuration <- ifelse(
+    # a navigation block from a new user
+    (graph_subset_data$Point == "NBFirstPercentage" &
+        graph_subset_data$IsNewUser),
+    0,
+    ifelse(
+        # a navigation block from the same user as previous
+        (graph_subset_data$Point == "NBFirstPercentage" &
+            !graph_subset_data$IsNewUser),
+        lag(graph_subset_data$CumulativeDuration, 1),
+        ifelse(
+            # the last event in a navigation block
+            graph_subset_data$Point == "NBLastPercentage",
+            graph_subset_data$CumulativeDuration,
+            NA
+        )
+    )
+)
+```
+
+## Progress graph
+
+We create multiple different versions of the progress graph in this section
+(1) A progress graph for each participant, arranged together to save space (saved as Fig_ProgressGraphGroupedByParticipant.png)
+(2) A progress graph for participants in the high-autonomy and low-autonomy conditions (saved as Fig_ProgressGraphGroupedByCondition.png)
+(3) Progress graphs for participants in each short story group, with a chronological abline (saved as Fig_ProgressGraphGroupedByStory.png)
+
+### 1. A progress graph for each participant
+
+```{r 'data for graph1'}
+Graph1a <- ggplot(
+    graph_subset_data,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for graph1'}
+Graph1b <- Graph1a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        x = "Cumulative time spent reading (min)",
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    facet_wrap(~UserId) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'formatting of graph1'}
+Graph1c <- Graph1b +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        legend.position = "none",
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 20, hjust = .5),
+        strip.text.x = element_blank()
+    )
+```
+
+```{r 'flip coordinates and print graph1', warning=FALSE}
+Graph1d <- Graph1c +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph1d
+```
+
+We then save the progress graph grouped by participant indicator. The figure has already been saved and so the below code is not run. The figure can be found in Fig folder as Fig_ProgressGraphGroupedByParticipant.png
+
+```{r, eval=FALSE}
+ggsave(
+    "Fig_ProgressGraphGroupedByParticipant.png",
+    plot = Graph1d,
+    width = 27,
+    height = 20,
+    units = "cm",
+    dpi = 300
+)
+```
+
+### 2. A progress graph for participants in the high-autonomy and low-autonomy conditions
+
+```{r 'data for graph2'}
+Graph2a <- ggplot(
+    graph_subset_data,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'new labels for condition'}
+graph_subset_data <- graph_subset_data %>%
+    # Rename Conditions
+    mutate(
+        Condition = recode(
+            Condition,
+            "AutonomousCondition" = "High-Autonomy Condition",
+            "NonAutonomousCondition" = "Low-Autonomy Condition"
+        )
+    )
+```
+
+```{r 'setup for graph2'}
+Graph2b <- Graph2a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        x = "Cumulative time spent reading (min)",
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    facet_wrap(~Condition) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'formatting of graph2'}
+Graph2c <- Graph2b +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        legend.position = "none",
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        strip.background = element_blank(),
+        plot.title = element_text(size = 20, hjust = .5),
+        strip.text = element_text(size = 16)
+    )
+```
+
+```{r 'flip coordinates and print graph2', warning=FALSE}
+Graph2d <- Graph2c +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph2d
+```
+
+We then save the progress graph grouped by condition. The figure has already been saved and so the below code is not run. The figure can be found in Fig folder as Fig_ProgressGraphGroupedByCondition.png
+
+```{r, eval=FALSE}
+ggsave(
+    "Fig_ProgressGraphGroupedByCondition.png",
+    plot = Graph2d,
+    width = 20,
+    height = 20,
+    units = "cm",
+    dpi = 300
+)
+```
+
+### 3. Progress graphs for participants in each short story group
+
+A progress graph is created for each short story group separately so that we can add a chronological line to which linearity can be compared.
+
+The following function will be needed for all story progress graphs:
+
+```{r}
+source("Functions/Functions_AddLine.R")
+```
+
+#### StoryId 1
+
+```{r 'storyId 1 subset'}
+StoryId1 <- filter(graph_subset_data, StoryId == "1")
+```
+
+```{r 'data for story1'}
+Graph31a <- ggplot(
+    StoryId1,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story1'}
+Graph31b <- Graph31a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 1",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story1'}
+ChronologicalAblineStoryId1 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId1$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story1'}
+Graph31c <- Graph31b +
+    geom_abline(
+        data = ChronologicalAblineStoryId1,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph2'}
+Graph31d <- Graph31c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        legend.position = "none",
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph2', warning=FALSE}
+Graph31e <- Graph31d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph31e
+```
+
+#### StoryId 2
+
+```{r 'storyId 2 subset'}
+StoryId2 <- filter(graph_subset_data, StoryId == "2")
+```
+
+```{r 'data for story2'}
+Graph32a <- ggplot(
+    StoryId2,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story2'}
+Graph32b <- Graph32a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 2",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story2'}
+ChronologicalAblineStoryId2 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId2$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story2'}
+Graph32c <- Graph32b +
+    geom_abline(
+        data = ChronologicalAblineStoryId2,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 2'}
+Graph32d <- Graph32c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story2', warning=FALSE}
+Graph32e <- Graph32d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph32e
+```
+
+#### StoryId 3
+
+```{r 'storyId 3 subset'}
+StoryId3 <- filter(graph_subset_data, StoryId == "3")
+```
+
+```{r 'data for story3'}
+Graph33a <- ggplot(
+    StoryId3,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story3'}
+Graph33b <- Graph33a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 3",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story3'}
+ChronologicalAblineStoryId3 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId3$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story3'}
+Graph33c <- Graph33b +
+    geom_abline(
+        data = ChronologicalAblineStoryId3,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 3'}
+Graph33d <- Graph33c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story3', warning=FALSE}
+Graph33e <- Graph33d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph33e
+```
+
+#### StoryId 4
+
+```{r 'storyId 4 subset'}
+StoryId4 <- filter(graph_subset_data, StoryId == "4")
+```
+
+```{r 'data for story4'}
+Graph34a <- ggplot(
+    StoryId4,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story4'}
+Graph34b <- Graph34a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 4",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story4'}
+ChronologicalAblineStoryId4 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId4$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story4'}
+Graph34c <- Graph34b +
+    geom_abline(
+        data = ChronologicalAblineStoryId4,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 4'}
+Graph34d <- Graph34c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story4', warning=FALSE}
+Graph34e <- Graph34d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph34e
+```
+
+#### StoryId 5
+
+```{r 'storyId 5 subset'}
+StoryId5 <- filter(graph_subset_data, StoryId == "5")
+```
+
+```{r 'data for story5'}
+Graph35a <- ggplot(
+    StoryId5,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story5'}
+Graph35b <- Graph35a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 5",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story5'}
+ChronologicalAblineStoryId5 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId5$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story5'}
+Graph35c <- Graph35b +
+    geom_abline(
+        data = ChronologicalAblineStoryId5,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 5'}
+Graph35d <- Graph35c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story5', warning=FALSE}
+Graph35e <- Graph35d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph35e
+```
+
+#### StoryId 6
+
+```{r 'storyId 6 subset'}
+StoryId6 <- filter(graph_subset_data, StoryId == "6")
+```
+
+```{r 'data for story6'}
+Graph36a <- ggplot(
+    StoryId6,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story5'}
+Graph36b <- Graph36a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 6",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story5'}
+ChronologicalAblineStoryId6 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId6$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story6'}
+Graph36c <- Graph36b +
+    geom_abline(
+        data = ChronologicalAblineStoryId6,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 6'}
+Graph36d <- Graph36c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story6', warning=FALSE}
+Graph36e <- Graph36d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph36e
+```
+
+#### StoryId 7
+
+```{r 'storyId 7 subset'}
+StoryId7 <- filter(graph_subset_data, StoryId == "7")
+```
+
+```{r 'data for story7'}
+Graph37a <- ggplot(
+    StoryId7,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story7'}
+Graph37b <- Graph37a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 7",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story7'}
+ChronologicalAblineStoryId7 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId7$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story7'}
+Graph37c <- Graph37b +
+    geom_abline(
+        data = ChronologicalAblineStoryId7,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 7'}
+Graph37d <- Graph37c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story7', warning=FALSE}
+Graph37e <- Graph37d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph37e
+```
+
+#### StoryId 8
+
+```{r 'storyId 8 subset'}
+StoryId8 <- filter(graph_subset_data, StoryId == "8")
+```
+
+```{r 'data for story8'}
+Graph38a <- ggplot(
+    StoryId8,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story8'}
+Graph38b <- Graph38a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 8",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story8'}
+ChronologicalAblineStoryId8 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId8$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story8'}
+Graph38c <- Graph38b +
+    geom_abline(
+        data = ChronologicalAblineStoryId8,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 8'}
+Graph38d <- Graph38c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story8', warning=FALSE}
+Graph38e <- Graph38d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph38e
+```
+
+#### StoryId 9
+
+```{r 'storyId 9 subset'}
+StoryId9 <- filter(graph_subset_data, StoryId == "9")
+```
+
+```{r 'data for story9'}
+Graph39a <- ggplot(
+    StoryId9,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r 'setup for story9'}
+Graph39b <- Graph39a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        title = "Story 9",
+        x = addline_format("Cumulative time spent,reading (min)"),
+    ) +
+    coord_cartesian(xlim = c(0, 150), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 50, 100))
+```
+
+```{r 'calculate abline story9'}
+ChronologicalAblineStoryId9 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId9$ChLength) / 5) / 250)),
+    "label" = "Chronological"
+)
+```
+
+```{r 'add abline story9'}
+Graph39c <- Graph39b +
+    geom_abline(
+        data = ChronologicalAblineStoryId9,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label,
+            linetype = "longdash"
+        ),
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r 'formatting of graph3 story 9'}
+Graph39d <- Graph39c +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_line(
+            colour = "#a6a6a6",
+            size = 0.1,
+            linetype = "solid"
+        ),
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 15),
+        plot.title = element_text(size = 20, hjust = .5)
+    )
+```
+
+```{r 'flip coordinates and print graph3 story9', warning=FALSE}
+Graph39e <- Graph39d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 130)
+    )
+Graph39e
+```
+
+##### Combine Story Graphs
+
+We combine the story graphs into one graph
+
+```{r}
+StoryGraph <- grid.arrange(
+    Graph31e,
+    Graph32e,
+    Graph33e,
+    Graph34e,
+    Graph35e,
+    Graph36e,
+    Graph37e,
+    Graph38e,
+    Graph39e,
+    ncol = 2
+)
+```
+
+We then save the story progress graph. The below code has already been run and the figure can be found as in Fig folder as Fig_ProgressGraphGroupedByStory.png
+
+```{r eval=FALSE}
+ggsave(
+    "Fig_ProgressGraphGroupedByStory.png",
+    plot = StoryGraph,
+    width = 20,
+    height = 50,
+    units = "cm",
+    dpi = 300
+)
+```
