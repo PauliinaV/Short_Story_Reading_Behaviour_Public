@@ -150,6 +150,7 @@ AllStories <- data.frame(
     NumberOfWords = NA,
     NumberOfSentences = NA,
     AverageSentenceLength = NA,
+    SDSentenceLength = NA,
     Story = StoryText
 )
 ```
@@ -210,6 +211,7 @@ NinthStory <- data.frame(
     NumberOfWords = 1608,
     NumberOfSentences = NA,
     AverageSentenceLength = NA,
+    SDSentenceLength = NA,
     Story = NA
 )
 AllStories <- rbind(
@@ -262,6 +264,9 @@ for (story in 1:length(AuthorList)) {
     AllStories[AllStories$Author == AuthorList[story], "AverageSentenceLength"] <- mean(
         sentences_data$NumberOfWords
     )
+    AllStories[AllStories$Author == AuthorList[story], "SDSentenceLength"] <- sd(
+        sentences_data$NumberOfWords
+    )
 }
 ```
 
@@ -270,6 +275,7 @@ Sentence information for the ninth story were calculated separately. We add this
 ```{r}
 AllStories[AllStories$Author == "Unnamed", "NumberOfSentences"] <- 460
 AllStories[AllStories$Author == "Unnamed", "AverageSentenceLength"] <- 16.2283
+AllStories[AllStories$Author == "Unnamed", "SDSentenceLength"] <- 11.7276
 ```
 
 The average number of sentences in a story is `r round(mean(AllStories$NumberOfSentences), 2)` and the average number of words in a sentence is `r round(mean(AllStories$AverageSentenceLength), 2)`
