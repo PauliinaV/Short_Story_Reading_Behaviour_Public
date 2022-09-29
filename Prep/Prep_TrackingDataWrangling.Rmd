@@ -231,27 +231,34 @@ The excessive durations are adjusted by creating new variables:
     * Set to 5 minutes for engagement events and to 0 for non-engagement events.
     * If an event is not the last event in a reading session or an excessive engagement duration, the event duration does not need to be adjusted and so AdjustedEventDuration = DurationMinutes
 
-```{r, adjustments to event durations}
-raw_tracking_data$AdjustedEventDuration <-
-    ifelse(
-        ((raw_tracking_data$Engagement == "Engagement") &
-            (raw_tracking_data$DurationMinutes > 5.1)),
-        5,
-        ifelse(
-            ((raw_tracking_data$IsLastEventInReadingSession &
-                raw_tracking_data$Engagement != "Engagement")),
-            0,
-            raw_tracking_data$DurationMinutes
-        )
-    )
+```{r 'adjustments to event durations'}
+for (row in 1:nrow(raw_tracking_data)) {
+    if (raw_tracking_data[row, "Engagement"] == "Engagement" &
+        raw_tracking_data[row, "DurationMinutes"] > 5.1) {
+        # excessive engagement duration
+        raw_tracking_data[row, "AdjustedEventDuration"] <- 5
+        raw_tracking_data[row, "IsAdjustedDuration"] <- TRUE
+    } else if (raw_tracking_data[row, "Engagement"] != "Engagement" &
+        raw_tracking_data[row, "IsLastEventInReadingSession"]) {
+        # excessive non-engagement duration
+        raw_tracking_data[row, "AdjustedEventDuration"] <- 0
+        raw_tracking_data[row, "IsAdjustedDuration"] <- TRUE
+    } else {
+        raw_tracking_data[row, "AdjustedEventDuration"] <-
+            raw_tracking_data[row, "DurationMinutes"]
+        raw_tracking_data[row, "IsAdjustedDuration"] <- FALSE
+    }
+}
 ```
 
 ```{r, check AdjustedEventDuration 1/2}
-table(raw_tracking_data$DurationMinutes !=
-    raw_tracking_data$AdjustedEventDuration)
+table(
+    raw_tracking_data$IsAdjustedDuration,
+    raw_tracking_data$Engagement
+)
 ```
 
-The above code shows that `r sum(raw_tracking_data$DurationMinutes != raw_tracking_data$AdjustedEventDuration)` event durations were adjusted.
+The above code shows that `r sum(raw_tracking_data$IsAdjustedDuration)` event durations were adjusted.
 
 Next:
 
@@ -673,7 +680,8 @@ artefacts_removed_tracking_data <- merge(
     by = "StoryId"
 )
 artefacts_removed_tracking_data$Percentage <- (
-    artefacts_removed_tracking_data$StartLocation / artefacts_removed_tracking_data$ChLength
+    artefacts_removed_tracking_data$StartLocation
+        / artefacts_removed_tracking_data$CharacterLength
 )
 ```
 
