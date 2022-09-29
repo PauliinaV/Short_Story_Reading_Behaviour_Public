@@ -1,0 +1,232 @@
+---
+title: "Prep_TaskSwitchingMeasure"
+author: "Pauliina Vuorinen"
+date: "29/09/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to create a measure of task switching frequency. This measure is analysed by modelling in Analysis_TaskSwitchingModel.rmd in Analysis folder.
+
+Task switching refers to the frequency of disengaging from the text. This is in contrast to multitasking, which refers to concurrent engagement in two different activities. Disengagements can be captured with the e-reader system when the reader unfocuses the e-reader system or opens one of the pop-ups on the page which masks the text.
+
+The data includes engagement types for all events, which tell us whether the e-reader was unfocused ('disengagement'), the menu or information sheet was open with the text masked ('dialog'), the participant was engaged in reading for less than 15 seconds ('disrupted engagement'), or engaged in reading the text ('engagement'). See more information on engagement types in the Info folder. For the purposes of this measure, we will treat all other engagement types as 'disengagements' than engagements. Furthermore, slow reading was treated as a disengagement in the task-switching measure. Previous studies have indicated that reading is unlikely to be slower than 100 words per minute when the text is fixated on and the reader is not multitasking [XX]. As a result, slow reading may be caused by a multitude of factors, such as mindwandering, multitasking, or task switching (see more information in the Info folder).
+
+In order to capture individual variance in task switching frequency, we pursued to create a measure that has more nuance than the count of disengagements. Therefore, we measure continuous engagement duration as a measure of task switching frequency. This measure indicates for how long participants engaged in reading continuously before disengaging from the text. Accordingly, a short continuous engagement duration was expected to tell us of more frequent task switching than longer continuous engagement durations.
+
+**Information on hypotheses:**
+We expected situational autonomous motivation to be connected to less frequent task switching. Therefore, participants who were situationally motivated (or rather, in the high-autonomy condition) to read the book should have longer continuous engagement durations during the study.
+
+Similarly, contextual autonomous motivation was expected to be connected to longer continuous engagement durations. Avid readers' enjoyment of reading as an activity should encourage them to task switch less often, resulting in long continuous engagements.
+
+Finally, task-relevant electronic reading experience was expected to be connected to less frequent task switching. Participants who are more familiar with using the electronic reading platforms should feel more at ease about reading on the e-reader, and thus, they should be more likely to read for longer continuous periods.
+
+## Setup
+
+```{r 'setup'}
+library(tidyverse)
+library(dplyr)
+```
+
+## Load data and check variable types
+
+We use a dataset that was created and saved at the end of Prep_TrackingDataWrangling.rmd:
+
+```{r 'load data'}
+tracking_data <-
+    read.csv(
+        "Data/wrangled_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+tracking_data <- select(tracking_data, -X, -X.1)
+```
+
+
+```{r 'change variable types'}
+str(tracking_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+tracking_data[, c(
+    "UserId",
+    "StoryId",
+    "Direction",
+    "NavigationBlockDirection"
+)] <- convert.magic(
+    tracking_data[, c(
+        "UserId",
+        "StoryId",
+        "Direction",
+        "NavigationBlockDirection"
+    )],
+    "factor"
+)
+## fix numeric columns that were automatically categorised as character
+tracking_data[, c(
+    "BaselineSpeed",
+    "DurationMinutes",
+    "ReadingBlockDuration",
+    "EngagedReadingDuration",
+    "EngagedReadingSpeed",
+    "NavigationBlockDuration",
+    "TimeBeforeDeadlinesDays"
+)] <- convert.magic(
+    tracking_data[, c(
+        "BaselineSpeed",
+        "DurationMinutes",
+        "ReadingBlockDuration",
+        "EngagedReadingDuration",
+        "EngagedReadingSpeed",
+        "NavigationBlockDuration",
+        "TimeBeforeDeadlinesDays"
+    )],
+    "numeric"
+)
+## turn reading block (page view) number,
+### reading session number, and
+#### navigation block number into ordered factors
+tracking_data[, c(
+    "ReadingBlockNumber",
+    "ReadingSessionNumber",
+    "NavigationBlockNumber"
+)] <- convert.magic(
+    tracking_data[, c(
+        "ReadingBlockNumber",
+        "ReadingSessionNumber",
+        "NavigationBlockNumber"
+    )],
+    "ordered"
+)
+## fix logical variables
+tracking_data[, c(
+    "IsBlurred",
+    "IsDialogOpen",
+    "IsMenuOpen",
+    "IsInactive",
+    "IsReading",
+    "IsPageOpen"
+)] <- convert.magic(
+    tracking_data[, c(
+        "IsBlurred",
+        "IsDialogOpen",
+        "IsMenuOpen",
+        "IsInactive",
+        "IsReading",
+        "IsPageOpen"
+    )],
+    "logical"
+)
+
+## fix date and time variable types
+tracking_data$Date <-
+    as.Date(
+        tracking_data$Date,
+        format = "%Y-%m-%d"
+    )
+TempTimeObject <- strsplit(tracking_data$Time, " ")
+TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+tracking_data$TempTimeObject <- TempTimeObject
+tracking_data <- dplyr::select(tracking_data, -Time)
+names(tracking_data)[which(colnames(tracking_data) == "TempTimeObject")] <- "Time"
+tracking_data$DateTime <- paste(
+    tracking_data$Date,
+    tracking_data$Time
+)
+op <-
+    options(digits.secs = 3)
+tracking_data$Time <-
+    strptime(
+        tracking_data$Time,
+        format = "%H:%M:%OS"
+    )
+tracking_data <- tracking_data %>%
+    mutate(DateTime = as.POSIXct(DateTime, format = "%Y-%m-%d %H:%M:%OS"))
+```
+
+## Task switching measure
+
+We use 'EngagementTypeId' and 'ContinuousEngagementMinutes' to compute continuous engagement duration. These variables were created in Prep_TrackingDataWrangling.rmd, and so they are already in the tracking_data.
+
+```{r}
+taskswitching_measure_data <- tracking_data %>%
+    filter(Engagement == "Engagement") %>%
+    filter(EngagedSpeedLabel != "SlowReading") %>%
+    group_by(
+        UserId,
+        StoryId,
+        EngagementTypeId,
+        Engagement,
+        ReadingSessionNumber) %>%
+    summarise(
+        ContinuousEngagementMinutes = first(ContinuousEngagementMinutes),
+        ContinuousEngagementSeconds = first(ContinuousEngagementSeconds),
+        FirstCumulativeRSTime = first(CumulativeRSTime),
+        LastCumulativeRSTime = last(CumulativeRSTime),
+        FirstPercentageLocation = first(Percentage),
+        LastPercentageLocation = last(Percentage),
+        DaysUntilDeadline = last(TimeBeforeDeadlinesDays)) %>%
+    mutate(
+        PercentageLocationMoved = (LastPercentageLocation - FirstPercentageLocation)
+    )
+```
+
+Visualise the distribution of continuous engagement duration:
+
+```{r}
+# in minutes
+hist(taskswitching_measure_data$ContinuousEngagementMinutes, breaks = 200)
+# in seconds
+hist(taskswitching_measure_data$ContinuousEngagementSeconds, breaks = 200)
+```
+
+Continuous engagement duration is skewed towards lower values, and so in modelling it could benefit from a log-transformation:
+
+```{r}
+# in minutes
+hist(log(taskswitching_measure_data$ContinuousEngagementMinutes), breaks = 200)
+# in seconds
+hist(log(taskswitching_measure_data$ContinuousEngagementSeconds), breaks = 200)
+```
+
+We then look at summary statistics for continuous engagement duration:
+
+```{r}
+mean(taskswitching_measure_data$ContinuousEngagementMinutes)
+sd(taskswitching_measure_data$ContinuousEngagementMinutes)
+range(taskswitching_measure_data$ContinuousEngagementMinutes)
+```
+
+The average continuous engagement is `r round(mean(taskswitching_measure_data$ContinuousEngagementMinutes), 2)` minutes long (*SD* = `r round(sd(taskswitching_measure_data$ContinuousEngagementMinutes), 2)`, *range* = `r round(min(taskswitching_measure_data$ContinuousEngagementSeconds), 2)` seconds - `r round(max(taskswitching_measure_data$ContinuousEngagementMinutes)/60, 2)`hours).
+
+Visualise participant variation:
+
+```{r}
+ggplot(taskswitching_measure_data, aes(x = UserId, y = ContinuousEngagementMinutes)) +
+    geom_point() +
+    theme_classic()
+```
+
+Most participants have continuous engagement durations that are shorter than an hour. We zoom into the first 60minutes to see this variance in a plot:
+
+```{r}
+ggplot(taskswitching_measure_data, aes(x = UserId, y = ContinuousEngagementMinutes)) +
+    geom_point() +
+    coord_cartesian(ylim = c(0, 60)) +
+    theme_classic()
+```
+
+Indeed, the majority of continuous engagement seem to fall under 30 minutes.
+
+## Save task switching measure for use in analysis
+
+taskswitching_measure_data is saved for usage in analysis (see Analysis_TaskSwitchingModel.rmd in Analysis folder). The data has already been saved, and so the following code is not run:
+
+```{r 'save task switching data', eval=FALSE, echo=TRUE}
+write.csv2(taskswitching_measure_data,
+    "task_switching_data.csv"
+)
+```
