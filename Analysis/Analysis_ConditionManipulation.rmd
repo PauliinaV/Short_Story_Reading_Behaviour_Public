@@ -1,0 +1,285 @@
+---
+title: "Analysis_ConditionManipulation"
+author: "Pauliina Vuorinen"
+date: "04/10/2022-"
+output: html_document
+#library: "S2_code_library.bib"
+---
+
+# Introduction
+
+* We manipulated autonomy in text selection
+* High-autonomy and low-autonomy condition
+
+## Hypothesis
+
+H1: Participants in the high-autonomy condition experience more situational autonomous motivation compared to participants in the low-autonomy condition.
+
+# Setup
+
+```{r 'load packages'}
+library(tidyverse)
+library(dplyr)
+library(psych)
+```
+
+## Load data
+
+Load in the tracking_data dataset:
+
+```{r 'load data'}
+tracking_data <-
+    read.csv(
+        "./Data/wrangled_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+tracking_data <- dplyr::select(tracking_data, -X, -X.1) # remove row numbers
+```
+
+Create a new dataframe from tracking_data that shows each participants' condition:
+
+```{r 'create condition_data'}
+condition_data <- tracking_data %>%
+    group_by(UserId, StoryId) %>%
+    summarise(
+        Condition = first(Condition)
+    )
+```
+
+Re-name condition names to follow convention used in the manuscript:
+
+```{r 'change condition labels'}
+condition_data$Condition <- ifelse(
+    condition_data$Condition == "AutonomousCondition",
+    "HighAutonomyCondition",
+    "LowAutonomyCondition"
+)
+```
+
+We then load in questionnaire data:
+
+```{r 'load predictors: questionnaires'}
+# IMI
+IMI_scores <-
+    read.csv(
+        "./Data/IMI_scores.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+IMI_scores <- dplyr::select(IMI_scores, -X) # remove row numbers
+# IMI-R
+IMIR_scores <-
+    read.csv(
+        "./Data/IMIR_scores.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+IMIR_scores <- dplyr::select(IMIR_scores, -X) # remove row numbers
+# Electronic experience
+eexp_scores <-
+    read.csv(
+        "./Data/eexp_scores.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+eexp_scores <- dplyr::select(eexp_scores, -X) # remove row numbers
+# demographic information
+demographics_data <-
+    read.csv(
+        "./Data/demographics_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+demographics_data <- dplyr::select(demographics_data, -X) # remove row numbers
+```
+
+Merge the datasets together:
+
+We then merge these dataframes together:
+
+```{r 'merge dfs'}
+# measure and IMI
+condition_data <- merge(
+    condition_data,
+    IMI_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and IMI-R
+condition_data <- merge(
+    condition_data,
+    IMIR_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and EEXP
+condition_data <- merge(
+    condition_data,
+    eexp_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and demographic information
+condition_data <- merge(
+    condition_data,
+    demographics_data,
+    all.x = TRUE,
+    by = "UserId"
+)
+```
+
+## Change variable types
+
+```{r 'change variable types'}
+str(condition_data)
+source("./Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+condition_data[, c(
+    "UserId",
+    "StoryId",
+    "Condition"
+)] <- convert.magic(
+    condition_data[, c(
+        "UserId",
+        "StoryId",
+        "Condition"
+    )],
+    "factor"
+)
+```
+
+# Assess the impact of condition on autonomy
+
+Participants were evenly divided in the two conditions (*n*~High-Autonomy~ = `r sum(condition_data$Condition == "HighAutonomyCondition")`, *n*~Low-Autonomy~ = `r sum(condition_data$Condition == "LowAutonomyCondition")`).
+
+We expected that condition manipulation would result in differences in participants' perceived autonomy. This situational autonomy was measured with SAutonomy from IMI.
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = SAutonomy)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+The boxplot indicates that participants in the high-autonomy condition may have felt slightly more autonomous than participants in the low-autonomy condition.
+
+We test this with a t-test:
+
+```{r}
+ConditionAutonomyTest <- t.test(
+    condition_data$SAutonomy ~
+        condition_data$Condition
+)
+ConditionAutonomyTest
+```
+
+Indeed, the t-test indicates that our condition manipulation was successful. Participants in the high-autonomy condition (*M* = `r round(mean(condition_data[condition_data$Condition == "HighAutonomyCondition", "SAutonomy"]), 2)`, *SD* = `r round(sd(condition_data[condition_data$Condition == "HighAutonomyCondition", "SAutonomy"]), 2)`) had significantly higher scores on the perceived autonomy subscale of IMI, compared to participants in the low-autonomy condition (*M* = `r round(mean(condition_data[condition_data$Condition == "LowAutonomyCondition", "SAutonomy"]), 2)`, *SD* = `r round(sd(condition_data[condition_data$Condition == "LowAutonomyCondition", "SAutonomy"]), 2)`), *t*(`r round(ConditionAutonomyTest$parameter, 2)`) = `r round(ConditionAutonomyTest$statistic, 3)`, *p* = `r substr(round(ConditionAutonomyTest$p.value, 3), 2, 5)`.
+
+# Assess the impact of condition on situational motivation
+
+We expected that the autonomy manipulation would have affect participants' situational reading motivation during the study (H1 in manuscript). Participants in the high-autonomy condition should therefore have a higher situational interest score (measured via IMI, 'SInterest' reflects the extent of intrinsic motivation in IMI and thus it is used as a measure of situational motivation) than participants in the low-autonomy condition.
+
+To test this hypothesis, we first visualise the relationship:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = SInterest)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+The plot indicates that participants' in the high-autonomy condition may have experienced higher situational motivation than participants in the low-autonomy condition.
+
+We assess this with a t-test:
+
+```{r}
+ConditionMotivationTest <- t.test(
+    condition_data$SInterest ~
+        condition_data$Condition
+)
+ConditionMotivationTest
+```
+
+The t-test indicates that participants in the high-autonomy condition (*M* = `r round(mean(condition_data[condition_data$Condition == "HighAutonomyCondition", "SInterest"]), 2)`, *SD* = `r round(sd(condition_data[condition_data$Condition == "HighAutonomyCondition", "SInterest"]), 2)`) had significantly higher situational motivation than participants in the low-autonomy condition (*M* = `r round(mean(condition_data[condition_data$Condition == "LowAutonomyCondition", "SInterest"]), 2)`, *SD* = `r round(sd(condition_data[condition_data$Condition == "LowAutonomyCondition", "SInterest"]), 2)`), *t*(`r round(ConditionMotivationTest$parameter, 2)`) = `r round(ConditionMotivationTest$statistic, 3)`, *p* = `r substr(round(ConditionMotivationTest$p.value, 3), 2, 5)`. Therefore, our H1 was supported as the condition manipulation had a significant effect on participants' situational motivation.
+
+Considering that the condition manipulation was effective, in analyses on reading behaviour 'Condition' is used as a measure of Situational Autonomous Motivation (considering that it is significantly connected to SInterest and SAutonomy).
+
+# Connection to other questionnaire variables
+
+We then assess whether condition is connected to any other questionnaire variables. This is to make sure that the participants in the two conditions do not happen to have, for example, different demographic attributes or contextual motivation scores.
+
+## Situational competence
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = SCompetence)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+## Contextual motivation
+
+Interest scores:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = CInterest)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Competence scores:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = CCompetence)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+## Electronic reading experience
+
+Task-relevant text types:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = Eexp1LongformEFreq)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Task-relevant devices:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = Eexp2DeviceRecFreq)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+## Demographic information
+
+Age:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = Age)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Gender:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = Gender)) +
+    geom_jitter() +
+    theme_classic()
+```
+
+Whether each participant is a native English speaker or not:
+
+```{r}
+ggplot(condition_data, aes(x = Condition, y = NativeEnglish)) +
+    geom_jitter() +
+    theme_classic()
+```
+
