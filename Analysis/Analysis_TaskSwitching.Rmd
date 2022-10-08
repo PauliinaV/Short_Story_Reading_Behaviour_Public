@@ -1,0 +1,1062 @@
+---
+title: "Analysis_ReadingFrequency"
+author: "Pauliina Vuorinen"
+date: "08/10/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+# Introduction
+
+The purpose of this script is to model task switching frequency. The measure for task switching frequency was created in Prep_TaskSwitchingMeasure.rmd (in Prep folder).
+
+**Information on hypotheses:**
+We expected situational autonomous motivation to be connected to less frequent task switching. Therefore, participants who were situationally motivated (or rather, in the high-autonomy condition) to read the book should have longer continuous engagement durations during the study.
+
+Similarly, contextual autonomous motivation was expected to be connected to longer continuous engagement durations. Avid readers' enjoyment of reading as an activity should encourage them to task switch less often, resulting in long continuous engagements.
+
+Finally, task-relevant electronic reading experience was expected to be connected to less frequent task switching. Participants who are more familiar with using the electronic reading platforms should feel more at ease about reading on the e-reader, and thus, they should be more likely to read for longer continuous periods.
+
+#### Task switching: reader characteristics model, full structure
+
+The full model structure was as follows, see below for brief explanations on individual variables. See the information folder for more detail on why this particular structure was chosen.
+
+
+```
+ContinuousEngagementMinutes ~
+
+    # control variable:
+    DaysUntilReadingDeadline +
+
+    # demographic information:
+    IsNativeEnglishSpeaker +
+
+    # Situational motivation:
+    Condition +
+    SCompetence +
+
+    # Contextual motivation
+    CInterest +
+    CCompetence +
+
+    # Electronic reading experience
+    Device +
+    TextTypes +
+
+    # Interactions
+    # Condition * SCompetence + # speed + linearity
+    # CInterest * SCompetence + # speed + linearity
+    Device * TextTypes +
+    # Device * TextTypes * SCompetence # speed + linearity
+
+    # Random effects
+    (1 | UserId)
+    (1 | StoryId)
+```
+
+Outcome variable:
+
+- ContinuousEngagementMinutes: measure of task switching
+    - 
+
+Fixed effects:
+
+- DaysUntilReadingDeadline: indicator of how close to the end of the study participant is at the moment of their last reading event
+    - This variable is mainly included to account for random variation, for example, from pressure to read to finish the text close to the deadline
+
+- Condition: Manipulation of autonomy in story selection
+    - High-autonomy and low-autonomy condition
+    - Used as a measure of situational interest and autonomy after manipulation analysis indicated that participants significantly differed in their autonomy and interest based on condition
+
+- S_Competence: Situational reading competence
+    - 
+- S_Choice: Situational reading autonomy
+
+Random effects:
+
+- UserId: participant indicator
+  - To account for the random variation from different participants (individual variance)
+- BookId: text indicator
+    - To account for the random variation from different books being read
+
+For reading behaviour measures calculated on the page-level we also include a random intercept of WindowWidth to reflect device size.
+
+# Setup
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(psych)
+library(gridExtra)
+library(corrplot)
+library(lme4)
+library(lmerTest)
+library(performance)
+library(effects)
+library(interactions)
+library(jtools)
+```
+
+Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
+
+The working directory is not changed with setwd() because this script is knit remotely in other scripts.
+
+```{r 'working directory for my purposes'}
+mypath_SSRBP <- getwd()
+if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
+    # wrong working directory
+    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
+        # directory name isn't GITHUB, unlike I would expect
+        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
+            # GITHUB is in the path
+            ## use mypath_SSRBP instead of dirname()
+            mypath_SSRBP <- paste0(
+                mypath_SSRBP,
+                "/Short_Story_Reading_Behaviour_Public"
+            )
+        }
+    } else {
+        # directory name is GITHUB
+        # save correct working directory
+        mypath_SSRBP <- paste0(
+            dirname(mypath_SSRBP),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+    }
+}
+```
+
+# Load data
+
+Load the Task switching measure dataset:
+
+```{r 'load measure'}
+task_switching_data <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/task_switching_data.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+task_switching_data <- dplyr::select(task_switching_data, -X) # remove row numbers
+```
+
+The sample includes *n* = `r length(unique(task_switching_data$UserId))` participants, indicating that all participants have at least one observation for task switching. The total amount of observations is `r nrow(task_switching_data)`.
+
+Next, load in the questionnaire data:
+
+We then load in questionnaire data:
+
+```{r 'load predictors: questionnaires'}
+# IMI
+IMI_scores <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/IMI_scores.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+IMI_scores <- dplyr::select(IMI_scores, -X) # remove row numbers
+# IMI-R
+IMIR_scores <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/IMIR_scores.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+IMIR_scores <- dplyr::select(IMIR_scores, -X) # remove row numbers
+# Electronic experience
+eexp_scores <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/eexp_scores.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+eexp_scores <- dplyr::select(eexp_scores, -X) # remove row numbers
+# demographic information
+demographics_data <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/demographics_data.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+demographics_data <- dplyr::select(demographics_data, -X) # remove row numbers
+```
+
+Load in information about the stories that participants read:
+
+```{r}
+story_information_data <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/story_information_data.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+story_information_data <- dplyr::select(story_information_data, -X) # remove row numbers
+```
+
+We then merge these dataframes together:
+
+```{r 'merge dfs'}
+# measure and IMI
+task_switching_data <- merge(
+    task_switching_data,
+    IMI_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and IMI-R
+task_switching_data <- merge(
+    task_switching_data,
+    IMIR_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and EEXP
+task_switching_data <- merge(
+    task_switching_data,
+    eexp_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and demographic information
+task_switching_data <- merge(
+    task_switching_data,
+    demographics_data,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and information about stories
+task_switching_data <- merge(
+    task_switching_data,
+    story_information_data[, c(1:3, 10)],
+    all.x = TRUE,
+    by = "StoryId"
+)
+```
+
+## Change variable types
+
+```{r 'change variable types'}
+str(task_switching_data)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
+
+## turn columns into factors that should be factors
+task_switching_data[, c(
+    "UserId",
+    "StoryId"
+)] <- convert.magic(
+    task_switching_data[, c(
+        "UserId",
+        "StoryId"
+    )],
+    "factor"
+)
+```
+
+## Visualise task switching
+
+The task_switching_data has `r nrow(task_switching_data)` observations.
+
+We create graphs to inspect task switching and its connection to other variables.
+
+The task switching measure, ContinuousEngagementMinutes, is skewed towards lower values and the distribution may be improved by log-transformation.
+
+```{r}
+hist(task_switching_data$ContinuousEngagementMinutes, breaks = 50)
+hist(log(task_switching_data$ContinuousEngagementMinutes + 1), breaks = 50)
+```
+
+Variation between participants:
+
+```{r}
+ggplot(task_switching_data, aes(x = UserId, y = ContinuousEngagementMinutes)) +
+    geom_point() +
+    theme_classic() +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+Variation between different books read:
+
+```{r}
+ggplot(
+    task_switching_data,
+    aes(x = StoryId, y = ContinuousEngagementMinutes)
+) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic() +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+We correct for story length to see if there are differences between different books read:
+
+```{r}
+ggplot(task_switching_data, aes(x = StoryId, y = (ContinuousEngagementMinutes / CharacterLength))) +
+    geom_boxplot() +
+    geom_jitter() +
+    theme_classic() +
+    ylab("ContinuousEngagementMinutes/Book length")
+```
+
+We inspect individual variation within the different books read:
+
+```{r}
+ggplot(
+    task_switching_data,
+    aes(x = StoryId, y = ContinuousEngagementMinutes)
+) +
+    geom_violin() +
+    geom_jitter(aes(colour = UserId)) +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+Create a formatted plot which shows variation between participants and books read. This plot is saved in Fig folder as Fig_TaskSwitchingVariance.png
+
+```{r}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_AddLine.R"
+    )
+)
+TaskSwitchingVariance <-
+    ggplot(
+        task_switching_data,
+        aes(
+            x = UserId,
+            y = ContinuousEngagementMinutes,
+            colour = StoryId
+        )
+    ) +
+    geom_point(size = 2) +
+    labs(
+        y = addline_format("Continuous engagegement,duration (mins)"),
+        x = "Participant indicator",
+        colour = "Story indicator"
+    ) +
+    scale_fill_grey() +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 25),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 25, vjust = 0.5),
+        axis.title.y = element_text(size = 25, angle = 90, vjust = 0.5),
+        plot.title = element_text(size = 20),
+        legend.position = "none",
+        strip.text.x = element_text(size = 16)
+    ) +
+    scale_y_continuous(labels = function(UserId) format(UserId, width = 2))
+TaskSwitchingVariance
+```
+
+Effect of DaysUntilDeadline:
+
+```{r}
+ggplot(task_switching_data, aes(x = DaysUntilDeadline, y = ContinuousEngagementMinutes)) +
+    geom_point(aes(colour = UserId), size = 3) +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Days Until Reading Deadline")
+```
+
+
+### task switching and demographic information
+
+Gender:
+
+```{r}
+ggplot(task_switching_data, aes(x = Gender, y = ContinuousEngagementMinutes)) +
+    geom_violin() +
+    geom_jitter(aes(colour = UserId)) +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+Age:
+
+```{r}
+ggplot(task_switching_data, aes(x = Age, y = ContinuousEngagementMinutes)) +
+    geom_point() +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+Whether participants' native language is English or not:
+
+```{r}
+ggplot(task_switching_data, aes(x = NativeEnglish, y = ContinuousEngagementMinutes)) +
+    geom_violin() +
+    geom_jitter(aes(colour = UserId)) +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+### Task switching and condition
+
+```{r}
+ggplot(task_switching_data, aes(x = Condition, y = ContinuousEngagementMinutes)) +
+    geom_boxplot() +
+    theme_classic() +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+### Motivation
+
+Only situational competence is included in the model from the IMI variables, considering that condition is significantly connected to both situational autonomy and interest.
+
+Situational competence:
+
+```{r}
+ggplot(task_switching_data, aes(x = SCompetence, y = ContinuousEngagementMinutes)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+We then create visualisations for contextual measures of motivation: interest, competence, and effort.
+
+Contextual interest:
+
+```{r}
+ggplot(task_switching_data, aes(x = CInterest, y = ContinuousEngagementMinutes)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+Contextual competence:
+
+```{r}
+ggplot(task_switching_data, aes(x = CCompetence, y = ContinuousEngagementMinutes)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+### Task switching and electronic reading experience
+
+We are interested in how task-relevant electronic experience is connected to task switching.
+Electronic experience was measured by two variables: Eexp1LongFormEFreq - the frequency of reading long-form, narrative texts electronnically, and Eexp2DeviceRecFreq - the frequency of using task-relevant digital devices for recreational reading purposes.
+
+Eexp1LongformEFreq (longfrom reading electronically):
+
+```{r}
+ggplot(task_switching_data, aes(x = Eexp1LongformEFreq, y = ContinuousEngagementMinutes)) +
+    geom_point() +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
+
+```{r}
+ggplot(task_switching_data, aes(x = Eexp2DeviceRecFreq, y = ContinuousEngagementMinutes)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic() +
+    theme(
+        legend.position = "none"
+    ) +
+    ylab("Continuous Engagement Duration (Mins)")
+```
+
+## Create contrasts to predictors
+
+Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
+
+Load a function to create helmert contrasts for categorical variables:
+
+```{r 'load helmert contrasts functions'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.weighted.R"
+    )
+)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.unweighted.R"
+    )
+)
+```
+
+Contrasts for categorical variables:
+
+```{r 'categorical contrasts'}
+# whether native language is English or not
+task_switching_data$NativeEnglish <- as.factor(task_switching_data$NativeEnglish)
+contrasts(task_switching_data$NativeEnglish) <- contr.helmert.unweighted(task_switching_data$NativeEnglish)
+contrasts(task_switching_data$NativeEnglish)
+# condition
+task_switching_data$Condition <- dplyr::recode(
+    task_switching_data$Condition,
+    "AutonomousCondition" = "HighAutonomyCondition",
+    "NonAutonomousCondition" = "LowAutonomyCondition"
+)
+task_switching_data$Condition <- as.factor(task_switching_data$Condition)
+contrasts(task_switching_data$Condition) <- contr.helmert.unweighted(
+    task_switching_data$Condition
+)
+contrasts(task_switching_data$Condition)
+```
+
+Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
+
+```{r 'scale continuous variables'}
+# Situational competence
+task_switching_data$SCompetence.sc <-
+    scale(task_switching_data$SCompetence,
+        center = TRUE,
+        scale = TRUE
+    )
+# Contextual motivation
+task_switching_data$CInterest.sc <-
+    scale(task_switching_data$CInterest,
+        center = TRUE,
+        scale = TRUE
+    )
+task_switching_data$CCompetence.sc <-
+    scale(task_switching_data$CCompetence,
+        center = TRUE,
+        scale = TRUE
+    )
+# Electronic reading experience
+task_switching_data$Eexp1LongformEFreq.sc <-
+    scale(task_switching_data$Eexp1LongformEFreq,
+        center = TRUE,
+        scale = TRUE
+    )
+task_switching_data$Eexp2DeviceRecFreq.sc <-
+    scale(task_switching_data$Eexp2DeviceRecFreq,
+        center = TRUE,
+        scale = TRUE
+    )
+# Days until reading deadline
+task_switching_data$DaysUntilDeadline.sc <-
+    scale(task_switching_data$DaysUntilDeadline,
+        center = TRUE,
+        scale = TRUE
+    )
+```
+
+## Model of Task Switching
+
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 12 parameters (including two random effects and categorical variable levels), and `r nrow(task_switching_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(task_switching_data)`/12 = `r round(nrow(task_switching_data)/12, 2)`
+
+```{r}
+FullStructure <- (
+    "log(ContinuousEngagementMinutes + 1) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc + (1 | StoryId) + (1 | UserId)"
+)
+```
+
+```{r}
+TaskSwitching_FullModel <- lmer(
+    FullStructure,
+    data = task_switching_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+```{r}
+summary(TaskSwitching_FullModel)
+plot(TaskSwitching_FullModel)
+```
+
+Inspect model values:
+
+```{r}
+confint(TaskSwitching_FullModel)
+fixef(TaskSwitching_FullModel)
+```
+
+### Model Assumptions
+
+All models were tested for (1) multicollinearity, (2) non-normality of residuals, (3) heteroscedasticity, (4) influential observations, and (5) normality of random effects
+
+#### 1. Multicollinearity
+
+We check for multicollinearity first with a correlation matrix:
+
+```{r}
+corrplot(cor(task_switching_data[, c(7, 13, 16, 18:21)]), method = "number")
+```
+
+Some of the variables show high correlations. For example, contextual reading competence is correlated with situational competence (*r* = `r round(cor(task_switching_data$SCompetence, task_switching_data$CCompetence), 2)`) and contextual motivation (*r* = `r round(cor(task_switching_data$CCompetence, task_switching_data$CInterest), 2)`).
+
+To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
+
+```{r}
+check_collinearity(TaskSwitching_FullModel)
+plot(check_collinearity(TaskSwitching_FullModel))
+```
+
+Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
+
+#### 2. Non-normality of residuals
+
+We first check normality of residuals by plotting model residuals and fitted values
+
+```{r}
+plot(resid(TaskSwitching_FullModel), fitted(TaskSwitching_FullModel))
+```
+
+The model residuals seem to be scattered symmetrically in the plot, which indicates that the residuals may be normally distributed.
+
+To further check non-normality, we use a qqplot:
+
+```{r}
+qqnorm(residuals(TaskSwitching_FullModel))
+```
+
+The qqplot shows only very slight variation from normality.
+
+Finally, we test normality of residuals with a Shapiro Test that checks studentized residuals for normal distribution. A p-value of < .05 indicates significant deviation from normality.
+
+```{r}
+check_normality(TaskSwitching_FullModel)
+```
+
+The Shapiro test is not significant, indicating that the model is likely to not have non-normal residuals.
+
+#### 3. Heteroscedasticity
+
+We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
+
+```{r}
+check_heteroscedasticity(TaskSwitching_FullModel)
+plot(check_heteroscedasticity(TaskSwitching_FullModel))
+```
+
+The p-value is not significant, which indicates that the residuals are homoscedastic. Also, the plot line seems to be fairly flat and horizontal, indicating of homoscedasticity.
+
+We check categorical predictors separately with a Levene's test:
+
+```{r}
+leveneTest(residuals(TaskSwitching_FullModel) ~ task_switching_data$Condition)
+```
+
+```{r}
+leveneTest(residuals(TaskSwitching_FullModel) ~ task_switching_data$NativeEnglish)
+```
+
+The assumption of equal variables is met for both Condition and NativeEnglish.
+
+#### 4. Influential Observations
+
+We test influential observations with Cook's Distance:
+
+```{r}
+cooksd <-
+    cooks.distance(TaskSwitching_FullModel)
+plot(cooksd,
+    pch = "*",
+    cex = 2,
+    main = "Influential Obs by Cooks Distance"
+)
+abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+text(
+    x = 1:length(cooksd) + 1,
+    y = cooksd,
+    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+    col = "red"
+)
+```
+
+The plot indicates that some observations may be influential. However, the Cook's Distance threshold is very conservative at `r round((4 * mean(cooksd, na.rm = TRUE)), 2)`.
+
+We further inspect Cook's Distance with a different plot:
+
+```{r}
+check_outliers(TaskSwitching_FullModel)
+plot(check_outliers(TaskSwitching_FullModel))
+```
+
+Usage of a less conservative limit (Cook's Distance > .5 for influential observations) indicates that none of the observations are influential. We trust this judgement after off-script experimentation indicated that removal of the most influential observation flagged earlier does not affect results.
+
+#### Normality of Random Effects
+
+Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
+
+```{r}
+random_intercept_UserId <- ranef(TaskSwitching_FullModel)$UserId$`(Intercept)`
+qqnorm(random_intercept_UserId)
+qqline(random_intercept_UserId)
+shapiro.test(random_intercept_UserId)
+```
+
+The qqplot slightly varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed
+
+```{r}
+random_intercept_StoryId <- ranef(TaskSwitching_FullModel)$StoryId$`(Intercept)`
+qqnorm(random_intercept_StoryId)
+qqline(random_intercept_StoryId)
+shapiro.test(random_intercept_StoryId)
+```
+
+StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
+
+The model aligns with all assumptions.
+
+### Interpret model
+
+We then interpret model effects to interpret the results.
+
+```{r}
+summary(TaskSwitching_FullModel)
+```
+
+Only SCompetence, CInterest and CCompetence are significant predictors in the model.
+
+#### Hypotheses
+
+**H4a: We expect situational motivation (high-autonomy condition) to be a positive predictor of continuous engagement duration.**
+
+This hypothesis was not supported as Condition was not a significant predictor of task switching frequency in the model.
+
+```{r}
+taskswitching_effect_condition <- effect(
+    "Condition",
+    TaskSwitching_FullModel,
+    transformation = list(link = function(x) log((x + 1)), inverse = function(x) (exp(x) - 1))
+)
+plot(taskswitching_effect_condition,
+    multiline = TRUE,
+    xlab = addline_format("Condition"),
+    ylab = "Continuous engagement duration (min)",
+    main = NULL
+)
+
+taskswitching_effectplot_condition <- cat_plot(
+    TaskSwitching_FullModel,
+    pred = "Condition",
+    data =  task_switching_data,
+    plot.points = TRUE,
+    point.size = 2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Continuous engagement duration (min)",
+        x = addline_format("Condition")
+    ) +
+    coord_cartesian(ylim = c(0.6931472, 4.5)) +
+    scale_y_continuous(breaks = c(
+        0.6931472,
+        2.484907,
+        3.465736,
+        3.951244,
+        4.276666
+    ), labels = c(
+        "0",
+        "10",
+        "30",
+        "50",
+        "70"
+    ))
+```
+
+Participants in the high-autonomy and low-autonomy conditions did not differ significantly in their continuous engagement durations
+
+**H4b: We expect contextual motivation to be a positive predictor of continuous engagement duration**
+
+Contextual motivation (measured by CInterest) was a significant predictor of continuous engagement duration.
+
+```{r}
+taskswitching_effectplot_contextualmotivation <- effect_plot(
+    TaskSwitching_FullModel,
+    pred = "CInterest.sc",
+    data =  task_switching_data,
+    plot.points = TRUE,
+    point.size = 2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Continuous engagement duration (min)",
+        x = addline_format("Contextual motivation score, measured by contextual reading interest,(centered and scaled)")
+    ) +
+    coord_cartesian(ylim = c(0.6931472, 4.5)) +
+    scale_y_continuous(breaks = c(
+        0.6931472,
+        2.484907,
+        3.465736,
+        3.951244,
+        4.276666
+    ), labels = c(
+        "0",
+        "10",
+        "30",
+        "50",
+        "70"
+    ))
+```
+
+Participants with a higher contextual motivations score engaged for longer continuously and thus task switched less frequently than participants with lower contextual motivation. Therefore, our hypothesis H4b was supported.
+
+**H4c: We expect an interaction between task-relevant electronic experience measures to be a positive predictor of continuous engagement duration**
+
+This hypothesis was not supported as neither of the electronic experience measures was a significant predictor of task switching frequency in the model.
+
+```{r}
+taskswitching_effectplot_electronicexperience <-
+    interact_plot(TaskSwitching_FullModel,
+        pred = Eexp1LongformEFreq.sc,
+        modx = Eexp2DeviceRecFreq.sc,
+        data = task_switching_data,
+        plot.points = TRUE,
+        point.alpha = .2,
+        point.size = 1,
+        jitter = .5,
+        interval = TRUE,
+        legend.main = addline_format("Electronic experience 2"),
+        colors = c("orange", "darkred", "navy"),
+        point.shape = TRUE
+    ) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Continuous engagement duration (min)",
+        x = addline_format("Electronic experience 1:,Frequency of reading longform texts electronically,(centered and scaled)"),
+        caption = addline_format("Legend variable: Frequency of using task-relevant digital devices,for recreational reading (centered and scaled)")
+    ) +
+    coord_cartesian(ylim = c(0.6931472, 4.5)) +
+    scale_y_continuous(breaks = c(
+        0.6931472,
+        2.484907,
+        3.465736,
+        3.951244,
+        4.276666
+    ), labels = c(
+        "0",
+        "10",
+        "30",
+        "50",
+        "70"
+    ))
+```
+
+The trend of the results is what we would expect - a combination of both types of electronic experience is associated with a slightly higher continuous engagement duration. However, the interaction is not significant, and therefore, hypothesis H4c was not supported.
+
+#### Other results
+
+In addition to CInterest.sc, Continuous engagement duration was significantly predicted by situational competence (SCompetence.sc) and contextual competence (CCompetence.sc). Next, we inspect these significant effects.
+
+**Situational competence**
+
+```{r}
+taskswitching_effectplot_situationalcompetence <- effect_plot(
+    TaskSwitching_FullModel,
+    pred = "SCompetence.sc",
+    data =  task_switching_data,
+    plot.points = TRUE,
+    point.size = 2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Continuous engagement duration (min)",
+        x = addline_format("Situational perceived competence, score (centered and scaled)")
+    ) +
+    coord_cartesian(ylim = c(0.6931472, 4.5)) +
+    scale_y_continuous(breaks = c(
+        0.6931472,
+        2.484907,
+        3.465736,
+        3.951244,
+        4.276666
+    ), labels = c(
+        "0",
+        "10",
+        "30",
+        "50",
+        "70"
+    ))
+```
+
+Situational competence is positively connected to continuous engagement duration, indicating that participants who found the text easier to read, read it for longer continuously.
+
+**Contextual Competence**
+
+```{r}
+taskswitching_effectplot_contextualcompetence <- effect_plot(
+    TaskSwitching_FullModel,
+    pred = "CCompetence.sc",
+    data =  task_switching_data,
+    plot.points = TRUE,
+    point.size = 2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Continuous engagement duration (min)",
+        x = addline_format("Contextual perceived competence, score (centered and scaled)")
+    ) +
+    coord_cartesian(ylim = c(0.6931472, 4.5)) +
+    scale_y_continuous(breaks = c(
+        0.6931472,
+        2.484907,
+        3.465736,
+        3.951244,
+        4.276666
+    ), labels = c(
+        "0",
+        "10",
+        "30",
+        "50",
+        "70"
+    ))
+```
+
+Whereas situational competence score is positively connected to continuous engagement duration, interestingly, contextual competence is negatively connected to it. Therefore, participants who found judged themselves to have a generally high reading ability were more likely to task switch frequently than participants who reported lower general reading skills.
+
