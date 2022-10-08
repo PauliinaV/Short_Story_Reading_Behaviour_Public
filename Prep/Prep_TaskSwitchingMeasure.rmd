@@ -128,7 +128,7 @@ tracking_data$Date <-
         format = "%Y-%m-%d"
     )
 TempTimeObject <- strsplit(tracking_data$Time, " ")
-TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+TempTimeObject <- sapply(TempTimeObject, "[[", 2)
 tracking_data$TempTimeObject <- TempTimeObject
 tracking_data <- dplyr::select(tracking_data, -Time)
 names(tracking_data)[which(colnames(tracking_data) == "TempTimeObject")] <- "Time"
@@ -160,7 +160,9 @@ taskswitching_measure_data <- tracking_data %>%
         StoryId,
         EngagementTypeId,
         Engagement,
-        ReadingSessionNumber) %>%
+        ReadingSessionNumber,
+        Condition
+    ) %>%
     summarise(
         ContinuousEngagementMinutes = first(ContinuousEngagementMinutes),
         ContinuousEngagementSeconds = first(ContinuousEngagementSeconds),
@@ -168,7 +170,8 @@ taskswitching_measure_data <- tracking_data %>%
         LastCumulativeRSTime = last(CumulativeRSTime),
         FirstPercentageLocation = first(Percentage),
         LastPercentageLocation = last(Percentage),
-        DaysUntilDeadline = last(TimeBeforeDeadlinesDays)) %>%
+        DaysUntilDeadline = last(TimeBeforeDeadlinesDays)
+    ) %>%
     mutate(
         PercentageLocationMoved = (LastPercentageLocation - FirstPercentageLocation)
     )
@@ -226,7 +229,8 @@ Indeed, the majority of continuous engagement seem to fall under 30 minutes.
 taskswitching_measure_data is saved for usage in analysis (see Analysis_TaskSwitchingModel.rmd in Analysis folder). The data has already been saved, and so the following code is not run:
 
 ```{r 'save task switching data', eval=FALSE, echo=TRUE}
-write.csv2(taskswitching_measure_data,
+write.csv2(
+    taskswitching_measure_data,
     "task_switching_data.csv"
 )
 ```
