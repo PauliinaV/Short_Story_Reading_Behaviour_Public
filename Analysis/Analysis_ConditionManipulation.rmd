@@ -23,6 +23,39 @@ library(dplyr)
 library(psych)
 ```
 
+Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
+
+The working directory is not changed with setwd() because this script is knit remotely in other scripts.
+
+```{r 'working directory for my purposes'}
+mypath_SSRBP <- getwd()
+if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
+    # wrong working directory
+    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
+        # directory name isn't GITHUB, unlike I would expect
+        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
+            # GITHUB is in the path
+            ## use mypath_SSRBP instead of dirname()
+            mypath_SSRBP <- paste0(
+                mypath_SSRBP,
+                "/Short_Story_Reading_Behaviour_Public"
+            )
+        }
+    } else {
+        # directory name is GITHUB
+        # save correct working directory
+        mypath_SSRBP <- paste0(
+            dirname(mypath_SSRBP),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+    }
+}
+```
+
+```{r 'check that wording director is correct'}
+
+```
+
 ## Load data
 
 Load in the tracking_data dataset:
@@ -30,7 +63,10 @@ Load in the tracking_data dataset:
 ```{r 'load data'}
 tracking_data <-
     read.csv(
-        "./Data/wrangled_tracking_data.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/wrangled_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -64,7 +100,10 @@ We then load in questionnaire data:
 # IMI
 IMI_scores <-
     read.csv(
-        "./Data/IMI_scores.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/IMI_scores.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -73,7 +112,10 @@ IMI_scores <- dplyr::select(IMI_scores, -X) # remove row numbers
 # IMI-R
 IMIR_scores <-
     read.csv(
-        "./Data/IMIR_scores.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/IMIR_scores.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -82,7 +124,10 @@ IMIR_scores <- dplyr::select(IMIR_scores, -X) # remove row numbers
 # Electronic experience
 eexp_scores <-
     read.csv(
-        "./Data/eexp_scores.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/eexp_scores.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -91,7 +136,10 @@ eexp_scores <- dplyr::select(eexp_scores, -X) # remove row numbers
 # demographic information
 demographics_data <-
     read.csv(
-        "./Data/demographics_data.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/demographics_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -138,7 +186,12 @@ condition_data <- merge(
 
 ```{r 'change variable types'}
 str(condition_data)
-source("./Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 
 ## turn columns into factors that should be factors
 condition_data[, c(
@@ -221,6 +274,17 @@ ggplot(condition_data, aes(x = Condition, y = SCompetence)) +
     theme_classic()
 ```
 
+```{r}
+# connection to SCompetence
+ConditionSituationalCompetenceTest <- t.test(
+    condition_data$SCompetence ~
+        condition_data$Condition
+)
+ConditionSituationalCompetenceTest
+```
+
+The participants do not significantly differ in their situational competence scores, *t*(`r round(ConditionSituationalCompetenceTest$parameter, 2)`)  = `r round(ConditionSituationalCompetenceTest$statistic, 3)`, *p* = `r substr(round(ConditionSituationalCompetenceTest$p.value, 3), 2, 5)`. Therefore, the condition manipulation did not influence participants' feelings of whether the story was difficult to read or not.
+
 ## Contextual motivation
 
 Interest scores:
@@ -231,6 +295,17 @@ ggplot(condition_data, aes(x = Condition, y = CInterest)) +
     theme_classic()
 ```
 
+```{r}
+# connection to CInterest
+ConditionContextualMotivationTest <- t.test(
+    condition_data$CInterest ~
+        condition_data$Condition
+)
+ConditionContextualMotivationTest
+```
+
+The participants do not significantly differ in their contextual motivation scores, *t*(`r round(ConditionContextualMotivationTest$parameter, 2)`)  = `r round(ConditionContextualMotivationTest$statistic, 3)`, *p* = `r substr(round(ConditionContextualMotivationTest$p.value, 3), 2, 5)`. Therefore, the participants in the two conditions had comparable levels of contextual motivation for recreational reading.
+
 Competence scores:
 
 ```{r}
@@ -238,6 +313,17 @@ ggplot(condition_data, aes(x = Condition, y = CCompetence)) +
     geom_boxplot() +
     theme_classic()
 ```
+
+```{r}
+# connection to CCompetence
+ConditionContextualCompetenceTest <- t.test(
+    condition_data$CCompetence ~
+        condition_data$Condition
+)
+ConditionContextualCompetenceTest
+```
+
+Similarly, the participants do not significantly differ in their contextual motivation scores, *t*(`r round(ConditionContextualCompetenceTest$parameter, 2)`)  = `r round(ConditionContextualCompetenceTest$statistic, 3)`, *p* = `r substr(round(ConditionContextualCompetenceTest$p.value, 3), 2, 5)`. Therefore, the participants in the two conditions had comparable levels of self-reported reading ability.
 
 ## Electronic reading experience
 
@@ -249,6 +335,17 @@ ggplot(condition_data, aes(x = Condition, y = Eexp1LongformEFreq)) +
     theme_classic()
 ```
 
+```{r}
+# connection to task-relevant text types
+ConditionTextTypesTest <- t.test(
+    condition_data$Eexp1LongformEFreq ~
+        condition_data$Condition
+)
+ConditionTextTypesTest
+```
+
+The participants do not significantly differ in their frequency of reading task-relevant text types electronically, *t*(`r round(ConditionTextTypesTest$parameter, 2)`)  = `r round(ConditionTextTypesTest$statistic, 3)`, *p* = `r substr(round(ConditionTextTypesTest$p.value, 3), 2, 5)`.
+
 Task-relevant devices:
 
 ```{r}
@@ -256,6 +353,17 @@ ggplot(condition_data, aes(x = Condition, y = Eexp2DeviceRecFreq)) +
     geom_boxplot() +
     theme_classic()
 ```
+
+```{r}
+# connection to task-relevant devices
+ConditionDevicesTest <- t.test(
+    condition_data$Eexp2DeviceRecFreq ~
+        condition_data$Condition
+)
+ConditionDevicesTest
+```
+
+Although the participants have comparable levels of electronic experience of reading task-relevant text types, the participants in the two conditions significantly differ in how frequently they use task-relevant digital devices for recreational reading purposes, *t*(`r round(ConditionDevicesTest$parameter, 2)`)  = `r round(ConditionDevicesTest$statistic, 3)`, *p* = `r substr(round(ConditionDevicesTest$p.value, 3), 2, 5)`. Indeed, participants in the low-autonomy condition (*M* = `r round(mean(condition_data[condition_data$Condition == "LowAutonomyCondition", "Eexp2DeviceRecFreq"]), 2)`, *SD* = `r round(sd(condition_data[condition_data$Condition == "LowAutonomyCondition", "Eexp2DeviceRecFreq"]), 2)`) reported using task-relevant digital devices for reading more often than participants in the high-autonomy condition (*M* = `r round(mean(condition_data[condition_data$Condition == "HighAutonomyCondition", "Eexp2DeviceRecFreq"]), 2)`, *SD* = `r round(sd(condition_data[condition_data$Condition == "HighAutonomyCondition", "Eexp2DeviceRecFreq"]), 2)`).
 
 ## Demographic information
 
