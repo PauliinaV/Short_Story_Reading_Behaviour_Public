@@ -191,7 +191,7 @@ Calculate a start and end time for each reading session:
 ```{r}
 # info on reading sessions
 reading_session_durations <- tracking_data %>%
-    group_by(UserId, ReadingSessionNumber, StoryId) %>%
+    group_by(UserId, ReadingSessionNumber, StoryId, Condition) %>%
     summarise(
         FirstEventStartTime = first(DateTime),
         LastEventStartTime = last(DateTime),
@@ -210,7 +210,8 @@ reading_frequency_measure <- data.frame(
     ReadingSessionNumber = numeric(),
     TimeBetweenReadingSessions = numeric(),
     StoryId = character(),
-    DaysUntilDeadline = numeric()
+    DaysUntilDeadline = numeric(),
+    Condition = character()
 )
 # calculate TimeBetweenReadingSessions by:
 ## deduct previous reading session's end time from current session's start time, if
@@ -236,6 +237,7 @@ for (user in levels(reading_session_durations$UserId)) {
                 )
                 reading_frequency_measure[y, "StoryId"] <- subset_user[row, "StoryId"]
                 reading_frequency_measure[y, "DaysUntilDeadline"] <- subset_user[row, "LastDaysUntilDeadline"]
+                reading_frequency_measure[y, "Condition"] <- subset_user[row, "Condition"]
                 y = y + 1
             } else {
                 reading_frequency_measure[y, "UserId"] <- user
@@ -243,6 +245,7 @@ for (user in levels(reading_session_durations$UserId)) {
                 reading_frequency_measure[y, "TimeBetweenReadingSessions"] <- NA
                 reading_frequency_measure[y, "StoryId"] <- subset_user[row, "StoryId"]
                 reading_frequency_measure[y, "DaysUntilDeadline"] <- subset_user[row, "LastDaysUntilDeadline"]
+                reading_frequency_measure[y, "Condition"] <- subset_user[row, "Condition"]
                 y = y + 1
             }
         } else {
@@ -251,6 +254,7 @@ for (user in levels(reading_session_durations$UserId)) {
                 reading_frequency_measure[y, "TimeBetweenReadingSessions"] <- 0
                 reading_frequency_measure[y, "StoryId"] <- subset_user[row, "StoryId"]
                 reading_frequency_measure[y, "DaysUntilDeadline"] <- subset_user[row, "LastDaysUntilDeadline"]
+                reading_frequency_measure[y, "Condition"] <- subset_user[row, "Condition"]
                 y = y + 1
     }
 }
