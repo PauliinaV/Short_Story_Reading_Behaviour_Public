@@ -26,7 +26,7 @@ This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd
 library(tidyverse)
 library(tidyr)
 library(dplyr)
-library(plotly) #interactive plots
+library(plotly) # interactive plots
 getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 ```
 
@@ -82,7 +82,7 @@ grouped_tracking_data$Date <-
         format = "%Y-%m-%d"
     )
 TempTimeObject <- strsplit(grouped_tracking_data$Time, " ")
-TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+TempTimeObject <- sapply(TempTimeObject, "[[", 2)
 grouped_tracking_data$TempTimeObject <- TempTimeObject
 grouped_tracking_data <- dplyr::select(grouped_tracking_data, -Time)
 names(grouped_tracking_data)[which(colnames(grouped_tracking_data) == "TempTimeObject")] <- "Time"
@@ -138,8 +138,8 @@ grouped_tracking_data$IsNewSession <-
     )
 grouped_tracking_data$IsReadingSetUpChange <-
     (
-        grouped_tracking_data$NBFirstTotalPagesInSection !=
-            (lag(grouped_tracking_data$NBFirstTotalPagesInSection, 1))
+        grouped_tracking_data$NBFirstPagesInSection !=
+            (lag(grouped_tracking_data$NBFirstPagesInSection, 1))
     )
 # first event is TRUE for all 3 tests
 grouped_tracking_data[1, "IsNewUser"] <- TRUE
@@ -201,18 +201,18 @@ Considering that regressions refer to any movement backwards in text, any naviga
 
 ```{r 'regression and forward leap label assignment'}
 grouped_tracking_data$IsRegression <-
-(
-  grouped_tracking_data$PagesTurned < 0
-)
+    (
+        grouped_tracking_data$PagesTurned < 0
+    )
 table(grouped_tracking_data$IsRegression)
 
 grouped_tracking_data$IsForwardLeap <-
-(
-    ((grouped_tracking_data$PagesTurned > 1) &
-     (grouped_tracking_data$NBSpeedLabel == "Browsing")) |
-    ((grouped_tracking_data$PagesTurned > 1) &
-       (grouped_tracking_data$NBAnyProgressBarUsage))
-)
+    (
+        ((grouped_tracking_data$PagesTurned > 1) &
+            (grouped_tracking_data$NBSpeedLabel == "Browsing")) |
+            ((grouped_tracking_data$PagesTurned > 1) &
+                (grouped_tracking_data$NBAnyProgressBarUsage))
+    )
 table(grouped_tracking_data$IsForwardLeap)
 ```
 
@@ -265,7 +265,7 @@ tracking_data$Date <-
         format = "%Y-%m-%d"
     )
 TempTimeObject <- strsplit(tracking_data$Time, " ")
-TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+TempTimeObject <- sapply(TempTimeObject, "[[", 2)
 tracking_data$TempTimeObject <- TempTimeObject
 tracking_data <- dplyr::select(tracking_data, -Time)
 names(tracking_data)[which(colnames(tracking_data) == "TempTimeObject")] <- "Time"
@@ -333,7 +333,7 @@ Calculate (1) IsNonlinearNavigation:
 tracking_data$IsNonlinearNavigation <-
     ifelse(
         (tracking_data$IsRegression |
-        tracking_data$IsForwardLeap),
+            tracking_data$IsForwardLeap),
         TRUE,
         FALSE
     )
@@ -426,12 +426,12 @@ Then, use tests in calculating StartsNonlinearity:
 ```{r}
 ## Find events that initiate nonlinearity
 for (row in 1:nrow(tracking_data)) {
-    if(row == 1 |
+    if (row == 1 |
         tracking_data[row, "IsNewUser"] |
-            tracking_data[row, "IsNewSession"] |
-                tracking_data[row, "IsReadingSetUpChange"]) {
+        tracking_data[row, "IsNewSession"] |
+        tracking_data[row, "IsReadingSetUpChange"]) {
         # first row, new user, new session, or new set up
-        if(tracking_data[row, "IsNonlinearNavigation"]) {
+        if (tracking_data[row, "IsNonlinearNavigation"]) {
             # nonlinear navigation
             tracking_data[row, "StartsNonlinearity"] <-
                 TRUE
@@ -441,20 +441,20 @@ for (row in 1:nrow(tracking_data)) {
                 FALSE
         }
     } else {
-            # same user, reading session and reading set up
+        # same user, reading session and reading set up
         if ((tracking_data[row - 1, "Linearity"] !=
-                tracking_data[row, "Linearity"]) &
-                tracking_data[row, "IsNonlinearNavigation"]) {
-                    # linearity type changes between previous and current event
-                    ## and current event is nonlinear
-                    tracking_data[row, "StartsNonlinearity"] <-
-                        TRUE
-                } else {
-                    # the nonlinear event doesn't start nonlinearity
-                    tracking_data[row, "StartsNonlinearity"] <-
-                        FALSE
-                }
+            tracking_data[row, "Linearity"]) &
+            tracking_data[row, "IsNonlinearNavigation"]) {
+            # linearity type changes between previous and current event
+            ## and current event is nonlinear
+            tracking_data[row, "StartsNonlinearity"] <-
+                TRUE
+        } else {
+            # the nonlinear event doesn't start nonlinearity
+            tracking_data[row, "StartsNonlinearity"] <-
+                FALSE
         }
+    }
 }
 ```
 
@@ -488,10 +488,13 @@ participant_navigation_counts <- tracking_data %>%
 ```
 
 ```{r}
-plot1 <- ggplot(participant_navigation_counts, aes(x = IsNonlinearNavigationCount, y = StartsNonlinearityCount, colour = UserId)) +
+StaticPlot <- ggplot(
+    participant_navigation_counts,
+    aes(x = IsNonlinearNavigationCount, y = StartsNonlinearityCount, colour = UserId)
+) +
     geom_point() +
     theme_classic()
-ggplotly(plot1)
+ggplotly(StaticPlot)
 ```
 
 IsNonlinearNavigation and StartsNonlinearity are strongly correlated when there are only few nonlinear navigation events. This indicates that the nonlinear events are likely to be separate from each other, instead of being used for a longer period at once (consecutive nonlinearity or not). For example, participant id 55 has 18 nonlinear navigation events and 9 of them initiate nonlinearity. This indicates that on average, participant id 55 used two nonlinear navigation events concurrently (18/9=2). 
@@ -514,13 +517,14 @@ tracking_data <-
 linearity_measure_data <- tracking_data %>%
     filter(
         Engagement != "Disengagement" &
-        Engagement != "Dialog")
+            Engagement != "Dialog"
+    )
 # Select one event per each page-view:
 ## group events by
-### UserId, ReadingSessionNumber, and ReadingBlockNumber (page-view indicator)
+### UserId, ReadingSessionNumber, ReadingBlockNumber (page-view indicator), and Condition
 #### and summarise other important variables into columns
 linearity_measure_data <- linearity_measure_data %>%
-    group_by(UserId, StoryId, ReadingSessionNumber, ReadingBlockNumber) %>%
+    group_by(UserId, StoryId, ReadingSessionNumber, ReadingBlockNumber, Condition) %>%
     summarise(
         StartLocation = first(StartLocation),
         EndLocation = first(EndLocation),
@@ -541,7 +545,8 @@ The new df is saved for usage in analysis.
 The dataset has already been saved, and so the below sr code chunk is not run.
 
 ```{r, eval=FALSE, echo=TRUE, save linearity df}
-write.csv2(linearity_measure_data,
+write.csv2(
+    linearity_measure_data,
     "linearity_measure_data.csv"
 )
 ```
