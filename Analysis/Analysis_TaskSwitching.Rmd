@@ -92,6 +92,7 @@ library(corrplot)
 library(lme4)
 library(lmerTest)
 library(performance)
+library(car)
 library(effects)
 library(interactions)
 library(jtools)
@@ -145,8 +146,6 @@ task_switching_data <- dplyr::select(task_switching_data, -X) # remove row numbe
 ```
 
 The sample includes *n* = `r length(unique(task_switching_data$UserId))` participants, indicating that all participants have at least one observation for task switching. The total amount of observations is `r nrow(task_switching_data)`.
-
-Next, load in the questionnaire data:
 
 We then load in questionnaire data:
 
