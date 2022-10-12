@@ -16,7 +16,13 @@ Linear navigation was defined as movement forwards in the text without skipping 
 
 Browsing was used in the definition of nonlinearity because the intention behind browsing is to move between locations in the text rather than read. Browsing speed was defined as less than one second used on a page-view. One second would not be enough time to read the text on a page, but it would only allow participants to get a gist of the information.
 
-To measure frequency of nonlinear navigation, we calculate how often a nonnavigation event, a linear navigation event, or a different type of nonlinear navigation event is followed by nonlinear navigation. Simply put, previous event's linearity does not equal current event's linearity, and the current event is nonlinear. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
+To measure frequency of nonlinear navigation, we calculate how often a nonnavigation event is initiated. A nonlinear is initiated if a nonlinear event occurs following a linear navigation event, or a nonlinear event to a different direction (e.g. forward leap following a regression) or executed via a different method (e.g. a regression by using the progress bar following a regression by turning pages backwards). Simply put, previous event's (k-1) linearity, method of nonlinear navigation or direction of nonlinear navigation, does not correspond with the current event's (k) linearity, method or direction of nonlinear navigation, and the current event is nonlinear. This measure therefore reflects the frequency of initiating nonlinear navigation during reading of the story.
+
+See below graph for an illustration of how an event can initiate nonlinearity:
+
+<!-- add graph -->
+
+Frequency of initiating nonlinearity was used as a measure of linearity of reading instead of linearity categories (linear or nonnavigation, regression, or forward leap) to make sure that each navigation event is only counted once. Using the linearity category would inflate the amount of nonlinear navigation if it is used across multiple pages (e.g. a regression that includes the participant going multiple pages backwards by page turns). 
 
 This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
 
