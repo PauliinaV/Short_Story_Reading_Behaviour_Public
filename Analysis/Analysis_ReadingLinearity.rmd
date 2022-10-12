@@ -8,6 +8,13 @@ library: "~/Extra/RPackages.bib"
 
 ## Introduction
 
+<!-- some notes -->
+* talk about datapoint or observation k that is predicted
+    * previous event is k-1, the one before that is k-2
+* create an illustration from a participants' linearity across pages? look at notebook pg43
+    * this could go into Prep_ReadingLinearityMeasure
+
+
 The purpose of this script is to analyse how linearly participants' read the short story during the study.
 We aim to assess how frequently participants' used nonlinearity during the study, how nonlinearity occurred, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to this nonlinearity. See the full article for details.
 
@@ -398,7 +405,7 @@ ggplot(linearity_measure_count, aes(x = NativeEnglish, y = Count, colour = Start
     )
 ```
 
-### Task switching and condition
+### Condition
 
 ```{r}
 ggplot(linearity_measure_count, aes(x = Condition, y = Count, colour = StartsNonlinearity)) +
@@ -963,3 +970,760 @@ linearity_effectplot_eexp <- interact_plot(
 ```
 
 The finding indicated that a combination of high scores in the two task-relevant electronic reading experience measures was associated with lower likelihood of nonlinear navigation. In contrast, a low score in either measure with a high level of the other, was associated with more frequent nonlinear navigation. This indicates that electronic experience affected participants' linearity of reading.
+
+## Event properties model
+
+The event properties model of linearity is used for explorative purposes, to study how frequency of nonlinear navigation varied during the study.
+
+The model takes the following structure:
+
+$Y_{i} = 
+    \beta_{0} +
+    # control variable
+    TimeUntilDeadline +
+    # predictors
+    PreviousEvent +
+    PreviousEvent2 +
+    ReadingSessionNumber +
+    TimeInReadingSession +
+    LocationInText +
+    u_{Subject} +
+    u_{Story} +
+    u_{ScreenSize} +
+    \varepsilon_{i}$ 
+
+where <!-- fix below-->
+**$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
+**$\beta_{0}$** is the intercept
+**DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
+**Native** is a binary variable indicating whether the participant is a native speaker of English or not (responses - Yes/No, yes indicating that the participant is a native speaker).
+**Cond** represents autonomy condition (as a measure of situational motivation)
+**SComp** is participants' situational competence (perception of competence to read the story), measured by the subcomponent of 'competence' from the IMI questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
+**CMot** is participants' contextual reading motivation, measured by the subcomponent of contextual interest from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
+**CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
+**EExp1** is frequency of using any electronic devices for long-form text reading purposes
+**EExp2** is frequency of using task-relevant devices for any reading purpose
+**$u_{Subject}$** indicates a random intercept of subject indicator
+**$u_{Story}$** indicates a random intercept of story indicator
+**$u_{ScreenSize}$** indicates a random intercept of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
+**$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
+
+First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions between all predictors remaining in the model, and select them backward stepwise until the model converges. This model selection is used to explore possible interactions that are meaningful to add without overfitting the model.
+
+### Create predictor variables
+
+
+```{r}
+linearity_measure_data$StartsNonlinearity_lag1 <- lag(linearity_measure_data$StartsNonlinearity, 1)
+linearity_measure_data$StartsNonlinearity_lag2 <- lag(linearity_measure_data$StartsNonlinearity, 2)
+```
+
+
+### Visualise outcome variable and predictors
+
+The linearity_measure_data has `r nrow(linearity_measure_data)` observations.
+
+We create graphs to inspect linearity of reading and its connection to other variables.
+Graphs on the distribution of StartsNonlinearity and connection to random effects were created before the reader characteristics model, and so they are not repeated here.
+
+
+### Connection to previous event
+
+We visualise connection to previous events to see if initiating nonlinearity on the previous page, or on the page before the previous, is connected to initiating linearity on the current page-view.
+
+Previous page-view:
+
+```{r}
+table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$StartsNonlinearity_lag1)
+ggplot(
+    linearity_measure_data,
+    aes(StartsNonlinearity, ..count..)
+) +
+    geom_bar(aes(fill = StartsNonlinearity_lag1), position = "dodge") +
+    theme_classic()
+```
+
+Two pages before the current page-view:
+
+```{r}
+table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$StartsNonlinearity_lag1)
+ggplot(linearity_measure_data, aes(StartsNonlinearity, ..count..)) +
+    geom_bar(aes(fill = StartsNonlinearity_lag2), position = "dodge") +
+    theme_classic()
+```
+
+### Reading session
+
+Reading session number:
+
+```{r}
+ggplot(linearity_measure_data, aes(x = StartsNonlinearity, y = ReadingSessionNumber, fill = StartsNonlinearity)) +
+    geom_violin() +
+    geom_jitter(alpha = .1) +
+    theme_classic()
+```
+
+Nonlinearity may be more common in early reading sessions.
+
+Time in a reading session:
+
+```{r}
+ggplot(linearity_measure_data, aes(
+    x = StartsNonlinearity,
+    y = FirstCumulativeRSTime,
+    fill = StartsNonlinearity
+)) +
+    geom_violin() +
+    geom_jitter(alpha = .1) +
+    theme_classic() +
+    labs(y = "Time in a reading session (min)")
+```
+
+Similarly, nonlinearity may be more frequent at the beginning of reading sessions.
+
+### Location in text
+
+```{r}
+linearity_measure_data$PercentageLocation <- (
+    (linearity_measure_data$StartLocation
+        / linearity_measure_data$CharacterLength)
+)
+```
+
+```{r}
+ggplot(linearity_measure_data, aes(
+    x = StartsNonlinearity,
+    y = (PercentageLocation) * 100,
+    fill = StartsNonlinearity
+)) +
+    geom_violin() +
+    geom_jitter(alpha = .1) +
+    theme_classic() +
+    labs(y = "Location (%)")
+```
+
+Nonlinearity may also be connected to the beginning of the text.
+
+### Set contrasts to predictors
+
+Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
+
+Load a function to create helmert contrasts for categorical variables:
+
+```{r 'load helmert contrasts functions'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.weighted.R"
+    )
+)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.unweighted.R"
+    )
+)
+```
+
+Contrasts for categorical variables:
+
+```{r 'categorical contrasts'}
+# previous event (lag of 1)
+linearity_measure_data$StartsNonlinearity_lag1 <- as.factor(linearity_measure_data$StartsNonlinearity_lag1)
+contrasts(linearity_measure_data$StartsNonlinearity_lag1) <- contr.helmert.unweighted(linearity_measure_data$StartsNonlinearity_lag1)
+contrasts(linearity_measure_data$StartsNonlinearity_lag1)
+# two events back (lag of 2)
+linearity_measure_data$StartsNonlinearity_lag2 <- as.factor(linearity_measure_data$StartsNonlinearity_lag2)
+contrasts(linearity_measure_data$StartsNonlinearity_lag2) <- contr.helmert.unweighted(linearity_measure_data$StartsNonlinearity_lag2)
+contrasts(linearity_measure_data$StartsNonlinearity_lag2)
+```
+
+Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
+
+# control variable
+    TimeUntilDeadline +
+    # predictors
+    PreviousEvent +
+    PreviousEvent2 +
+    ReadingSessionNumber +
+    TimeInReadingSession +
+    LocationInText +
+
+```{r 'scale continuous variables'}
+# Days until reading deadline (control variable)
+linearity_measure_data$DaysUntilDeadline.sc <-
+    scale(linearity_measure_data$FirstTimeUntilDeadlineDays,
+        center = TRUE,
+        scale = TRUE
+    )
+# Reading session number
+linearity_measure_data$ReadingSessionNumber.sc <-
+    scale(linearity_measure_data$ReadingSessionNumber,
+        center = TRUE,
+        scale = TRUE
+    )
+# Time in a reading session
+linearity_measure_data$TimeInReadingSession.sc <-
+    scale(linearity_measure_data$FirstCumulativeRSTime,
+        center = TRUE,
+        scale = TRUE
+    )
+# Location in text
+linearity_measure_data$PercentageLocation.sc <-
+    scale(linearity_measure_data$PercentageLocation,
+        center = TRUE,
+        scale = TRUE
+    )
+```
+
+### Modelling by Event Properties
+
+#### Main effects
+
+First, we build the model structure consisting of only main effects and random intercepts. Refer to the beginning of the event properties section of this script to see information on how the model is built.
+
+The model includes 10 parameters before adding interactions (including intercept and the three random effects), and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/10 = `r round(nrow(linearity_measure_data)/10, 2)`
+
+```{r}
+AdditiveStructure_EventProperties <- (
+    "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+)
+```
+
+```{r}
+Linearity_EP_AdditiveModel <- glmer(
+    AdditiveStructure_EventProperties,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+summary(Linearity_EP_AdditiveModel)
+plot(Linearity_EP_AdditiveModel)
+```
+
+Inspect model values:
+
+```{r}
+fixef(Linearity_EP_AdditiveModel)
+```
+
+The model with all main effects converges, and so we can add all two-way interactions.
+
+#### Interactions
+
+We create a new model structure with interactions between all predictors of interest (all main effects apart from DaysUntilDeadline which is used as a control variable only). Only two-way interactions are included to avoid overfitting the model. The interactive model includes 32 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/32 = `r round(nrow(linearity_measure_data)/32, 2)`.
+
+```{r}
+InteractiveStructure_EventProperties <- (
+    "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + StartsNonlinearity_lag1 : ReadingSessionNumber.sc + StartsNonlinearity_lag1 : TimeInReadingSession.sc + StartsNonlinearity_lag1 : PercentageLocation.sc +  StartsNonlinearity_lag2 : ReadingSessionNumber.sc + StartsNonlinearity_lag2 : TimeInReadingSession.sc + StartsNonlinearity_lag2 : PercentageLocation.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc +  ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+)
+```
+
+```{r}
+Linearity_EP_InteractiveModel <- glmer(
+    InteractiveStructure_EventProperties,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+summary(Linearity_EP_InteractiveModel)
+plot(Linearity_EP_InteractiveModel)
+```
+
+Inspect model values:
+
+```{r}
+fixef(Linearity_EP_InteractiveModel)
+```
+
+The interactive model converges, and so there is no need for simplification of the model if the model assumptions are met.
+
+### Model Assumptions
+
+All generalised linear mixed models were tested for (1) multicollinearity, (2) under- and overdispersion, (3) heteroscedasticity, (4) influential observations, and (5) normality of random effects.
+
+#### 1. Multicollinearity
+
+We check for multicollinearity first with a correlation matrix:
+
+```{r}
+corrplot(cor(linearity_measure_data[, c(40:42)]), method = "number")
+```
+
+Location in text and time in a reading session are positively correlated, *r* = `r round(cor(linearity_measure_data$PercentageLocation.sc, linearity_measure_data$TimeInReadingSession.sc), 2)`.
+
+To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
+
+```{r}
+check_collinearity(Linearity_EP_InteractiveModel)
+plot(check_collinearity(Linearity_EP_InteractiveModel))
+```
+
+Despite of the correlations, and the multiple interactions included in the model, the predictors do not seem to be multicollinear. All VIF < 2.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
+
+#### 2. Under- and Overdispersion
+
+Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
+
+```{r}
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel, plot = F)
+```
+
+```{r}
+plotQQunif(simulated_model_output)
+```
+
+The model does not deviate from the expected distribution according to the qqplot.
+
+```{r}
+testDispersion(simulated_model_output)
+```
+
+The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
+
+#### 3. Heteroscedasticity
+
+We use the same simulated_model_output created in step 2 to test heteroscedasticity
+
+```{r}
+testQuantiles(simulated_model_output)
+```
+
+The p-value is not significant, although it is close to .05 at .08. The plot shows that some quantile deviations may be present as the lowest reference line in the plot does not lie parallel to the reference lines. However, this variance is minimal and so it is judged to not require corrections.
+
+#### 4. Influential Observations
+
+We test influential observations with Cook's Distance:
+
+```{r}
+cooksd <-
+    cooks.distance(Linearity_EP_InteractiveModel)
+plot(cooksd,
+    pch = "*",
+    cex = 2,
+    main = "Influential Obs by Cooks Distance"
+)
+abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+text(
+    x = 1:length(cooksd) + 1,
+    y = cooksd,
+    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+    col = "red"
+)
+```
+
+The plot indicates that the datset includes some highly influential observations. The plot highlights three influential values, numbers 60, 254, and 263.
+
+We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
+
+```{r}
+testOutliers(simulated_model_output)
+```
+
+Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. In order to assess the impact of the influential points indicated by Cook's Distance, we re-fit the model three times without each influential observation to see if the results are altered.
+
+**Fit the model without observation #263:**
+
+```{r}
+subset_without_observation263 <- linearity_measure_data[c(1:262, 264:nrow(linearity_measure_data)), ]
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influential263 <- glmer(
+    InteractiveStructure_EventProperties,
+    data = subset_without_observation263,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Inspect if model results are affected:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_influential263)
+summary(Linearity_EP_InteractiveModel)
+```
+
+Removing observation #263 does not seem to impact results as the significance of effects are not altered. Inclusion of this observation does not affect model interpretation.
+
+**Fit the model without observation #254:**
+
+```{r}
+subset_without_observation254 <- linearity_measure_data[c(1:253, 255:nrow(linearity_measure_data)), ]
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influential254 <- glmer(
+    InteractiveStructure_EventProperties,
+    data = subset_without_observation254,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Inspect if model results are affected:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_influential254)
+summary(Linearity_EP_InteractiveModel)
+```
+
+Removing observation #254 has an impact on model results. Removing the value results in a new significant interaction effect (StartsNonlinearity_lag2 and TimeInReadingSession.s). Therefore, the observation affects model interpretation and it should be removed from analyses.
+
+**Fit the model without observation #60:**
+
+```{r}
+subset_without_observation60 <- linearity_measure_data[c(1:59, 61:nrow(linearity_measure_data)), ]
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influential60 <- glmer(
+    InteractiveStructure_EventProperties,
+    data = subset_without_observation60,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Inspect if model results are affected:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_influential60)
+summary(Linearity_EP_InteractiveModel)
+```
+
+Removing observation #60 does not seem to impact results as the significance of effects are not altered. Inclusion of this observation does not affect model interpretation.
+
+In conclusion, observation #254 is treated as an influential point. It is removed from analysis at the end of the assumptions.
+
+#### 5. Normality of Random Effects
+
+Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId', and finally 'WindowWidth' random intercepts.
+
+```{r}
+random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel)$UserId$`(Intercept)`
+qqnorm(random_intercept_UserId)
+qqline(random_intercept_UserId)
+shapiro.test(random_intercept_UserId)
+```
+
+The qqplot varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed.
+
+```{r}
+random_intercept_StoryId <- ranef(Linearity_EP_InteractiveModel)$StoryId$`(Intercept)`
+qqnorm(random_intercept_StoryId)
+qqline(random_intercept_StoryId)
+shapiro.test(random_intercept_StoryId)
+```
+
+StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
+
+```{r}
+random_intercept_WindowWidth <- ranef(Linearity_EP_InteractiveModel)$WindowWidth$`(Intercept)`
+qqnorm(random_intercept_WindowWidth)
+qqline(random_intercept_WindowWidth)
+shapiro.test(random_intercept_WindowWidth)
+```
+
+Again, the qqplot indicates that WindowWidth may vary from normality, however, considering that the variance is not extensive and the Shapiro Test is not significant, we assume that WindowWidth random intercept is normally distributed.
+
+**Assumptions conclusion**
+
+One influential observation was found in assumption testing. This observation was removed from the model dataset and the model was re-fit. In interpretations we use Linearity_EP_InteractiveModel_influential254 which does not contain the influential observation. The new model was re-checked for assumptions (see plots below). The same tests were conducted, and the model was found the align with assumptions. Indeed, without the influential observation, the model aligned better with the assumptions, for example, in the case of heteroscedasticity.
+
+```{r 'all assumptions with updated model'}
+plot(check_collinearity(Linearity_EP_InteractiveModel_influential254))
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_influential254, plot = F)
+plotQQunif(simulated_model_output)
+testDispersion(simulated_model_output)
+testQuantiles(simulated_model_output)
+testOutliers(simulated_model_output)
+random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_influential254)$UserId$`(Intercept)`
+shapiro.test(random_intercept_UserId)
+random_intercept_StoryId <- ranef(Linearity_EP_InteractiveModel_influential254)$StoryId$`(Intercept)`
+shapiro.test(random_intercept_StoryId)
+random_intercept_WindowWidth <- ranef(Linearity_EP_InteractiveModel_influential254)$WindowWidth$`(Intercept)`
+shapiro.test(random_intercept_WindowWidth)
+```
+
+### Interpret reader characteristics model
+
+We then interpret model effects to interpret the results.
+
+```{r}
+summary(Linearity_EP_InteractiveModel_influential254)
+```
+
+Linearity of reading is significantly predicted by
+1. A main effect of previous event (lag 1)
+2. A main effect of time in a reading session
+3. An interaction between previous event (lag 1) and location in text
+4. An interaction between event preceeding previous (lag 2) and time in a reading session
+5. An interaction between reading session number and location in text
+6. An interaction between time in a reading session and location in text
+
+These findings are explored below by visualisations.
+First, we discuss the effect of previous events (1, 3, and 4). Secondly, we discuss the influence of reading session and location (2, 5, and 6)
+
+Note that no hypotheses were set for the event properties models and they are used for explorative purposes only.
+
+#### Connection between subsequent events
+
+The results of the model inidcated that previous event (lag 1) was a significant negative predictor of the odds of a nonlinear navigation being initiated.
+
+```{r}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_AddLine.R"
+    )
+)
+linearity_effectplot_previousevent <- effect_plot(
+    Linearity_EP_InteractiveModel_influential254,
+    pred = "StartsNonlinearity_lag1",
+    data =  subset_without_observation254,
+    interval = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Whether previous event initiated,nonlinear navigation or not")
+    )
+```
+ 
+The result indicates that participants were more likely to initiate nonlinear navigation if the previous event did not initiate nonlinearity. In other words, participants were unlikely to move between different types of nonlinear navigation (e.g. from a regression to a forward leap) in consecutive page-views.
+
+This main effect is affected by a significant interaction between the event on page(k-1) and location in text.
+
+```{r}
+subset_without_observation254$StartsNonlinearity_lag1 <- as.factor(subset_without_observation254$StartsNonlinearity_lag1)
+
+linearity_effectplot_previouseventlocation <- interact_plot(
+    Linearity_EP_InteractiveModel_influential254,
+    pred = "PercentageLocation.sc",
+    modx = "StartsNonlinearity_lag1",
+    data =  subset_without_observation254,
+    interval = TRUE,
+    legend.main = addline_format("Whether previous event initiated,nonlinear navigation or not")
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Location in text,(centered and scaled)")
+    )
+```
+
+The interaction effect indicates that the odds of a participant initiating a nonlinear navigation event on page(k) following an event on page(k-1) that did not initiate nonlinearity remained roughly the same regardless of text location. However, when the event on page(k-1) initiated nonlinear navigation, the odds of nonlinear navigation being initiated again on page(k) increased towards the end of the text. If consecutive page-views initiate nonlinearity, the participant is likely to be using both regressions and forward leaps to move in the text. Therefore, participants alternated more in their navigation habits towards the end of the text, compared to the beginning.
+
+In addition to the event on page(k-1), the event in page(k-2) was a significant predictor of nonlinearity in interaction with time in a reading session.
+
+```{r}
+linearity_effectplot_lag2time <- interact_plot(
+    Linearity_EP_InteractiveModel_influential254,
+    pred = "TimeInReadingSession.sc",
+    modx = "StartsNonlinearity_lag2",
+    interval = TRUE,
+    legend.main = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not")
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Location in text,(centered and scaled)")
+    )
+```
+
+The interaction effect indicates that the odds of a participant initiating nonlinear navigation in page(k) following a similar event in page(k-2) remained constant across the text. However, if the event in page(k-2) did not start a new nonlinear navigation event, the odds of nonlinear navigation being initiated in page(k) decreased towards the end of the text. This indicates that 
+
+
+
+
+a nonlinear navigation event that was initiated in the page-view preceeding the previous page-view (lag 2) remained constant regardless of participants' location in text. However, if the event two page-views apart from the current did not include a initiation of nonlinear navigation, the odds of initiating nonlinear navigation in the current event decreased towards the end of the text. In other words, participants were equally likely to initiate nonlinearity at the beginning of the text despite of previous events' nonlinearity, however, the likelihood of initiating nonlinearity became increasingly unlikely if the event
+
+
+**H4a: We expect situational motivation (high-autonomy condition) to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+
+This hypothesis was not supported as the interaction effect between Condition and situational competence was removed from the model during backward stepwise selection. Indeed, the main effect of condition was similarly removed, and therefore, participants in the high-autonomy and low-autonomy conditions did not differ significantly in their frequency of using nonlinear navigation during reading of the short story.
+
+**H4b: We expect contextual motivation to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+
+This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
+
+```{r}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_AddLine.R"
+    )
+)
+
+linearity_effectplot_cmotscomp <- interact_plot(
+    Linearity_ModelSelection5,
+    pred = "CInterest.sc",
+    modx = "SCompetence.sc",
+    data =  linearity_measure_data,
+    interval = TRUE,
+    legend.main = addline_format("Situation competence score,(centered and scaled)")
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Contextual motivation score, measured by contextual reading interest,(centered and scaled)")
+    )
+```
+
+Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation slightly less often when they found the text easy to read (high situational competence score). In contrast, a low contextual motivation score and high situational competence is associated with more frequent nonlinear navigation.
+
+However, the interaction was not significant and so the effect should not be interpreted further.
+
+**H4c: We expect an interaction between task-relevant electronic experience measures to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+
+This hypothesis was not supported as an interaction between the two electronic experience measures and situational competence was not a significant predictor of linearity of reading.
+
+```{r}
+linearity_effectplot_eexpscomp <- interact_plot(
+    Linearity_ModelSelection5,
+    pred = "Eexp1LongformEFreq.sc",
+    modx = "Eexp2DeviceRecFreq.sc",
+    mod2 = "SCompetence.sc",
+    data =  linearity_measure_data,
+    interval = TRUE,
+    legend.main = addline_format("Electronic experience measure 2: Device*"),
+    mod2.labels = c("-1SD Situational competence", "Mean of Situational Competence", "+1SD Situational Competence")
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
+    )
+```
+
+Indeed, the effect of electronic experience was the same, despite of situational competence.
+
+Although the three-way interaction between electronic experience measures and situational competence did not significantly predict linearity of reading, a two-way interaction between the electronic experience measures was a significant predictor in the model.
+
+```{r}
+linearity_effectplot_eexp <- interact_plot(
+    Linearity_ModelSelection5,
+    pred = "Eexp1LongformEFreq.sc",
+    modx = "Eexp2DeviceRecFreq.sc",
+    data =  linearity_measure_data,
+    interval = TRUE,
+    legend.main = addline_format("Electronic experience measure 2: Device*")
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
+    )
+```
+
+The finding indicated that a combination of high scores in the two task-relevant electronic reading experience measures was associated with lower likelihood of nonlinear navigation. In contrast, a low score in either measure with a high level of the other, was associated with more frequent nonlinear navigation. This indicates that electronic experience affected participants' linearity of reading.
+
