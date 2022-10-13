@@ -20,7 +20,7 @@ We aim to assess how frequently participants' used nonlinearity during the study
 
 To answer these research questions, we use 'StartsNonlinearity' (saved in Data as linearity_measure_data.csv) as a measure of the frequency of nonlinearity. This measure was computed in Prep_ReadingLinearityMeasure.rmd, and it tells us whether nonlinear navigation was initiated on a page-view or not. Therefore, StartsNonlinearity is TRUE when a participant starts a regression or a forward leap on a page-view and the previous page-view did not include similar nonlinearity (see Prep_TrackingDataWrangling.rmd in Prep for more detail).
 
-In this analysis script, StartsNonlinearity is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict StartsNonlinearity. In the second model, the dependent variables include information on the timing and location of StartsNonlinearity. With the latter model our intention is to study in which situations nonlinearity occurs. Both model structures are based on selection outlined in the full article. The models are constructed using glm() in the lme4-package by @bates_fitting_2015.
+In this analysis script, StartsNonlinearity is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict StartsNonlinearity. In the second model, the independent variables include information on the timing and location of StartsNonlinearity. With the latter model our intention is to study in which situations nonlinearity occurs. Both model structures are based on selection outlined in the full article. The models are constructed using glm() in the lme4-package by @bates_fitting_2015.
 
 **Information on the hypotheses**
 
@@ -554,14 +554,14 @@ linearity_measure_data$DaysUntilDeadline.sc <-
 First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 20 parameters (including two random effects and categorical variable levels), and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/20 = `r round(nrow(linearity_measure_data)/20, 2)`
 
 ```{r}
-FullStructure <- (
+FullStructure_RC <- (
     "StartsNonlinearity ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
 )
 ```
 
 ```{r}
-Linearity_FullModel <- glmer(
-    FullStructure,
+Linearity_RC_FullModel <- glmer(
+    FullStructure_RC,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -571,14 +571,14 @@ Linearity_FullModel <- glmer(
 The full model is singular, and so it needs to be simplified.
 
 ```{r}
-summary(Linearity_FullModel)
-plot(Linearity_FullModel)
+summary(Linearity_RC_FullModel)
+plot(Linearity_RC_FullModel)
 ```
 
 Inspect model values:
 
 ```{r}
-fixef(Linearity_FullModel)
+fixef(Linearity_RC_FullModel)
 ```
 
 ### Model backward selection
@@ -587,19 +587,19 @@ The fullmodel is singular, and thus its structure needs to be simplified. We rem
 
 Find lowest p-value:
 ```{r}
-summary(Linearity_FullModel)
+summary(Linearity_RC_FullModel)
 ```
 
 'DaysUntilDeadline.sc' has the lowest p-value and thus contributes the least to the model. It is removed:
 
 ```{r}
-SimplifiedStructure <- str_remove(FullStructure, fixed("DaysUntilDeadline.sc + "))
+SimplifiedStructure <- str_remove(FullStructure_RC, fixed("DaysUntilDeadline.sc + "))
 ```
 
 re-fit the model with the simplified structure:
 
 ```{r}
-Linearity_ModelSelection1 <- glmer(
+Linearity_RC_ModelSelection1 <- glmer(
     SimplifiedStructure,
     data = linearity_measure_data,
     family = binomial(),
@@ -610,8 +610,8 @@ Linearity_ModelSelection1 <- glmer(
 The model remains singular, and so we identify another predictor to be removed:
 
 ```{r}
-summary(Linearity_ModelSelection1)
-plot(Linearity_ModelSelection1)
+summary(Linearity_RC_ModelSelection1)
+plot(Linearity_RC_ModelSelection1)
 ```
 
 'Condition:SCompetence.sc' has the lowest p-value and so it is removed:
@@ -623,7 +623,7 @@ SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Condition : SCo
 Re-fit the model:
 
 ```{r}
-Linearity_ModelSelection2 <- glmer(
+Linearity_RC_ModelSelection2 <- glmer(
     SimplifiedStructure,
     data = linearity_measure_data,
     family = binomial(),
@@ -634,8 +634,8 @@ Linearity_ModelSelection2 <- glmer(
 The model remains singular, and so we identify another predictor to be removed:
 
 ```{r}
-summary(Linearity_ModelSelection2)
-plot(Linearity_ModelSelection2)
+summary(Linearity_RC_ModelSelection2)
+plot(Linearity_RC_ModelSelection2)
 ```
 
 'CCompetence.sc' has the lowest p-value and so it is removed:
@@ -647,7 +647,7 @@ SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CCompetence.sc "
 Re-fit the model:
 
 ```{r}
-Linearity_ModelSelection3 <- glmer(
+Linearity_RC_ModelSelection3 <- glmer(
     SimplifiedStructure,
     data = linearity_measure_data,
     family = binomial(),
@@ -658,8 +658,8 @@ Linearity_ModelSelection3 <- glmer(
 The model remains singular, and so we identify another predictor to be removed:
 
 ```{r}
-summary(Linearity_ModelSelection3)
-plot(Linearity_ModelSelection3)
+summary(Linearity_RC_ModelSelection3)
+plot(Linearity_RC_ModelSelection3)
 ```
 
 'NativeEnglish' has the lowest p-value and so it is removed:
@@ -671,7 +671,7 @@ SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("NativeEnglish + ")
 Re-fit the model:
 
 ```{r}
-Linearity_ModelSelection4 <- glmer(
+Linearity_RC_ModelSelection4 <- glmer(
     SimplifiedStructure,
     data = linearity_measure_data,
     family = binomial(),
@@ -682,8 +682,8 @@ Linearity_ModelSelection4 <- glmer(
 The model remains singular, and so we identify another predictor to be removed:
 
 ```{r}
-summary(Linearity_ModelSelection4)
-plot(Linearity_ModelSelection4)
+summary(Linearity_RC_ModelSelection4)
+plot(Linearity_RC_ModelSelection4)
 ```
 
 'Condition' has the lowest p-value and so it is removed:
@@ -695,7 +695,7 @@ SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("Condition + "))
 Re-fit the model:
 
 ```{r}
-Linearity_ModelSelection5 <- glmer(
+Linearity_RC_ModelSelection5 <- glmer(
     SimplifiedStructure,
     data = linearity_measure_data,
     family = binomial(),
@@ -707,9 +707,9 @@ The model converges, and it is no longer singular.
 We then inspect the model coefficients:
 
 ```{r}
-summary(Linearity_ModelSelection5)
-plot(Linearity_ModelSelection5)
-fixef(Linearity_ModelSelection5)
+summary(Linearity_RC_ModelSelection5)
+plot(Linearity_RC_ModelSelection5)
+fixef(Linearity_RC_ModelSelection5)
 ```
 
 ### Model Assumptions
@@ -729,8 +729,8 @@ The two electronic experience measures are positively correlated, *r* = `r round
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
 ```{r}
-check_collinearity(Linearity_ModelSelection5)
-plot(check_collinearity(Linearity_ModelSelection5))
+check_collinearity(Linearity_RC_ModelSelection5)
+plot(check_collinearity(Linearity_RC_ModelSelection5))
 ```
 
 Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 1.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
@@ -740,7 +740,7 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
 
 ```{r}
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_ModelSelection5, plot = F)
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_RC_ModelSelection5, plot = F)
 ```
 
 ```{r}
@@ -771,7 +771,7 @@ We test influential observations with Cook's Distance:
 
 ```{r}
 cooksd <-
-    cooks.distance(Linearity_ModelSelection5)
+    cooks.distance(Linearity_RC_ModelSelection5)
 plot(cooksd,
     pch = "*",
     cex = 2,
@@ -801,7 +801,7 @@ The test and the plot indicate that none of the observations are influential. We
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId', and finally 'WindowWidth' random intercepts.
 
 ```{r}
-random_intercept_UserId <- ranef(Linearity_ModelSelection5)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Linearity_RC_ModelSelection5)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -810,7 +810,7 @@ shapiro.test(random_intercept_UserId)
 The qqplot varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed.
 
 ```{r}
-random_intercept_StoryId <- ranef(Linearity_ModelSelection5)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Linearity_RC_ModelSelection5)$StoryId$`(Intercept)`
 qqnorm(random_intercept_StoryId)
 qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
@@ -819,7 +819,7 @@ shapiro.test(random_intercept_StoryId)
 StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
 
 ```{r}
-random_intercept_WindowWidth <- ranef(Linearity_ModelSelection5)$WindowWidth$`(Intercept)`
+random_intercept_WindowWidth <- ranef(Linearity_RC_ModelSelection5)$WindowWidth$`(Intercept)`
 qqnorm(random_intercept_WindowWidth)
 qqline(random_intercept_WindowWidth)
 shapiro.test(random_intercept_WindowWidth)
@@ -834,7 +834,7 @@ The model aligns with all assumptions.
 We then interpret model effects to interpret the results.
 
 ```{r}
-summary(Linearity_ModelSelection5)
+summary(Linearity_RC_ModelSelection5)
 ```
 
 Only an interaction effect between the two task-relevant electronic experience measures is a signficant predictor of linearity of reading.
@@ -858,7 +858,7 @@ source(
 )
 
 linearity_effectplot_cmotscomp <- interact_plot(
-    Linearity_ModelSelection5,
+    Linearity_RC_ModelSelection5,
     pred = "CInterest.sc",
     modx = "SCompetence.sc",
     data =  linearity_measure_data,
@@ -899,7 +899,7 @@ This hypothesis was not supported as an interaction between the two electronic e
 
 ```{r}
 linearity_effectplot_eexpscomp <- interact_plot(
-    Linearity_ModelSelection5,
+    Linearity_RC_ModelSelection5,
     pred = "Eexp1LongformEFreq.sc",
     modx = "Eexp2DeviceRecFreq.sc",
     mod2 = "SCompetence.sc",
@@ -938,7 +938,7 @@ Although the three-way interaction between electronic experience measures and si
 
 ```{r}
 linearity_effectplot_eexp <- interact_plot(
-    Linearity_ModelSelection5,
+    Linearity_RC_ModelSelection5,
     pred = "Eexp1LongformEFreq.sc",
     modx = "Eexp2DeviceRecFreq.sc",
     data =  linearity_measure_data,
@@ -980,10 +980,10 @@ The model takes the following structure:
 $Y_{i} = 
     \beta_{0} +
     # control variable
-    TimeUntilDeadline +
+    DUD +
     # predictors
-    PreviousEvent +
-    PreviousEvent2 +
+    Observation~k-1~ +
+    Observation~k-2~ +
     ReadingSessionNumber +
     TimeInReadingSession +
     LocationInText +
@@ -996,13 +996,11 @@ where <!-- fix below-->
 **$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
 **$\beta_{0}$** is the intercept
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
-**Native** is a binary variable indicating whether the participant is a native speaker of English or not (responses - Yes/No, yes indicating that the participant is a native speaker).
-**Cond** represents autonomy condition (as a measure of situational motivation)
-**SComp** is participants' situational competence (perception of competence to read the story), measured by the subcomponent of 'competence' from the IMI questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
-**CMot** is participants' contextual reading motivation, measured by the subcomponent of contextual interest from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
-**CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
-**EExp1** is frequency of using any electronic devices for long-form text reading purposes
-**EExp2** is frequency of using task-relevant devices for any reading purpose
+**Observation~k-1~**
+**Observation~k-2~**
+**ReadingSessionNumber**
+**TimeInReadingSession**
+**LocationInText**
 **$u_{Subject}$** indicates a random intercept of subject indicator
 **$u_{Story}$** indicates a random intercept of story indicator
 **$u_{ScreenSize}$** indicates a random intercept of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
@@ -1140,15 +1138,6 @@ contrasts(linearity_measure_data$StartsNonlinearity_lag2)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-# control variable
-    TimeUntilDeadline +
-    # predictors
-    PreviousEvent +
-    PreviousEvent2 +
-    ReadingSessionNumber +
-    TimeInReadingSession +
-    LocationInText +
-
 ```{r 'scale continuous variables'}
 # Days until reading deadline (control variable)
 linearity_measure_data$DaysUntilDeadline.sc <-
@@ -1185,14 +1174,14 @@ First, we build the model structure consisting of only main effects and random i
 The model includes 10 parameters before adding interactions (including intercept and the three random effects), and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/10 = `r round(nrow(linearity_measure_data)/10, 2)`
 
 ```{r}
-AdditiveStructure_EventProperties <- (
+AdditiveStructure_EP <- (
     "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
 )
 ```
 
 ```{r}
 Linearity_EP_AdditiveModel <- glmer(
-    AdditiveStructure_EventProperties,
+    AdditiveStructure_EP,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1217,14 +1206,18 @@ The model with all main effects converges, and so we can add all two-way interac
 We create a new model structure with interactions between all predictors of interest (all main effects apart from DaysUntilDeadline which is used as a control variable only). Only two-way interactions are included to avoid overfitting the model. The interactive model includes 32 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/32 = `r round(nrow(linearity_measure_data)/32, 2)`.
 
 ```{r}
-InteractiveStructure_EventProperties <- (
+InteractiveStructure_EP <- (
     "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + StartsNonlinearity_lag1 : ReadingSessionNumber.sc + StartsNonlinearity_lag1 : TimeInReadingSession.sc + StartsNonlinearity_lag1 : PercentageLocation.sc +  StartsNonlinearity_lag2 : ReadingSessionNumber.sc + StartsNonlinearity_lag2 : TimeInReadingSession.sc + StartsNonlinearity_lag2 : PercentageLocation.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc +  ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+)
+
+InteractiveStructure_EP2 <- ( # possible way to prior set interactions
+    "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc +  ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
 )
 ```
 
 ```{r}
 Linearity_EP_InteractiveModel <- glmer(
-    InteractiveStructure_EventProperties,
+    InteractiveStructure_EP2,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1246,32 +1239,128 @@ The interactive model converges, and so there is no need for simplification of t
 
 ### Model Assumptions
 
-All generalised linear mixed models were tested for (1) multicollinearity, (2) under- and overdispersion, (3) heteroscedasticity, (4) influential observations, and (5) normality of random effects.
+All generalised linear mixed models were tested for (1) multicollinearity, (2) under- and overdispersion, (3) influential observations, (4) heteroscedasticity, and (5) normality of random effects.
 
 #### 1. Multicollinearity
+
+Multicollinearity is checked by first inspecting a correlation matrix, and then computing Variance Inflation Factors (VIF) for all predictors.
+Any VIF > 5 is considered to be a strong indication of multicollinearity, and thus those predictors should be removed. Any VIFs that are in the moderate range 1 < VIF < 5 are inspected before removing them. If removing the variable with a moderate VIF influences the model interpretation of predictors (not including the one that is removed), then the predictor should be removed from the model. 
 
 We check for multicollinearity first with a correlation matrix:
 
 ```{r}
-corrplot(cor(linearity_measure_data[, c(40:42)]), method = "number")
+corrplot(cor(linearity_measure_data[, c("ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
 ```
 
 Location in text and time in a reading session are positively correlated, *r* = `r round(cor(linearity_measure_data$PercentageLocation.sc, linearity_measure_data$TimeInReadingSession.sc), 2)`.
 
-To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
+To check if these correlations are problematic, we calculate VIF:
 
 ```{r}
 check_collinearity(Linearity_EP_InteractiveModel)
 plot(check_collinearity(Linearity_EP_InteractiveModel))
 ```
 
-Despite of the correlations, and the multiple interactions included in the model, the predictors do not seem to be multicollinear. All VIF < 2.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
+The 'check_collinearity' test from the 'performance' -package indicates a slightly inflated VIF value of 'StartsNonlinearity_lag1:StartsNonlinearity_lag2' (*VIF* = 3.82). Considering that the VIF is in the moderate range, we inspect whether removing the interaction has a significant effect on the model results interpretation (other than the removed predictor):
+
+```{r}
+SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag1 : StartsNonlinearity_lag2 "))
+```
+
+```{r}
+Linearity_EP_InteractiveModel_MulticollinearityTest <- glmer(
+    SimplifiedStructure_EP,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Compare model results to original interactive model:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_MulticollinearityTest)
+summary(Linearity_EP_InteractiveModel)
+```
+
+Inclusion of the interaction has a slight impact on model results, and therefore, the interaction effect should be removed.
+
+Multicollinearity is tested again after removal of "StartsNonlinearity_lag1 : StartsNonlinearity_lag2":
+
+```{r}
+check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest)
+plot(check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest))
+```
+
+The test indicates that an interaction effect between 'StartsNonlinearity_lag1' and 'ReadingSessionNumber.sc' has a moderate VIF (*VIF* = 2.86). Again, the impact of removal is inspected:
+
+```{r}
+SimplifiedStructure_EP <- str_remove(SimplifiedStructure_EP, fixed("+ StartsNonlinearity_lag1 : ReadingSessionNumber.sc "))
+```
+
+```{r}
+Linearity_EP_InteractiveModel_MulticollinearityTest2 <- glmer(
+    SimplifiedStructure_EP,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Compare model results to original interactive model:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_MulticollinearityTest2)
+summary(Linearity_EP_InteractiveModel_MulticollinearityTest)
+```
+
+Inclusion of the interaction has a slight impact on model results, and therefore, the interaction effect should be removed.
+
+Multicollinearity is tested again after removal of "StartsNonlinearity_lag1 : ReadingSessionNumber.sc":
+
+```{r}
+check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest2)
+plot(check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest2))
+```
+
+The test indicates that an interaction effect between 'StartsNonlinearity_lag1' and 'TimeInReadingSession.sc' has a moderate VIF (*VIF* = 3.90). Again, the impact of removal is inspected:
+
+```{r}
+SimplifiedStructure_EP <- str_remove(SimplifiedStructure_EP, fixed("+ StartsNonlinearity_lag1 : TimeInReadingSession.sc "))
+```
+
+```{r}
+Linearity_EP_InteractiveModel_MulticollinearityTest3 <- glmer(
+    SimplifiedStructure_EP,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Compare model results to original interactive model:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_MulticollinearityTest3)
+summary(Linearity_EP_InteractiveModel_MulticollinearityTest2)
+```
+
+Inclusion of the interaction has a slight impact on model results, and therefore, the interaction effect should be removed.
+Multicollinearity is tested again after removal of "StartsNonlinearity_lag1 : TimeInReadingSession.sc":
+
+```{r}
+check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest3)
+plot(check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest3))
+```
+
+The test indicates low correlation between predictors, and so the model is now expected to align to the assumption of not having multicollinearity. We use Linearity_EP_InteractiveModel_MulticollinearityTest3 in the following assumptions checks.
 
 #### 2. Under- and Overdispersion
 
 Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
 
 ```{r}
+set.seed(1234) # for reproducibility
 simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel, plot = F)
 ```
 
@@ -1287,17 +1376,7 @@ testDispersion(simulated_model_output)
 
 The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
 
-#### 3. Heteroscedasticity
-
-We use the same simulated_model_output created in step 2 to test heteroscedasticity
-
-```{r}
-testQuantiles(simulated_model_output)
-```
-
-The p-value is not significant, although it is close to .05 at .08. The plot shows that some quantile deviations may be present as the lowest reference line in the plot does not lie parallel to the reference lines. However, this variance is minimal and so it is judged to not require corrections.
-
-#### 4. Influential Observations
+#### 3. Influential Observations
 
 We test influential observations with Cook's Distance:
 
@@ -1318,39 +1397,15 @@ text(
 )
 ```
 
-The plot indicates that the datset includes some highly influential observations. The plot highlights three influential values, numbers 60, 254, and 263.
+The plot indicates that the dataset may include some highly influential observations. In particular, the plot highlights observations 254 and 60.
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
 ```{r}
-testOutliers(simulated_model_output)
+testOutliers(Linearity_EP_InteractiveModel)
 ```
 
-Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. In order to assess the impact of the influential points indicated by Cook's Distance, we re-fit the model three times without each influential observation to see if the results are altered.
-
-**Fit the model without observation #263:**
-
-```{r}
-subset_without_observation263 <- linearity_measure_data[c(1:262, 264:nrow(linearity_measure_data)), ]
-```
-
-```{r}
-Linearity_EP_InteractiveModel_influential263 <- glmer(
-    InteractiveStructure_EventProperties,
-    data = subset_without_observation263,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-Inspect if model results are affected:
-
-```{r}
-summary(Linearity_EP_InteractiveModel_influential263)
-summary(Linearity_EP_InteractiveModel)
-```
-
-Removing observation #263 does not seem to impact results as the significance of effects are not altered. Inclusion of this observation does not affect model interpretation.
+Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. In order to assess the impact of the influential points indicated by Cook's Distance, we re-fit the model twice  without each influential observation to see if the results are altered.
 
 **Fit the model without observation #254:**
 
@@ -1360,7 +1415,7 @@ subset_without_observation254 <- linearity_measure_data[c(1:253, 255:nrow(linear
 
 ```{r}
 Linearity_EP_InteractiveModel_influential254 <- glmer(
-    InteractiveStructure_EventProperties,
+    SimplifiedStructure_EP,
     data = subset_without_observation254,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1371,21 +1426,42 @@ Inspect if model results are affected:
 
 ```{r}
 summary(Linearity_EP_InteractiveModel_influential254)
-summary(Linearity_EP_InteractiveModel)
+summary(Linearity_EP_InteractiveModel_MulticollinearityTest3)
 ```
 
-Removing observation #254 has an impact on model results. Removing the value results in a new significant interaction effect (StartsNonlinearity_lag2 and TimeInReadingSession.s). Therefore, the observation affects model interpretation and it should be removed from analyses.
+Removing observation #254 has an impact on model results. Removing the value results in a new significant interaction effect (ReadingSessionNumber and TimeInReadingSession). Therefore, the observation affects model interpretation and it should be removed from analyses.
+
+Assess influential observations after removing point 254:
+
+```{r}
+cooksd <-
+    cooks.distance(Linearity_EP_InteractiveModel_influential254)
+plot(cooksd,
+    pch = "*",
+    cex = 2,
+    main = "Influential Obs by Cooks Distance"
+)
+abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+text(
+    x = 1:length(cooksd) + 1,
+    y = cooksd,
+    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+    col = "red"
+)
+```
+
+The plot indicates that the dataset still includes some influential observations. In particular, the plot highlights observation 60.
 
 **Fit the model without observation #60:**
 
 ```{r}
-subset_without_observation60 <- linearity_measure_data[c(1:59, 61:nrow(linearity_measure_data)), ]
+subset_without_observations254and60 <- subset_without_observation254[c(1:59, 61:nrow(subset_without_observation254)), ]
 ```
 
 ```{r}
-Linearity_EP_InteractiveModel_influential60 <- glmer(
-    InteractiveStructure_EventProperties,
-    data = subset_without_observation60,
+Linearity_EP_InteractiveModel_influential60and254 <- glmer(
+    SimplifiedStructure_EP,
+    data = subset_without_observations254and60,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
@@ -1394,13 +1470,73 @@ Linearity_EP_InteractiveModel_influential60 <- glmer(
 Inspect if model results are affected:
 
 ```{r}
-summary(Linearity_EP_InteractiveModel_influential60)
-summary(Linearity_EP_InteractiveModel)
+summary(Linearity_EP_InteractiveModel_influential60and254)
+summary(Linearity_EP_InteractiveModel_influential254)
 ```
 
-Removing observation #60 does not seem to impact results as the significance of effects are not altered. Inclusion of this observation does not affect model interpretation.
+Removing observation #60 has an impact on model results. Removing the value results in a new significant interaction effect (StartsNonlinearity_lag2 and TimeInReadingSession). Therefore, the observation affects model interpretation and it should be removed from analyses.
 
-In conclusion, observation #254 is treated as an influential point. It is removed from analysis at the end of the assumptions.
+Assess influential observations after removing points 254 and 60:
+
+```{r}
+cooksd <-
+    cooks.distance(Linearity_EP_InteractiveModel_influential60and254)
+plot(cooksd,
+    pch = "*",
+    cex = 2,
+    main = "Influential Obs by Cooks Distance"
+)
+abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+text(
+    x = 1:length(cooksd) + 1,
+    y = cooksd,
+    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+    col = "red"
+)
+```
+
+The plot indicates that the dataset still includes some influential observations. In particular, the plot highlights observation 263.
+
+**Fit the model without observation #263:**
+
+```{r}
+subset_without_3observations <- subset_without_observations254and60[c(1:262, 264:nrow(subset_without_observations254and60)), ]
+```
+
+```{r}
+Linearity_EP_InteractiveModel_3InfluentialPoints <- glmer(
+    SimplifiedStructure_EP,
+    data = subset_without_3observations,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+Inspect if model results are affected:
+
+```{r}
+summary(Linearity_EP_InteractiveModel_3InfluentialPoints)
+summary(Linearity_EP_InteractiveModel_influential60and254)
+```
+
+Removing observation #263 has no impact on model interpretation, and thus it is retained in the model and it is not considered to be influential.
+
+In following assumption checks we use Linearity_EP_InteractiveModel_influential60and254 that has two influential observations removed.
+
+#### 4. Heteroscedasticity
+
+Create a new simulated_model_output to test for heteroscedasticity:
+
+```{r}
+set.seed(1234) # for reproducibility
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_influential60and254, plot = F)
+```
+
+```{r}
+testQuantiles(simulated_model_output)
+```
+
+The quantile test for heteroscedasticity is significant, indicating that the model needs to be adjusted.
 
 #### 5. Normality of Random Effects
 
@@ -1435,20 +1571,119 @@ Again, the qqplot indicates that WindowWidth may vary from normality, however, c
 
 **Assumptions conclusion**
 
-One influential observation was found in assumption testing. This observation was removed from the model dataset and the model was re-fit. In interpretations we use Linearity_EP_InteractiveModel_influential254 which does not contain the influential observation. The new model was re-checked for assumptions (see plots below). The same tests were conducted, and the model was found the align with assumptions. Indeed, without the influential observation, the model aligned better with the assumptions, for example, in the case of heteroscedasticity.
+Two influential observations were found in assumption testing. These observations are removed from the model dataset and the model is re-fit.
+
+```{r}
+subset_without_observation254and263 <- linearity_measure_data[c(1:253, 255:262, 264:nrow(linearity_measure_data)), ]
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influentialsremoved <- glmer(
+    InteractiveStructure_EP,
+    data = subset_without_observation254and263,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+**Re-test the model assumptions**
+
+The new model is tested for assumptions.
+
+1. Multicollinearity:
+
+```{r}
+check_collinearity(Linearity_EP_InteractiveModel_influentialsremoved)
+plot(check_collinearity(Linearity_EP_InteractiveModel_influentialsremoved))
+```
+
+The collinearity test indicates that three different interaction effects may be collinear in the model.
+We test the impact of removing each of these one-by-one:
+
+```{r}
+SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag1 : StartsNonlinearity_lag2 "))
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity1 <- glmer(
+    SimplifiedStructure_EP,
+    data = subset_without_observation254and263,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity1)
+```
+
+Removing the interaction effect between 'StartsNonlinearity_lag1' and 'StartsNonlinearity_lag2' does not significantly change model results, and so the interaction is retained in the model.
+
+```{r}
+SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag1 : ReadingSessionNumber.sc "))
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity2 <- glmer(
+    SimplifiedStructure_EP,
+    data = subset_without_observation254and263,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity2)
+```
+
+Removing the interaction effect between 'StartsNonlinearity_lag1' and 'ReadingSessionNumber.sc' does not significantly change model results, and so the interaction is retained in the model.
+
+```{r}
+SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag2 : TimeInReadingSession.sc "))
+```
+
+```{r}
+Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity3 <- glmer(
+    SimplifiedStructure_EP,
+    data = subset_without_observation254and263,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity3)
+```
+
+Removing the interaction effect between 'StartsNonlinearity_lag1' and 'TimeInReadingSession.sc' does have a significant effect on the model results. As a result, 
+
+As a result, 
+
+lag1 : per affects model results
+
+```{r}
+anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved2)
+```
+
+sig in anova too
+
+```{r}
+
+```
 
 ```{r 'all assumptions with updated model'}
-plot(check_collinearity(Linearity_EP_InteractiveModel_influential254))
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_influential254, plot = F)
+plot(check_collinearity(Linearity_EP_InteractiveModel_influentialsremoved2))
+set.seed(1234)
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_influentialsremoved, plot = F)
 plotQQunif(simulated_model_output)
 testDispersion(simulated_model_output)
 testQuantiles(simulated_model_output)
 testOutliers(simulated_model_output)
-random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_influential254)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_influentialsremoved)$UserId$`(Intercept)`
 shapiro.test(random_intercept_UserId)
-random_intercept_StoryId <- ranef(Linearity_EP_InteractiveModel_influential254)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Linearity_EP_InteractiveModel_influentialsremoved)$StoryId$`(Intercept)`
 shapiro.test(random_intercept_StoryId)
-random_intercept_WindowWidth <- ranef(Linearity_EP_InteractiveModel_influential254)$WindowWidth$`(Intercept)`
+random_intercept_WindowWidth <- ranef(Linearity_EP_InteractiveModel_influentialsremoved)$WindowWidth$`(Intercept)`
 shapiro.test(random_intercept_WindowWidth)
 ```
 
