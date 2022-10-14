@@ -1,0 +1,272 @@
+---
+title: "Prep_ReadingSpeedMeasure"
+author: "Pauliina Vuorinen"
+date: "14/10/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to compute a measure of reading speed. 
+
+Participants' reading speed was measured in words per minute by comparing the time they spent on a page-view to the amount of words on each page. Reading speeds were then categorised by comparing the speed to participants' result in a baseline reading speed test. We were interested in 'deep reading' speeds, which reflect a natural reading speed at which the text can be comprehended. These speeds were assumed to vary between 100wpm and 2.4*baseline speed (see more information in the manuscript).
+
+To compare participants' variance in reading speed, we normalise reading speeds by deducting the baseline speed result from it. We are interested in whether participants use their natural reading speeds, or speeds higher or lower than the baseline, and therefore, we aim to measure absolute variance from baseline reading speed.
+
+**Information on hypotheses:**
+
+
+
+
+
+This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
+
+## Setup
+
+```{r, setup}
+library(tidyverse)
+library(tidyr)
+library(dplyr)
+getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
+```
+
+## Load data and check variable types
+
+```{r 'load data'}
+tracking_data <-
+    read.csv(
+        "Data/wrangled_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+tracking_data <- select(tracking_data, -X)
+```
+
+```{r 'change variable types'}
+str(tracking_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+tracking_data[, c(
+    "UserId",
+    "StoryId",
+    "Direction",
+    "NavigationBlockDirection"
+)] <- convert.magic(
+    tracking_data[, c(
+        "UserId",
+        "StoryId",
+        "Direction",
+        "NavigationBlockDirection"
+    )],
+    "factor"
+)
+## fix numeric columns that were automatically categorised as character
+tracking_data[, c(
+    "BaselineSpeed",
+    "DurationMinutes",
+    "ReadingBlockDuration",
+    "EngagedReadingDuration",
+    "EngagedReadingSpeed",
+    "NavigationBlockDuration",
+    "TimeBeforeDeadlinesDays"
+)] <- convert.magic(
+    tracking_data[, c(
+        "BaselineSpeed",
+        "DurationMinutes",
+        "ReadingBlockDuration",
+        "EngagedReadingDuration",
+        "EngagedReadingSpeed",
+        "NavigationBlockDuration",
+        "TimeBeforeDeadlinesDays"
+    )],
+    "numeric"
+)
+## turn reading block (page view) number,
+### reading session number, and
+#### navigation block number into ordered factors
+tracking_data[, c(
+    "ReadingBlockNumber",
+    "ReadingSessionNumber",
+    "NavigationBlockNumber"
+)] <- convert.magic(
+    tracking_data[, c(
+        "ReadingBlockNumber",
+        "ReadingSessionNumber",
+        "NavigationBlockNumber"
+    )],
+    "ordered"
+)
+## fix logical variables
+tracking_data[, c(
+    "IsBlurred",
+    "IsDialogOpen",
+    "IsMenuOpen",
+    "IsInactive",
+    "IsReading",
+    "IsPageOpen"
+)] <- convert.magic(
+    tracking_data[, c(
+        "IsBlurred",
+        "IsDialogOpen",
+        "IsMenuOpen",
+        "IsInactive",
+        "IsReading",
+        "IsPageOpen"
+    )],
+    "logical"
+)
+
+## fix date and time variable types
+tracking_data$Date <-
+    as.Date(
+        tracking_data$Date,
+        format = "%Y-%m-%d"
+    )
+TempTimeObject <- strsplit(tracking_data$Time, " ")
+TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+tracking_data$TempTimeObject <- TempTimeObject
+tracking_data <- dplyr::select(tracking_data, -Time)
+names(tracking_data)[which(colnames(tracking_data) == "TempTimeObject")] <- "Time"
+tracking_data$DateTime <- paste(
+    tracking_data$Date,
+    tracking_data$Time
+)
+op <-
+    options(digits.secs = 3)
+tracking_data$Time <-
+    strptime(
+        tracking_data$Time,
+        format = "%H:%M:%OS"
+    )
+tracking_data <- tracking_data %>%
+    mutate(DateTime = as.POSIXct(DateTime, format = "%Y-%m-%d %H:%M:%OS"))
+```
+
+## Reading speed measure
+
+First, we remove all events that do not occur on a page-view:
+
+```{r}
+## 8144 rows (full data 8774 rows)
+speed_measure_data <- tracking_data %>%
+    filter(
+        Engagement != "Disengagement" &
+            Engagement != "Dialog"
+    )
+```
+
+The dataset decreases from `r nrow(tracking_data)` rows to `r nrow(speed_measure_data)` rows.
+
+We then create a new column that includes participants' baseline speed if it is not adjusted, and adjusted baseline speed if adjustments were needed (see manuscript for more information on why baseline speed was adjusted):
+
+```{r}
+speed_measure_data$AdjustedBaselineSpeed <- ifelse(
+    !(is.na(speed_measure_data$AdjustedBaselineSpeed)),
+    speed_measure_data$AdjustedBaselineSpeed,
+    speed_measure_data$BaselineSpeed
+)
+```
+
+We then calculate absolute reading rate (baseline speed deducted from reading speed):
+
+```{r}
+speed_measure_data$ReadingRate <- (
+    speed_measure_data$EngagedReadingSpeed
+    - speed_measure_data$AdjustedBaselineSpeed)
+speed_measure_data$AbsReadingRate <- abs(
+    speed_measure_data$ReadingRate
+    )
+```
+
+Finally, we select one observation per page-view to make sure that the dataset does not contain dublicate values:
+
+```{r}
+# make sure the df is correctly ordered
+speed_measure_data <-
+    speed_measure_data[
+        with(
+            speed_measure_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
+# Select one event per each page-view:
+## group events
+### and summarise important variables into columns
+speed_measure_data <- speed_measure_data %>%
+    filter(!(is.na(ReadingRate))) %>%
+    group_by(
+        UserId,
+        StoryId,
+        ReadingSessionNumber,
+        ReadingBlockNumber,
+        Condition,
+        ReadingRate,
+        AbsReadingRate,
+        EngagedSpeedLabel) %>%
+    summarise(
+        StartLocation = first(StartLocation),
+        EndLocation = first(EndLocation),
+        FirstTimeUntilDeadlineDays = first(TimeBeforeDeadlinesDays),
+        FirstCumulativeRSTime = first(CumulativeRSTime),
+        WindowWidth = first(WindowWidth)
+    )
+```
+
+Only information on 'deep reading' speeds is retained in the measure dataset:
+
+```{r}
+reading_speed_measure_data <- filter(
+    speed_measure_data,
+    EngagedSpeedLabel == "DeepReading"
+)
+```
+
+The dataset decreases from `r nrow(speed_measure_data)` rows to `r nrow(reading_speed_measure_data)` rows.
+
+## Inspect reading speed
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = UserId, y = ReadingRate)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Some participants vary in their reading rate much more than others.
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = StartLocation, y = ReadingRate)) +
+    geom_line() +
+    facet_wrap(~UserId)
+```
+Variance across different locations in the book (note that location is not standardised across the different texts).
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = UserId, y = AbsReadingRate)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Variance in absolute reading rate
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = StartLocation, y = AbsReadingRate)) +
+    geom_line() +
+    facet_wrap(~UserId)
+```
+
+By-participant variance in absolute reading rate.
+
+## Save reading speed dataset
+
+The new df is saved for usage in analysis.
+The dataset has already been saved, and so the below sr code chunk is not run.
+
+```{r, eval=FALSE, echo=TRUE, save linearity df}
+write.csv2(
+    reading_speed_measure_data,
+    "reading_speed_measure_data.csv"
+)
+```
