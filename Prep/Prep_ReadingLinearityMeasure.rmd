@@ -510,6 +510,13 @@ However, this connection is less apparent for the participants who have more non
 Finally, to create a measure for linearity to use in the analysis, we filter the dataframe to only include one event per page-view. We therefore remove events that occur outside of visible page-views, such as disengagements and dialog events (triggered by viewing of information sheet). We then select one event per page-view that includes information on linearity (in particular, "StartsNonlinearity")
 
 ```{r, create a linearity df with one event per page-view}
+# Remove events that do not occur on a page-view
+## 8144 rows (full data 8774 rows)
+linearity_measure_data <- tracking_data %>%
+    filter(
+        Engagement != "Disengagement" &
+            Engagement != "Dialog"
+    )
 # make sure the df is correctly ordered
 tracking_data <-
     tracking_data[
@@ -518,13 +525,6 @@ tracking_data <-
             order(UserId, Date, Time, Id)
         ),
     ]
-# Remove events that do not occur on a page-view
-## 8144 rows (full data 8774 rows)
-linearity_measure_data <- tracking_data %>%
-    filter(
-        Engagement != "Disengagement" &
-            Engagement != "Dialog"
-    )
 # Select one event per each page-view:
 ## group events by
 ### UserId, ReadingSessionNumber, ReadingBlockNumber (page-view indicator), and Condition
