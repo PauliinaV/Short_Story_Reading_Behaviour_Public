@@ -170,15 +170,36 @@ speed_measure_data$AdjustedBaselineSpeed <- ifelse(
 )
 ```
 
-We then calculate absolute reading rate (baseline speed deducted from reading speed):
+We then calculate difference in reading speed and baseline:
+
+```{r}
+speed_measure_data$ReadingSpeedDifference <- (
+    speed_measure_data$EngagedReadingSpeed
+    - speed_measure_data$AdjustedBaselineSpeed)
+speed_measure_data$AbsReadingSpeedDifference <- abs(
+    speed_measure_data$ReadingSpeedDifference
+    )
+```
+
+Calculate reading rate (speed/baseline):
 
 ```{r}
 speed_measure_data$ReadingRate <- (
     speed_measure_data$EngagedReadingSpeed
-    - speed_measure_data$AdjustedBaselineSpeed)
-speed_measure_data$AbsReadingRate <- abs(
-    speed_measure_data$ReadingRate
-    )
+    / speed_measure_data$AdjustedBaselineSpeed
+)
+```
+
+Calculate difference in reading speed relative to baseline ((speed - baseline)/baseline):
+
+```{r}
+speed_measure_data$RelativeSpeedDifference <- (
+    speed_measure_data$ReadingSpeedDifference
+    / speed_measure_data$AdjustedBaselineSpeed
+)
+speed_measure_data$AbsRelativeSpeedDifference <- abs(
+    speed_measure_data$RelativeSpeedDifference
+)
 ```
 
 Finally, we select one observation per page-view to make sure that the dataset does not contain dublicate values:
@@ -203,8 +224,11 @@ speed_measure_data <- speed_measure_data %>%
         ReadingSessionNumber,
         ReadingBlockNumber,
         Condition,
+        ReadingSpeedDifference,
+        AbsReadingSpeedDifference,
+        RelativeSpeedDifference,
+        AbsRelativeSpeedDifference,
         ReadingRate,
-        AbsReadingRate,
         EngagedSpeedLabel) %>%
     summarise(
         StartLocation = first(StartLocation),
@@ -239,25 +263,25 @@ Some participants vary in their reading rate much more than others.
 ```{r}
 ggplot(reading_speed_measure_data, aes(x = StartLocation, y = ReadingRate)) +
     geom_line() +
+    geom_hline(yintercept = 1) +
     facet_wrap(~UserId)
 ```
 Variance across different locations in the book (note that location is not standardised across the different texts).
 
+We then inspect relative speed difference ((speed-baseline)/baseline):
+
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = UserId, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = UserId, y = RelativeSpeedDifference)) +
     geom_boxplot() +
     theme_classic()
 ```
 
-Variance in absolute reading rate
-
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = StartLocation, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = StartLocation, y = RelativeSpeedDifference)) +
     geom_line() +
+    geom_hline(yintercept = 0) +
     facet_wrap(~UserId)
 ```
-
-By-participant variance in absolute reading rate.
 
 ## Save reading speed dataset
 
