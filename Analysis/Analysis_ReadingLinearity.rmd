@@ -15,12 +15,12 @@ library: "~/Extra/RPackages.bib"
     * this could go into Prep_ReadingLinearityMeasure
 
 
-The purpose of this script is to analyse how linearly participants' read the short story during the study.
-We aim to assess how frequently participants' used nonlinearity during the study, how nonlinearity occurred, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to this nonlinearity. See the full article for details.
+The purpose of this script is to analyse how linearly participants read the short story during the study.
+We aim to assess how frequently participants used nonlinearity during the study, how nonlinearity occurred, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to this nonlinearity. See the full article for details.
 
 To answer these research questions, we use 'StartsNonlinearity' (saved in Data as linearity_measure_data.csv) as a measure of the frequency of nonlinearity. This measure was computed in Prep_ReadingLinearityMeasure.rmd, and it tells us whether nonlinear navigation was initiated on a page-view or not. Therefore, StartsNonlinearity is TRUE when a participant starts a regression or a forward leap on a page-view and the previous page-view did not include similar nonlinearity (see Prep_TrackingDataWrangling.rmd in Prep for more detail).
 
-In this analysis script, StartsNonlinearity is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict StartsNonlinearity. In the second model, the independent variables include information on the timing and location of StartsNonlinearity. With the latter model our intention is to study in which situations nonlinearity occurs. Both model structures are based on selection outlined in the full article. The models are constructed using glm() in the lme4-package by @bates_fitting_2015.
+In this analysis script, StartsNonlinearity is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict StartsNonlinearity. In the second model, the independent variables include information on the timing and location of StartsNonlinearity. With the latter model our intention is to study in which situations nonlinearity occurs. Both model structures are based on selection outlined in the full article. The models are constructed using glmer() in the lme4-package by @bates_fitting_2015.
 
 **Information on the hypotheses**
 
@@ -426,7 +426,7 @@ ggplot(linearity_measure_count, aes(x = SCompetence, y = Count, colour = StartsN
     theme_classic()
 ```
 
-We then create visualisations for contextual measures of motivation: interest, competence, and effort.
+We then create visualisations for contextual measures of motivation: interest, and competence.
 
 Contextual interest:
 
