@@ -1,0 +1,611 @@
+---
+title: "Analysis_ReadingSpeed"
+author: "Pauliina Vuorinen"
+date: "14/10/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+## Introduction
+
+The purpose of this script is to analyse variance in participants' reading speed.
+
+We aim to assess how variance in reading speed fluctuated during the study, in which contexts, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to reading speed. See the full article for details.
+
+To answer these research questions, we use 'AbsReadingRate' (saved in Data as reading_speed_measure_data.csv) as a measure of variance in reading speed. This measure was computed in Prep_ReadingSpeedMeasure.rmd. The measure indicates the absolute variation from participants' baseline speed (baseline deducted from speed). We focus on natural reading speeds with which participants can fully comprehend the story, which we call 'deep reading', and thus the dataset only includes observations on deep reading.
+
+In this analysis script, AbsReadingRate is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict AbsReadingRate. In the second model, the independent variables include information on the timing and location of AbsReadingRate. With the latter model our intention is to study in which situation reading speed varies. Both model structures are based on selection outlined in the full article. The models are constructed using lmer() in the lme4-package by @bates_fitting_2015.
+
+**Information on the hypotheses**
+
+* H6a: Situational autonomous motivation is connected to lower reading speed variance when task competence is high.
+* H6b: Contextual autonomous motivation is connected to lower reading speed variance when task competence is high.
+* H6c: Task-relevant electronic experience is connected to lower reading speed variance when task competence is high.
+
+## Setup
+
+```{r, setup}
+library(tidyverse)
+library(dplyr)
+library(psych)
+library(gridExtra)
+library(corrplot)
+library(lme4)
+library(lmerTest)
+library(DHARMa)
+library(performance)
+library(car)
+library(effects)
+library(interactions)
+library(jtools)
+getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
+```
+
+Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
+
+The working directory is not changed with setwd() because this script is knit remotely in other scripts.
+
+```{r 'working directory for my purposes'}
+mypath_SSRBP <- getwd()
+if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
+    # wrong working directory
+    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
+        # directory name isn't GITHUB, unlike I would expect
+        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
+            # GITHUB is in the path
+            ## use mypath_SSRBP instead of dirname()
+            mypath_SSRBP <- paste0(
+                mypath_SSRBP,
+                "/Short_Story_Reading_Behaviour_Public"
+            )
+        }
+    } else {
+        # directory name is GITHUB
+        # save correct working directory
+        mypath_SSRBP <- paste0(
+            dirname(mypath_SSRBP),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+    }
+}
+```
+
+## Load data and check variable types
+
+```{r, load data}
+# load data
+reading_speed_measure_data <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/reading_speed_measure_data.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+reading_speed_measure_data <- dplyr::select(reading_speed_measure_data, -X) # remove row numbers
+```
+
+We then load in data from questionnaires:
+
+```{r 'load predictors: questionnaires'}
+# IMI
+IMI_scores <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/IMI_scores.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+IMI_scores <- dplyr::select(IMI_scores, -X) # remove row numbers
+# IMI-R
+IMIR_scores <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/IMIR_scores.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+IMIR_scores <- dplyr::select(IMIR_scores, -X) # remove row numbers
+# Electronic experience
+eexp_scores <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/eexp_scores.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+eexp_scores <- dplyr::select(eexp_scores, -X) # remove row numbers
+# demographic information
+demographics_data <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/demographics_data.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+demographics_data <- dplyr::select(demographics_data, -X) # remove row numbers
+```
+
+Load in information about the stories that participants read:
+
+```{r}
+story_information_data <-
+    read.csv(
+        paste0(
+            mypath_SSRBP,
+            "/Data/story_information_data.csv"
+        ),
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+story_information_data <- dplyr::select(story_information_data, -X) # remove row numbers
+```
+
+We then merge these dataframes together:
+
+```{r 'merge dfs'}
+# measure and IMI
+reading_speed_measure_data <- merge(
+    reading_speed_measure_data,
+    IMI_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and IMI-R
+reading_speed_measure_data <- merge(
+    reading_speed_measure_data,
+    IMIR_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and EEXP
+reading_speed_measure_data <- merge(
+    reading_speed_measure_data,
+    eexp_scores,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and demographic information
+reading_speed_measure_data <- merge(
+    reading_speed_measure_data,
+    demographics_data,
+    all.x = TRUE,
+    by = "UserId"
+)
+# measure and information about stories
+reading_speed_measure_data <- merge(
+    reading_speed_measure_data,
+    story_information_data[, c(1:3, 10)],
+    all.x = TRUE,
+    by = "StoryId"
+)
+```
+
+## Change variable types
+
+```{r 'change variable types'}
+str(reading_speed_measure_data)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
+
+## turn columns into factors that should be factors
+reading_speed_measure_data[, c(
+    "UserId",
+    "StoryId"
+)] <- convert.magic(
+    reading_speed_measure_data[, c(
+        "UserId",
+        "StoryId"
+    )],
+    "factor"
+)
+```
+
+## Reader characteristics model
+
+The reader characteristics model of reading speed aims to address the following hypotheses:
+
+* H6a: Situational autonomous motivation is connected to lower reading speed variance when task competence is high.
+* H6b: Contextual autonomous motivation is connected to lower reading speed variance when task competence is high.
+* H6c: Task-relevant electronic experience is connected to lower reading speed variance when task competence is high.
+
+The reader characteristics model for linearity of reading takes the following structure:
+
+$Y_{i} = 
+    \beta_{0} +
+    DUD +
+    Native +
+    Cond +
+    SComp +
+    CMot +
+    CComp +
+    EExp1 +
+    EExp2 +
+    Cond x SComp +
+    CMot x SComp +
+    EExp1 x EExp2 +
+    EExp1 x EExp2 x SComp +
+    u_{Subject} +
+    u_{Story} +
+    u_{ScreenSize} +
+    \varepsilon_{i}$ 
+
+where
+**$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
+**$\beta_{0}$** is the intercept
+**DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
+**Native** is a binary variable indicating whether the participant is a native speaker of English or not (responses - Yes/No, yes indicating that the participant is a native speaker).
+**Cond** represents autonomy condition (as a measure of situational motivation)
+**SComp** is participants' situational competence (perception of competence to read the story), measured by the subcomponent of 'competence' from the IMI questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
+**CMot** is participants' contextual reading motivation, measured by the subcomponent of contextual interest from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
+**CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
+**EExp1** is frequency of using any electronic devices for long-form text reading purposes
+**EExp2** is frequency of using task-relevant devices for any reading purpose
+**$u_{Subject}$** indicates a random intercept of subject indicator
+**$u_{Story}$** indicates a random intercept of story indicator
+**$u_{ScreenSize}$** indicates a random intercept of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
+**$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
+
+Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, the remaining models (task switching and reading persistence) are modelled without 'Cond x SComp', 'CMot x SComp', and 'EExp1 x EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching and reading persistence are expected to be connected to motivation and electronic experience directly (main effects).
+
+### Visualise outcome variable and predictors
+
+The reading_speed_measure_data has `r nrow(reading_speed_measure_data)` observations.
+
+We create graphs to inspect speed of reading and its connection to other variables.
+
+AbsReadingRate is skewed towards lower values, and so it could benefit from a log-transformation:
+
+```{r}
+hist(reading_speed_measure_data$AbsReadingRate)
+hist(log(reading_speed_measure_data$AbsReadingRate))
+```
+
+Variance between participants:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = UserId, y = AbsReadingRate)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Variance between different stories:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = StoryId, y = AbsReadingRate)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+We correct for story length to see if there are differences between different books read:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = StoryId, y = AbsReadingRate/CharacterLength)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+Variance across window widths (size of device and amount of text visible):
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = AbsReadingRate)) +
+    geom_point() +
+    theme_classic()
+```
+
+We then visualise the effect of DaysUntilDeadline:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = AbsReadingRate)) +
+    geom_point() +
+    theme_classic()
+```
+
+### Reading Speed and Demographic Information
+
+Gender:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = Gender, y = AbsReadingRate)) +
+    geom_violin() +
+    geom_jitter() +
+    theme_classic()
+```
+
+Age:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = Age, y = AbsReadingRate)) +
+    geom_point() +
+    theme_classic()
+```
+
+Whether participants' native language is English or not:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = AbsReadingRate)) +
+    geom_violin() +
+    geom_jitter() +
+    theme_classic()
+```
+
+### Condition
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = Condition, y = AbsReadingRate)) +
+    geom_boxplot() +
+    theme_classic()
+```
+
+### Motivation
+
+Only situational competence is included in the model from the IMI variables, considering that condition is significantly connected to both situational autonomy and interest.
+
+Situational competence:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = SCompetence, y = AbsReadingRate)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic()
+```
+
+We then create visualisations for contextual measures of motivation: interest, and competence.
+
+Contextual interest:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = CInterest, y = AbsReadingRate)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic()
+```
+
+Contextual competence:
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = CCompetence, y = AbsReadingRate)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic()
+```
+
+### Reading speed and electronic reading experience
+
+We are interested in how task-relevant electronic experience is connected to reading speed.
+Electronic experience was measured by two variables: Eexp1LongFormEFreq - the frequency of reading long-form, narrative texts electronnically, and Eexp2DeviceRecFreq - the frequency of using task-relevant digital devices for recreational reading purposes.
+
+Eexp1LongformEFreq (longfrom reading electronically):
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = AbsReadingRate)) +
+    geom_point() +
+    theme_classic()
+```
+
+Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
+
+```{r}
+ggplot(reading_speed_measure_data, aes(x = Eexp2DeviceRecFreq, y = AbsReadingRate)) +
+    geom_smooth() +
+    geom_point() +
+    theme_classic()
+```
+
+### Set contrasts to predictors
+
+Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
+
+Load a function to create helmert contrasts for categorical variables:
+
+```{r 'load helmert contrasts functions'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.weighted.R"
+    )
+)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.unweighted.R"
+    )
+)
+```
+
+Contrasts for categorical variables:
+
+```{r 'categorical contrasts'}
+# whether native language is English or not
+reading_speed_measure_data$NativeEnglish <- as.factor(reading_speed_measure_data$NativeEnglish)
+contrasts(reading_speed_measure_data$NativeEnglish) <- contr.helmert.unweighted(reading_speed_measure_data$NativeEnglish)
+contrasts(reading_speed_measure_data$NativeEnglish)
+# condition
+reading_speed_measure_data$Condition <- dplyr::recode(
+    reading_speed_measure_data$Condition,
+    "AutonomousCondition" = "HighAutonomyCondition",
+    "NonAutonomousCondition" = "LowAutonomyCondition"
+)
+reading_speed_measure_data$Condition <- as.factor(reading_speed_measure_data$Condition)
+contrasts(reading_speed_measure_data$Condition) <- contr.helmert.unweighted(
+    reading_speed_measure_data$Condition
+)
+contrasts(reading_speed_measure_data$Condition)
+```
+
+Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
+
+```{r 'scale continuous variables'}
+# Situational competence
+reading_speed_measure_data$SCompetence.sc <-
+    scale(reading_speed_measure_data$SCompetence,
+        center = TRUE,
+        scale = TRUE
+    )
+# Contextual motivation
+reading_speed_measure_data$CInterest.sc <-
+    scale(reading_speed_measure_data$CInterest,
+        center = TRUE,
+        scale = TRUE
+    )
+reading_speed_measure_data$CCompetence.sc <-
+    scale(reading_speed_measure_data$CCompetence,
+        center = TRUE,
+        scale = TRUE
+    )
+# Electronic reading experience
+reading_speed_measure_data$Eexp1LongformEFreq.sc <-
+    scale(reading_speed_measure_data$Eexp1LongformEFreq,
+        center = TRUE,
+        scale = TRUE
+    )
+reading_speed_measure_data$Eexp2DeviceRecFreq.sc <-
+    scale(reading_speed_measure_data$Eexp2DeviceRecFreq,
+        center = TRUE,
+        scale = TRUE
+    )
+# Days until reading deadline
+reading_speed_measure_data$DaysUntilDeadline.sc <-
+    scale(reading_speed_measure_data$FirstTimeUntilDeadlineDays,
+        center = TRUE,
+        scale = TRUE
+    )
+```
+
+### Modelling by Reader Characteristics
+
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 20 parameters (including two random effects and categorical variable levels), and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/20 = `r round(nrow(reading_speed_measure_data)/20, 2)`
+
+```{r}
+FullStructure_RC <- (
+    "log(AbsReadingRate + 1) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+)
+
+FullStructure_RC2 <- (
+    "log(AbsReadingRate + 1) ~ StoryId + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId) + (1 | WindowWidth)"
+)
+
+FullStructure_RC3 <- (
+    "AbsReadingRate ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+)
+```
+
+```{r}
+Speed_RC_FullModel <- lmer(
+    FullStructure_RC4,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The full model is singular, and so it needs to be simplified.
+
+```{r}
+summary(Speed_RC_FullModel)
+plot(Speed_RC_FullModel)
+```
+
+Inspect model values:
+
+```{r}
+fixef(Speed_RC_FullModel)
+```
+
+### Model backward selection
+
+The full model is singular, and thus its structure needs to be simplified. We remove predictors by backward stepwise selection, until convergence. The predictors with the lowest p-value is removed first.
+
+Find lowest p-value:
+```{r}
+summary(Speed_RC_FullModel)
+```
+
+An interaction between the two electronic experience measures, 'Eexp1LongformEFreq.sc:Eexp2DeviceRecFreq.sc', has the lowest p-value and thus contributes the least to the model. It is removed:
+
+```{r}
+SimplifiedStructure <- str_remove(FullStructure_RC, fixed("+ Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc "))
+```
+
+re-fit the model with the simplified structure:
+
+```{r}
+Speed_RC_ModelSelection1 <- lmer(
+    SimplifiedStructure,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The model remains singular, and so we identify another predictor to be removed:
+
+```{r}
+summary(Speed_RC_ModelSelection1)
+plot(Speed_RC_ModelSelection1)
+```
+
+A three-way interaction 'SCompetence.sc:Eexp1LongformEFreq.sc:Eexp2DeviceRecFreq.sc' has the lowest p-value and so it is removed:
+
+```{r}
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc "))
+```
+
+re-fit the model with the simplified structure:
+
+```{r}
+Speed_RC_ModelSelection2 <- lmer(
+    SimplifiedStructure,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The model remains singular, and so we identify another predictor to be removed:
+
+```{r}
+summary(Speed_RC_ModelSelection2)
+plot(Speed_RC_ModelSelection2)
+```
+
+An interaction effect between condition and situational competence, 'Condition:SCompetence.sc', has the lowest p-value and so it is removed:
+
+```{r}
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Condition : SCompetence.sc "))
+```
+
+```{r}
+Speed_RC_ModelSelection3 <- lmer(
+    SimplifiedStructure,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The model remains singular, and so we identify another predictor to be removed:
+
+```{r}
+summary(Speed_RC_ModelSelection3)
+plot(Speed_RC_ModelSelection3)
+```
