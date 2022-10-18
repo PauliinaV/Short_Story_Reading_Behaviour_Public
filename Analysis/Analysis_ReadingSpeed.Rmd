@@ -938,30 +938,6 @@ overdisp_fun(Speed_RC_FullModel_Gamma_RemovedStoryId)
 
 The overdispersion test is not significant, and therefore, the model aligns with the overdispersion assumption.
 
-```{r}
-library("blmeco")
-dispersion_glmer(Speed_RC_FullModel_Gamma_RemovedStoryId) # it shouldn't be over 1.4
-```
-
-The dispersion value shouldn't be over 1.4. 
-
-```{r}
-set.seed(1234) # for reproducibility
-simulated_model_output <- simulateResiduals(fittedModel = Speed_RC_FullModel_Gamma_RemovedStoryId, plot = F)
-```
-
-```{r}
-plotQQunif(simulated_model_output)
-```
-
-The model does not deviate from the expected distribution according to the qqplot.
-
-```{r}
-testDispersion(simulated_model_output)
-```
-
-The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
-
 #### 3. Heteroscedasticity
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
