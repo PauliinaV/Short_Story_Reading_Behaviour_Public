@@ -297,7 +297,8 @@ Variation between participants:
 
 ```{r}
 ggplot(task_switching_data, aes(x = UserId, y = ContinuousEngagementMinutes)) +
-    geom_point() +
+    geom_boxplot() +
+    geom_jitter() +
     theme_classic() +
     ylab("Continuous Engagement Duration (Mins)")
 ```
@@ -602,7 +603,7 @@ task_switching_data$DaysUntilDeadline.sc <-
 
 ## Model of Task Switching
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 12 parameters (including two random effects and categorical variable levels), and `r nrow(task_switching_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(task_switching_data)`/12 = `r round(nrow(task_switching_data)/12, 2)`
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 13 parameters, and `r nrow(task_switching_data)` observations. Previous research has suggested that each parameter in a model has 20 observations. Our sample is close to this threshold considering that `r nrow(task_switching_data)`/13 = `r round(nrow(task_switching_data)/13, 2)`
 
 ```{r}
 FullStructure <- (
@@ -633,7 +634,7 @@ fixef(TaskSwitching_FullModel)
 
 ### Model Assumptions
 
-All models were tested for (1) multicollinearity, (2) non-normality of residuals, (3) heteroscedasticity, (4) influential observations, and (5) normality of random effects
+All models were tested for (1) multicollinearity, (2) heteroscedasticity, (3) influential observations, and (4) normality of random effects
 
 #### 1. Multicollinearity
 
@@ -654,33 +655,7 @@ plot(check_collinearity(TaskSwitching_FullModel))
 
 Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
 
-#### 2. Non-normality of residuals
-
-We first check normality of residuals by plotting model residuals and fitted values
-
-```{r}
-plot(resid(TaskSwitching_FullModel), fitted(TaskSwitching_FullModel))
-```
-
-The model residuals seem to be scattered symmetrically in the plot, which indicates that the residuals may be normally distributed.
-
-To further check non-normality, we use a qqplot:
-
-```{r}
-qqnorm(residuals(TaskSwitching_FullModel))
-```
-
-The qqplot shows only very slight variation from normality.
-
-Finally, we test normality of residuals with a Shapiro Test that checks studentized residuals for normal distribution. A p-value of < .05 indicates significant deviation from normality.
-
-```{r}
-check_normality(TaskSwitching_FullModel)
-```
-
-The Shapiro test is not significant, indicating that the model is likely to not have non-normal residuals.
-
-#### 3. Heteroscedasticity
+#### 2. Heteroscedasticity
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
@@ -703,7 +678,7 @@ leveneTest(residuals(TaskSwitching_FullModel) ~ task_switching_data$NativeEnglis
 
 The assumption of equal variables is met for both Condition and NativeEnglish.
 
-#### 4. Influential Observations
+#### 3. Influential Observations
 
 We test influential observations with Cook's Distance:
 
@@ -735,7 +710,7 @@ plot(check_outliers(TaskSwitching_FullModel))
 
 Usage of a less conservative limit (Cook's Distance > .5 for influential observations) indicates that none of the observations are influential. We trust this judgement after off-script experimentation indicated that removal of the most influential observation flagged earlier does not affect results.
 
-#### Normality of Random Effects
+#### 4. Normality of Random Effects
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
