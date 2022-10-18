@@ -497,7 +497,7 @@ First, we build the full structure. Refer to the beginning of this script to see
 
 ```{r}
 FullStructure_RC <- (
-    "RelativeSpeedDifference ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+    "log(AbsRelativeSpeedDifference + 1) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
 )
 ```
 
@@ -512,17 +512,28 @@ Speed_RC_FullModel <- lmer(
 
 The full model is singular, and so it needs to be simplified.
 
+Inspect model values:
+
 ```{r}
 summary(Speed_RC_FullModel)
+fixef(Speed_RC_FullModel)
 plot(Speed_RC_FullModel)
 plot(reading_speed_measure_data$RelativeSpeedDifference, fitted(Speed_RC_FullModel))
 ```
 
-Inspect model values:
+Inspect distribution of residuals:
 
 ```{r}
-fixef(Speed_RC_FullModel)
+hist(resid(Speed_RC_FullModel), breaks = 100)
+# 0 - normal, neg - left skew, pos - right skew
+skewness(resid(Speed_RC_FullModel))
+# 3 - normal, <3 playkurtic, >3 leptokurtic
+kurtosis(resid(Speed_RC_FullModel))
+# Jarque-Bera normality test
+jarque.test(resid(Speed_RC_FullModel))
 ```
+
+The residuals have a slight right skew as skewness = `r skewness(resid(Speed_RC_FullModel))`. The distribution of residuals is also leptokurtic, and thus the residuals have heavier than usual tails. 
 
 ### Model backward selection
 
@@ -533,10 +544,10 @@ Find lowest p-value:
 summary(Speed_RC_FullModel)
 ```
 
-An interaction between situational competence and condition, 'Condition:SCompetence.sc', has the lowest p-value and thus contributes the least to the model. It is removed:
+A binary variable of whether English is each participants' native language or not, 'NativeEnglish', has the highest p-value (of the predictors that can be removed from the model). So it is removed:
 
 ```{r}
-SimplifiedStructure <- str_remove(FullStructure_RC, fixed("+  Condition : SCompetence.sc "))
+SimplifiedStructure <- str_remove(FullStructure_RC, fixed("+ NativeEnglish "))
 ```
 
 re-fit the model with the simplified structure:
@@ -579,10 +590,10 @@ The model remains singular, and so we identify another predictor to be removed:
 summary(Speed_RC_ModelSelection2)
 ```
 
-A binary variable of whether English is each participants' native language or not, 'NativeEnglish', has the highest p-value (of the predictors that can be removed from the model). So it is removed:
+An interaction between situational competence and condition, 'Condition:SCompetence.sc', has the lowest p-value and thus contributes the least to the model. It is removed:
 
 ```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ NativeEnglish "))
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Condition : SCompetence.sc "))
 ```
 
 ```{r}
@@ -621,10 +632,10 @@ The model remains singular, and so we identify another predictor to be removed:
 summary(Speed_RC_ModelSelection4)
 ```
 
-Many of the remaining predictors that can be removed (interaction effects need to be removed before removing main effects involved in interactions) are significant. The highest p-value, however, is between situational competence and contextual motivation, 'SCompetence.sc:CInterest.sc', and so it is removed:
+The control variable, 'DaysUntilDeadline.sc', has the highest p-value and so it is removed:
 
 ```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CInterest.sc : SCompetence.sc "))
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed(" DaysUntilDeadline.sc +"))
 ```
 
 ```{r}
@@ -642,10 +653,10 @@ The model remains singular, and so we identify another predictor to be removed:
 summary(Speed_RC_ModelSelection5)
 ```
 
-Contextual motivation, 'CInterest.sc', has the highest p-value, and so it is removed:
+The highest p-value is between situational competence and contextual motivation, 'SCompetence.sc:CInterest.sc', and so it is removed:
 
 ```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CInterest.sc "))
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CInterest.sc : SCompetence.sc "))
 ```
 
 ```{r}
@@ -657,11 +668,53 @@ Speed_RC_ModelSelection6 <- lmer(
 )
 ```
 
-The model converges after the removal. Inspect model values:
+The model remains singular, and so we identify another predictor to be removed:
 
 ```{r}
 summary(Speed_RC_ModelSelection6)
-plot(Speed_RC_ModelSelection6)
+```
+
+Contextual motivation, 'CInterest.sc', has the highest p-value, and so it is removed:
+
+```{r}
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CInterest.sc "))
+```
+
+```{r}
+Speed_RC_ModelSelection7 <- lmer(
+    SimplifiedStructure,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The model remains singular, and so we identify another predictor to be removed:
+
+```{r}
+summary(Speed_RC_ModelSelection7)
+```
+
+The remaining predictors that can be removed from the model (interaction effects need to be removed before main effects involved in the interactions) are significant. Regardless, we remove a significant effect 'SCompetence.sc:Eexp1LongformEFreq.sc:Eexp2DeviceRecFreq.sc':
+
+```{r}
+SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc "))
+```
+
+```{r}
+Speed_RC_ModelSelection8 <- lmer(
+    SimplifiedStructure,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The model converges after the removal. Inspect model values:
+
+```{r}
+summary(Speed_RC_ModelSelection8)
+plot(Speed_RC_ModelSelection8)
 ```
 
 ### Model Assumptions
@@ -681,8 +734,8 @@ Some of the variables show high correlations. For example, contextual reading co
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
 ```{r}
-check_collinearity(Speed_RC_ModelSelection6)
-plot(check_collinearity(Speed_RC_ModelSelection6))
+check_collinearity(Speed_RC_ModelSelection8)
+plot(check_collinearity(Speed_RC_ModelSelection8))
 ```
 
 Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
@@ -692,7 +745,7 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r}
-plot(resid(Speed_RC_ModelSelection6), fitted(Speed_RC_ModelSelection6))
+plot(resid(Speed_RC_ModelSelection8), fitted(Speed_RC_ModelSelection8))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -700,7 +753,7 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r}
-qqnorm(residuals(Speed_RC_ModelSelection6))
+qqnorm(residuals(Speed_RC_ModelSelection8))
 ```
 
 The qqplot shows slight variation from normality. To assess how severe it is, we compare to a simulated qqplot:
@@ -715,15 +768,200 @@ for (i in 1:9) {
 }
 ```
 
-Finally, we test normality of residuals with a Shapiro Test that checks studentized residuals for normal distribution. A p-value of < .05 indicates significant deviation from normality.
+The nonnormality of residuals seems to be due to observations that cluster around certain reading speeds, indeed the model seems to have trouble estimating mid-values in the distribution. It is possible that the largest amount of observations were detected at the midpoint of the distribution (around baseline speed), and participants varied widely in how baseline-level speeds were used during the study.
+
+The qqplots indicate that the variance from normality may be considerable, we check this by assessing skewness and kurtosis in residuals:
+
+Inspect distribution of residuals:
 
 ```{r}
-plot(check_normality(Speed_RC_ModelSelection6))
+hist(resid(Speed_RC_ModelSelection8), breaks = 100)
+# 0 - normal, neg - left skew, pos - right skew
+skewness(resid(Speed_RC_ModelSelection8))
+# 3 - normal, <3 playkurtic, >3 leptokurtic
+kurtosis(resid(Speed_RC_ModelSelection8))
+# Jarque-Bera normality test
+jarque.test(resid(Speed_RC_ModelSelection8))
+# Shapiro Wilkins Test
+plot(check_normality(Speed_RC_ModelSelection8))
 ```
 
-Finally, the Shapiro Test indicates that the residuals are indeed not normally distributed.
+The residuals have a slight right skew as skewness = `r skewness(resid(Speed_RC_ModelSelection8))`. The distribution of residuals is also leptokurtic, and thus the residuals have heavier than usual tails. The Jarque-Bera normality test is significant, indicating that the residuals significantly vary from normality. Similarly, Shapiro test is significant.
 
-The nonnormality of residuals seems to be due to observations that cluster around certain reading speeds, indeed the model seems to have trouble estimating mid-values in the distribution. It is possible that the largest amount of observations were detected at the midpoint of the distribution (around baseline speed), and participants varied widely in how baseline-level speeds were used during the study.
+To address the nonnormality, we assess if another model, such as GLMM could be used. To do this, we assess which distribution best fits the outcome variable. First, assess normal distribution:
+
+```{r}
+fit.normal <- fitdist(reading_speed_measure_data$AbsRelativeSpeedDifference, distr = "norm", method = "mme")
+plot(fit.normal)
+```
+
+The plots confirm that in addition to the residuals the outcome variable poorly fits the normal distribution. We then assess fit in a gamma distribution:
+
+```{r}
+fit.gamma <- fitdist(reading_speed_measure_data$AbsRelativeSpeedDifference, distr = "gamma", method = "mme")
+plot(fit.gamma)
+```
+
+The outcome variable seems to fit well in the gamma distribution. This indicates that a GLMM model could be used to model reading speed instead of LMM.
+
+We  assess whether the nonnormality of residuals could be addressed by using a gamma distributed GLMM rather than lmer. To do this, we add +1 to the outcome variable to make sure that all observations are positive (gamma models do not allow zeros). We begin with a full model structure and then select the predictors backward stepwise until convergence:
+
+```{r}
+FullStructure_RC_Gamma <- (
+    "AbsRelativeSpeedDifference + 1 ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+)
+```
+
+We then re-fit the model with glmer. GLMM models do not need to align to the assumption of normality of residuals, and so if the model converges, it is important to test it for under and over dispersion instead.
+
+```{r}
+Speed_RC_FullModel_Gamma <- glmer(
+    FullStructure_RC_Gamma,
+    data = reading_speed_measure_data,
+    family = Gamma(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+The model is singular, and so we select it backwards stepwise. The selection is done off-script for brevity. The selection method is identical to the lmer model done earlier.
+
+Selection indicated that the model does not reach convergence even when all predictors are removed from the model and it only includes the intercept and random effects:
+
+```{r}
+SimplifiedStructure_RC_Gamma <- ("AbsRelativeSpeedDifference + 1 ~ 1 + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)")
+```
+
+```{r}
+Speed_RC_SelectedModel_Gamma <- glmer(
+    SimplifiedStructure_RC_Gamma,
+    data = reading_speed_measure_data,
+    family = Gamma(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+summary(Speed_RC_SelectedModel_Gamma)
+```
+
+Inspection of the model shows that the singularity of the model is likely to be due to 'StoryId' which accounts for zero variance in the model. This is a common occurrence [@Bolker2022]. In this case, the random effect can be added in the model as a fixed effect to assess if this rectified the singularity issue, assuming that the variable does not cause multicollinearity.
+
+We attempt to fit Gamma model again from the full model by using StoryId as a fixed effect, rather than as a random effect. This process is not done for the full model in lmer because the removal of the random intercept of StoryId is unlikely to affect the nonnormality of residuals.
+
+Set contrasts to StoryId:
+
+```{r}
+reading_speed_measure_data$StoryId <- as.factor(reading_speed_measure_data$StoryId)
+reading_speed_measure_data$StoryId <- as.factor(reading_speed_measure_data$StoryId)
+contrasts(reading_speed_measure_data$StoryId) <- contr.helmert.unweighted(
+    reading_speed_measure_data$StoryId
+)
+contrasts(reading_speed_measure_data$StoryId)
+```
+
+```{r}
+FullStructure_RC_Gamma_Adjusted <- (
+    "AbsRelativeSpeedDifference + 1 ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + StoryId + (1 | UserId) + (1 | WindowWidth)"
+)
+```
+
+```{r}
+Speed_RC_FullModel_Gamma_Adjusted <- glmer(
+    FullStructure_RC_Gamma_Adjusted,
+    data = reading_speed_measure_data,
+    family = Gamma(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+```{r}
+summary(Speed_RC_FullModel_Gamma_Adjusted)
+```
+
+The full model with gamma distribution and StoryId as a fixed rather than a random effect reaches convergence and is no longer singular. We then check if moving StoryId as a fixed effect caused multicollinearity in the model:
+
+```{r}
+# multicollinearity in model with StoryId as a fixed effect:
+plot(check_collinearity(Speed_RC_FullModel_Gamma_Adjusted))
+# multicollinearity in model with StoryId as a random effect:
+plot(check_collinearity(Speed_RC_FullModel_Gamma))
+```
+
+Adding StoryId as a fixed effect introduces multicollinearity in the model. This makes sense as participants may have perceived the task and behaved differently across the different stories read. Considering that the model does not reach convergence with StoryId as a random effect and adding StoryId as a fixed effect results in collinearity, we remove StoryId from the model. This means that we cannot estimate variance between different stories read.
+
+```{r}
+FullStructure_RC_Gamma_RemovedStoryId <- (
+    "AbsRelativeSpeedDifference + 1 ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId) + (1 | WindowWidth)"
+)
+```
+
+Re-fit the model:
+
+```{r}
+Speed_RC_FullModel_Gamma_RemovedStoryId <- glmer(
+    FullStructure_RC_Gamma_RemovedStoryId,
+    data = reading_speed_measure_data,
+    family = Gamma(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+The full model structure without StoryId converges and is non-singular.
+
+Inspect model values:
+
+```{r}
+summary(Speed_RC_FullModel_Gamma_RemovedStoryId)
+fixef(Speed_RC_FullModel_Gamma_RemovedStoryId)
+plot(Speed_RC_FullModel_Gamma_RemovedStoryId)
+plot(reading_speed_measure_data$RelativeSpeedDifference, fitted(Speed_RC_FullModel_Gamma_RemovedStoryId))
+```
+
+Normality of residuals is not an assumption for GLMMs so we do not test for it. Instead, we test for Overdispersion:
+
+#### Overdispersion
+
+Overdispersion occur when the data shows more variation than what we would expect. We test for dispersion with a custom function saved in the Functions folder (rather than DHARMa which was used in Analysis_ReadingLinearity due to difficulty simulating residuals > 0 to align with the gamma distribution):
+
+```{r}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_OverDispersionTest.R"
+    )
+)
+```
+
+```{r}
+overdisp_fun(Speed_RC_FullModel_Gamma_RemovedStoryId)
+```
+
+The overdispersion test is not significant, and therefore, the model aligns with the overdispersion assumption.
+
+```{r}
+library("blmeco")
+dispersion_glmer(Speed_RC_FullModel_Gamma_RemovedStoryId) # it shouldn't be over 1.4
+```
+
+The dispersion value shouldn't be over 1.4. 
+
+```{r}
+set.seed(1234) # for reproducibility
+simulated_model_output <- simulateResiduals(fittedModel = Speed_RC_FullModel_Gamma_RemovedStoryId, plot = F)
+```
+
+```{r}
+plotQQunif(simulated_model_output)
+```
+
+The model does not deviate from the expected distribution according to the qqplot.
+
+```{r}
+testDispersion(simulated_model_output)
+```
+
+The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
+
 
 We first assess if the nonnormality of residuals could be addressed by a log-transformation of the outcome variable.
 
@@ -799,6 +1037,8 @@ qqnorm(residuals(Speed_RC_ModelSelection_Transformed))
 ```
 
 The model square-root transformed outcome variable model does not align to the assumption of normality of residuals.
+
+
 
 #### 3. Heteroscedasticity
 
