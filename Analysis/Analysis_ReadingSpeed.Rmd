@@ -12,9 +12,9 @@ The purpose of this script is to analyse variance in participants' reading speed
 
 We aim to assess how variance in reading speed fluctuated during the study, in which contexts, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to reading speed. See the full article for details.
 
-To answer these research questions, we use 'AbsReadingRate' (saved in Data as reading_speed_measure_data.csv) as a measure of variance in reading speed. This measure was computed in Prep_ReadingSpeedMeasure.rmd. The measure indicates the absolute variation from participants' baseline speed (baseline deducted from speed). We focus on natural reading speeds with which participants can fully comprehend the story, which we call 'deep reading', and thus the dataset only includes observations on deep reading.
+To answer these research questions, we use 'ReadingRate' (saved in Data as reading_speed_measure_data.csv) as a measure of variance in reading speed. This measure was computed in Prep_ReadingSpeedMeasure.rmd. The measure indicates the variation in deep reading relative to participants' baseline speed (speed / baseline speed). We focus on 'deep reading' that reflects natural reading speeds with which participants can fully comprehend the story, and thus the dataset only includes observations on deep reading.
 
-In this analysis script, AbsReadingRate is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict AbsReadingRate. In the second model, the independent variables include information on the timing and location of AbsReadingRate. With the latter model our intention is to study in which situation reading speed varies. Both model structures are based on selection outlined in the full article. The models are constructed using lmer() in the lme4-package by @bates_fitting_2015.
+In this analysis script, ReadingRate is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict ReadingRate. In the second model, the independent variables include information on the timing and location of ReadingRate. With the latter model our intention is to study in which situation reading speed varies. Both model structures are based on selection outlined in the full article. The models are constructed using lmer() in the lme4-package by @bates_fitting_2015.
 
 **Information on the hypotheses**
 
@@ -250,7 +250,7 @@ $Y_{i} =
     \varepsilon_{i}$ 
 
 where
-**$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
+**$Y_{i}$** is the reading behaviour measure, in this case ReadingRate for reading speed. In this outcome variable a value of 1 indicates the participants' baseline reading speed, values below 1 indicate of slower speeds and values above 1 indicate of higher reading speeds. For example, a reading rate of 1.5 indicates that the participant read at 1.5x their baseline speed.
 **$\beta_{0}$** is the intercept
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
 **Native** is a binary variable indicating whether the participant is a native speaker of English or not (responses - Yes/No, yes indicating that the participant is a native speaker).
@@ -273,17 +273,17 @@ The reading_speed_measure_data has `r nrow(reading_speed_measure_data)` observat
 
 We create graphs to inspect speed of reading and its connection to other variables.
 
-AbsReadingRate is skewed towards lower values, and so it could benefit from a log-transformation:
+ReadingRate is slightly skewed towards lower values, and so it could benefit from a log-transformation:
 
 ```{r}
-hist(reading_speed_measure_data$AbsRelativeSpeedDifference)
-hist(log(reading_speed_measure_data$AbsRelativeSpeedDifference + 1))
+hist(reading_speed_measure_data$ReadingRate)
+hist(log(reading_speed_measure_data$ReadingRate + 1))
 ```
 
 Variance between participants:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = UserId, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = UserId, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
 ```
@@ -291,7 +291,7 @@ ggplot(reading_speed_measure_data, aes(x = UserId, y = AbsReadingRate)) +
 Variance between different stories:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = StoryId, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
 ```
@@ -299,7 +299,7 @@ ggplot(reading_speed_measure_data, aes(x = StoryId, y = AbsReadingRate)) +
 We correct for story length to see if there are differences between different books read:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = StoryId, y = AbsReadingRate / CharacterLength)) +
+ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate / CharacterLength)) +
     geom_boxplot() +
     theme_classic()
 ```
@@ -307,7 +307,7 @@ ggplot(reading_speed_measure_data, aes(x = StoryId, y = AbsReadingRate / Charact
 Variance across window widths (size of device and amount of text visible):
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = ReadingRate)) +
     geom_point() +
     theme_classic()
 ```
@@ -315,7 +315,7 @@ ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = AbsReadingRate)) +
 We then visualise the effect of DaysUntilDeadline:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = ReadingRate)) +
     geom_point() +
     theme_classic()
 ```
@@ -325,7 +325,7 @@ ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = AbsRe
 Gender:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = Gender, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = Gender, y = ReadingRate)) +
     geom_violin() +
     geom_jitter() +
     theme_classic()
@@ -334,7 +334,7 @@ ggplot(reading_speed_measure_data, aes(x = Gender, y = AbsReadingRate)) +
 Age:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = Age, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = Age, y = ReadingRate)) +
     geom_point() +
     theme_classic()
 ```
@@ -342,7 +342,7 @@ ggplot(reading_speed_measure_data, aes(x = Age, y = AbsReadingRate)) +
 Whether participants' native language is English or not:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = ReadingRate)) +
     geom_violin() +
     geom_jitter() +
     theme_classic()
@@ -351,7 +351,7 @@ ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = AbsReadingRate)) +
 ### Condition
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = Condition, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = Condition, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
 ```
@@ -363,7 +363,7 @@ Only situational competence is included in the model from the IMI variables, con
 Situational competence:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = SCompetence, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = SCompetence, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
     theme_classic()
@@ -374,7 +374,7 @@ We then create visualisations for contextual measures of motivation: interest, a
 Contextual interest:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = CInterest, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = CInterest, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
     theme_classic()
@@ -383,7 +383,7 @@ ggplot(reading_speed_measure_data, aes(x = CInterest, y = AbsReadingRate)) +
 Contextual competence:
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = CCompetence, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = CCompetence, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
     theme_classic()
@@ -397,7 +397,7 @@ Electronic experience was measured by two variables: Eexp1LongFormEFreq - the fr
 Eexp1LongformEFreq (longfrom reading electronically):
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = ReadingRate)) +
     geom_point() +
     theme_classic()
 ```
@@ -405,7 +405,7 @@ ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = AbsReadingRat
 Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
 
 ```{r}
-ggplot(reading_speed_measure_data, aes(x = Eexp2DeviceRecFreq, y = AbsReadingRate)) +
+ggplot(reading_speed_measure_data, aes(x = Eexp2DeviceRecFreq, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
     theme_classic()
@@ -493,11 +493,11 @@ reading_speed_measure_data$DaysUntilDeadline.sc <-
 
 ### Modelling by Reader Characteristics
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 20 parameters (including two random effects and categorical variable levels), and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/20 = `r round(nrow(reading_speed_measure_data)/20, 2)`
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 17 parameters (including two random effects and categorical variable levels), and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/17 = `r round(nrow(reading_speed_measure_data)/17, 2)`
 
 ```{r}
 FullStructure_RC <- (
-    "log(AbsRelativeSpeedDifference + 1) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+    "ReadingRate ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
 )
 ```
 
@@ -510,7 +510,7 @@ Speed_RC_FullModel <- lmer(
 )
 ```
 
-The full model is singular, and so it needs to be simplified.
+The full model is singular.
 
 Inspect model values:
 
@@ -518,234 +518,60 @@ Inspect model values:
 summary(Speed_RC_FullModel)
 fixef(Speed_RC_FullModel)
 plot(Speed_RC_FullModel)
-plot(reading_speed_measure_data$RelativeSpeedDifference, fitted(Speed_RC_FullModel))
+plot(reading_speed_measure_data$ReadingRate, fitted(Speed_RC_FullModel))
 ```
 
-Inspect distribution of residuals:
+Inspection of the model values shows that the random intercept of WindowWidth is accounting for zero variance in the model. This is a common occurrence [@Bolker2022]. In this case, the random effect can be added in the model as a fixed effect to assess if this rectifies the singularity issue, assuming that the variable does not cause multicollinearity.
+
+We attempt to fit the model again by using WindowWidth as a continuous fixed effect, rather than as a categorical random effect.
+
+Set contrasts to WindowWidth:
 
 ```{r}
-hist(resid(Speed_RC_FullModel), breaks = 100)
-# 0 - normal, neg - left skew, pos - right skew
-skewness(resid(Speed_RC_FullModel))
-# 3 - normal, <3 playkurtic, >3 leptokurtic
-kurtosis(resid(Speed_RC_FullModel))
-# Jarque-Bera normality test
-jarque.test(resid(Speed_RC_FullModel))
+reading_speed_measure_data$WindowWidth <- as.numeric(as.character(reading_speed_measure_data$WindowWidth))
+reading_speed_measure_data$WindowWidth.sc <-
+    scale(reading_speed_measure_data$WindowWidth,
+        center = TRUE,
+        scale = TRUE
+    )
 ```
 
-The residuals have a slight right skew as skewness = `r skewness(resid(Speed_RC_FullModel))`. The distribution of residuals is also leptokurtic, and thus the residuals have heavier than usual tails. 
+Re-fit the model with WindowWidth as a fixed effect:
 
-### Model backward selection
-
-The full model is singular, and thus its structure needs to be simplified. We remove predictors by backward stepwise selection, until convergence. The predictors with the lowest p-value is removed first.
-
-Find lowest p-value:
 ```{r}
-summary(Speed_RC_FullModel)
+FullStructure_RC_Adapted <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId)"
+)
 ```
 
-A binary variable of whether English is each participants' native language or not, 'NativeEnglish', has the highest p-value (of the predictors that can be removed from the model). So it is removed:
-
 ```{r}
-SimplifiedStructure <- str_remove(FullStructure_RC, fixed("+ NativeEnglish "))
-```
-
-re-fit the model with the simplified structure:
-
-```{r}
-Speed_RC_ModelSelection1 <- lmer(
-    SimplifiedStructure,
+Speed_RC_AdaptedModel <- lmer(
+    FullStructure_RC_Adapted,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
 )
 ```
 
-The model remains singular, and so we identify another predictor to be removed:
+The model is no longer singular when WindowWidth is included as a fixed rather than a random effect. Inspect the model:
 
 ```{r}
-summary(Speed_RC_ModelSelection1)
-```
-
-An interaction between the two electronic experience measures, 'Eexp1LongformEFreq.sc:Eexp2DeviceRecFreq.sc' has the lowest p-value and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc "))
-```
-
-re-fit the model with the simplified structure:
-
-```{r}
-Speed_RC_ModelSelection2 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Speed_RC_ModelSelection2)
-```
-
-An interaction between situational competence and condition, 'Condition:SCompetence.sc', has the lowest p-value and thus contributes the least to the model. It is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Condition : SCompetence.sc "))
-```
-
-```{r}
-Speed_RC_ModelSelection3 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Speed_RC_ModelSelection3)
-```
-
-Condition has the highest p-value of the predictors that can be removed, and so it is taken out:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ Condition "))
-```
-
-```{r}
-Speed_RC_ModelSelection4 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Speed_RC_ModelSelection4)
-```
-
-The control variable, 'DaysUntilDeadline.sc', has the highest p-value and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed(" DaysUntilDeadline.sc +"))
-```
-
-```{r}
-Speed_RC_ModelSelection5 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Speed_RC_ModelSelection5)
-```
-
-The highest p-value is between situational competence and contextual motivation, 'SCompetence.sc:CInterest.sc', and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CInterest.sc : SCompetence.sc "))
-```
-
-```{r}
-Speed_RC_ModelSelection6 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Speed_RC_ModelSelection6)
-```
-
-Contextual motivation, 'CInterest.sc', has the highest p-value, and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CInterest.sc "))
-```
-
-```{r}
-Speed_RC_ModelSelection7 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Speed_RC_ModelSelection7)
-```
-
-The remaining predictors that can be removed from the model (interaction effects need to be removed before main effects involved in the interactions) are significant. Regardless, we remove a significant effect 'SCompetence.sc:Eexp1LongformEFreq.sc:Eexp2DeviceRecFreq.sc':
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc "))
-```
-
-```{r}
-Speed_RC_ModelSelection8 <- lmer(
-    SimplifiedStructure,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
-
-The model converges after the removal. Inspect model values:
-
-```{r}
-summary(Speed_RC_ModelSelection8)
-plot(Speed_RC_ModelSelection8)
+summary(Speed_RC_AdaptedModel)
+plot(Speed_RC_AdaptedModel)
 ```
 
 ### Model Assumptions
 
-All lmer models were tested for (1) multicollinearity, (2) non-normality of residuals, (3) heteroscedasticity, (4) influential observations, and (5) normality of random effects
+All lmer models were tested for (1) multicollinearity, (2) influential observations, (3) heteroscedasticity, and (4) normality of random effects
 
-#### 1. Multicollinearity
+<!-- Normality of residuals?? -->
 
-We check for multicollinearity first with a correlation matrix:
-
-```{r}
-corrplot(cor(reading_speed_measure_data[, c(31:35)]), method = "number")
-```
-
-Some of the variables show high correlations. For example, contextual reading competence is correlated with situational competence (*r* = `r round(cor(reading_speed_measure_data$SCompetence, reading_speed_measure_data$CCompetence), 2)`) and contextual motivation (*r* = `r round(cor(reading_speed_measure_data$CCompetence, reading_speed_measure_data$CInterest), 2)`).
-
-To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
-
-```{r}
-check_collinearity(Speed_RC_ModelSelection8)
-plot(check_collinearity(Speed_RC_ModelSelection8))
-```
-
-Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
-
-#### 2. Non-normality of residuals
+####--------------------------####
 
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r}
-plot(resid(Speed_RC_ModelSelection8), fitted(Speed_RC_ModelSelection8))
+plot(resid(Speed_RC_AdaptedModel), fitted(Speed_RC_AdaptedModel))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -753,7 +579,7 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r}
-qqnorm(residuals(Speed_RC_ModelSelection8))
+qqnorm(residuals(Speed_RC_AdaptedModel))
 ```
 
 The qqplot shows slight variation from normality. To assess how severe it is, we compare to a simulated qqplot:
@@ -768,206 +594,52 @@ for (i in 1:9) {
 }
 ```
 
-The nonnormality of residuals seems to be due to observations that cluster around certain reading speeds, indeed the model seems to have trouble estimating mid-values in the distribution. It is possible that the largest amount of observations were detected at the midpoint of the distribution (around baseline speed), and participants varied widely in how baseline-level speeds were used during the study.
-
-The qqplots indicate that the variance from normality may be considerable, we check this by assessing skewness and kurtosis in residuals:
-
-Inspect distribution of residuals:
+```{r}
+par(mfrow = c(1, 1))
+plot(check_normality(Speed_RC_AdaptedModel))
+```
 
 ```{r}
-hist(resid(Speed_RC_ModelSelection8), breaks = 100)
+hist(resid(Speed_RC_AdaptedModel), breaks = 100)
 # 0 - normal, neg - left skew, pos - right skew
-skewness(resid(Speed_RC_ModelSelection8))
+skewness(resid(Speed_RC_AdaptedModel))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
-kurtosis(resid(Speed_RC_ModelSelection8))
+kurtosis(resid(Speed_RC_AdaptedModel))
 # Jarque-Bera normality test
-jarque.test(resid(Speed_RC_ModelSelection8))
+jarque.test(resid(Speed_RC_AdaptedModel))
 # Shapiro Wilkins Test
-plot(check_normality(Speed_RC_ModelSelection8))
+check_normality(Speed_RC_AdaptedModel)
 ```
 
-The residuals have a slight right skew as skewness = `r skewness(resid(Speed_RC_ModelSelection8))`. The distribution of residuals is also leptokurtic, and thus the residuals have heavier than usual tails. The Jarque-Bera normality test is significant, indicating that the residuals significantly vary from normality. Similarly, Shapiro test is significant.
 
-To address the nonnormality, we assess if another model, such as GLMM could be used. To do this, we assess which distribution best fits the outcome variable. First, assess normal distribution:
+####----------------------------####
+
+#### 1. Multicollinearity
+
+We check for multicollinearity first with a correlation matrix:
 
 ```{r}
-fit.normal <- fitdist(reading_speed_measure_data$AbsRelativeSpeedDifference, distr = "norm", method = "mme")
-plot(fit.normal)
+corrplot(cor(reading_speed_measure_data[, c(31:37)]), method = "number")
 ```
 
-The plots confirm that in addition to the residuals the outcome variable poorly fits the normal distribution. We then assess fit in a gamma distribution:
+Some of the variables show high correlations. For example, contextual reading competence is correlated with situational competence (*r* = `r round(cor(reading_speed_measure_data$SCompetence, reading_speed_measure_data$CCompetence), 2)`) and contextual motivation (*r* = `r round(cor(reading_speed_measure_data$CCompetence, reading_speed_measure_data$CInterest), 2)`).
+
+To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
 ```{r}
-fit.gamma <- fitdist(reading_speed_measure_data$AbsRelativeSpeedDifference, distr = "gamma", method = "mme")
-plot(fit.gamma)
+check_collinearity(Speed_RC_AdaptedModel)
+plot(check_collinearity(Speed_RC_AdaptedModel))
 ```
 
-The outcome variable seems to fit well in the gamma distribution. This indicates that a GLMM model could be used to model reading speed instead of LMM.
+Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
 
-We  assess whether the nonnormality of residuals could be addressed by using a gamma distributed GLMM rather than lmer. To do this, we add +1 to the outcome variable to make sure that all observations are positive (gamma models do not allow zeros). We begin with a full model structure and then select the predictors backward stepwise until convergence:
-
-```{r}
-FullStructure_RC_Gamma <- (
-    "AbsRelativeSpeedDifference + 1 ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
-)
-```
-
-We then re-fit the model with glmer. GLMM models do not need to align to the assumption of normality of residuals, and so if the model converges, it is important to test it for under and over dispersion instead.
-
-```{r}
-Speed_RC_FullModel_Gamma <- glmer(
-    FullStructure_RC_Gamma,
-    data = reading_speed_measure_data,
-    family = Gamma(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-The model is singular, and so we select it backwards stepwise. The selection is done off-script for brevity. The selection method is identical to the lmer model done earlier.
-
-Selection indicated that the model does not reach convergence even when all predictors are removed from the model and it only includes the intercept and random effects:
-
-```{r}
-SimplifiedStructure_RC_Gamma <- ("AbsRelativeSpeedDifference + 1 ~ 1 + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)")
-```
-
-```{r}
-Speed_RC_SelectedModel_Gamma <- glmer(
-    SimplifiedStructure_RC_Gamma,
-    data = reading_speed_measure_data,
-    family = Gamma(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-```{r}
-summary(Speed_RC_SelectedModel_Gamma)
-```
-
-Inspection of the model shows that the singularity of the model is likely to be due to 'StoryId' which accounts for zero variance in the model. This is a common occurrence [@Bolker2022]. In this case, the random effect can be added in the model as a fixed effect to assess if this rectified the singularity issue, assuming that the variable does not cause multicollinearity.
-
-We attempt to fit Gamma model again from the full model by using StoryId as a fixed effect, rather than as a random effect. This process is not done for the full model in lmer because the removal of the random intercept of StoryId is unlikely to affect the nonnormality of residuals.
-
-Set contrasts to StoryId:
-
-```{r}
-reading_speed_measure_data$StoryId <- as.factor(reading_speed_measure_data$StoryId)
-reading_speed_measure_data$StoryId <- as.factor(reading_speed_measure_data$StoryId)
-contrasts(reading_speed_measure_data$StoryId) <- contr.helmert.unweighted(
-    reading_speed_measure_data$StoryId
-)
-contrasts(reading_speed_measure_data$StoryId)
-```
-
-```{r}
-FullStructure_RC_Gamma_Adjusted <- (
-    "AbsRelativeSpeedDifference + 1 ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + StoryId + (1 | UserId) + (1 | WindowWidth)"
-)
-```
-
-```{r}
-Speed_RC_FullModel_Gamma_Adjusted <- glmer(
-    FullStructure_RC_Gamma_Adjusted,
-    data = reading_speed_measure_data,
-    family = Gamma(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-```{r}
-summary(Speed_RC_FullModel_Gamma_Adjusted)
-```
-
-The full model with gamma distribution and StoryId as a fixed rather than a random effect reaches convergence and is no longer singular. We then check if moving StoryId as a fixed effect caused multicollinearity in the model:
-
-```{r}
-# multicollinearity in model with StoryId as a fixed effect:
-plot(check_collinearity(Speed_RC_FullModel_Gamma_Adjusted))
-# multicollinearity in model with StoryId as a random effect:
-plot(check_collinearity(Speed_RC_FullModel_Gamma))
-```
-
-Adding StoryId as a fixed effect introduces multicollinearity in the model. This makes sense as participants may have perceived the task and behaved differently across the different stories read. Considering that the model does not reach convergence with StoryId as a random effect and adding StoryId as a fixed effect results in collinearity, we remove StoryId from the model. This means that we cannot estimate variance between different stories read.
-
-```{r}
-FullStructure_RC_Gamma_RemovedStoryId <- (
-    "AbsRelativeSpeedDifference + 1 ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId) + (1 | WindowWidth)"
-)
-```
-
-Re-fit the model:
-
-```{r}
-Speed_RC_FullModel_Gamma_RemovedStoryId <- glmer(
-    FullStructure_RC_Gamma_RemovedStoryId,
-    data = reading_speed_measure_data,
-    family = Gamma(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-The full model structure without StoryId converges and is non-singular.
-
-Inspect model values:
-
-```{r}
-summary(Speed_RC_FullModel_Gamma_RemovedStoryId)
-fixef(Speed_RC_FullModel_Gamma_RemovedStoryId)
-plot(Speed_RC_FullModel_Gamma_RemovedStoryId)
-plot(reading_speed_measure_data$RelativeSpeedDifference, fitted(Speed_RC_FullModel_Gamma_RemovedStoryId))
-```
-
-Normality of residuals is not an assumption for GLMMs so we do not test for it. Instead, we test for Overdispersion:
-
-#### Overdispersion
-
-Overdispersion occur when the data shows more variation than what we would expect. We test for dispersion with a custom function saved in the Functions folder (rather than DHARMa which was used in Analysis_ReadingLinearity due to difficulty simulating residuals > 0 to align with the gamma distribution):
-
-```{r}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_OverDispersionTest.R"
-    )
-)
-```
-
-```{r}
-overdisp_fun(Speed_RC_FullModel_Gamma_RemovedStoryId)
-```
-
-The overdispersion test is not significant, and therefore, the model aligns with the overdispersion assumption.
-
-#### 3. Heteroscedasticity
-
-We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
-
-```{r}
-check_heteroscedasticity(TaskSwitching_FullModel)
-plot(check_heteroscedasticity(TaskSwitching_FullModel))
-```
-
-The p-value is not significant, which indicates that the residuals are homoscedastic. Also, the plot line seems to be fairly flat and horizontal, indicating of homoscedasticity.
-
-We check categorical predictors separately with a Levene's test:
-
-```{r}
-leveneTest(residuals(TaskSwitching_FullModel) ~ task_switching_data$Condition)
-```
-
-```{r}
-leveneTest(residuals(TaskSwitching_FullModel) ~ task_switching_data$NativeEnglish)
-```
-
-The assumption of equal variables is met for both Condition and NativeEnglish.
-
-#### 4. Influential Observations
+#### 2. Influential Observations
 
 We test influential observations with Cook's Distance:
 
 ```{r}
 cooksd <-
-    cooks.distance(TaskSwitching_FullModel)
+    cooks.distance(Speed_RC_AdaptedModel)
 plot(cooksd,
     pch = "*",
     cex = 2,
@@ -982,32 +654,57 @@ text(
 )
 ```
 
-The plot indicates that some observations may be influential. However, the Cook's Distance threshold is very conservative at `r round((4 * mean(cooksd, na.rm = TRUE)), 2)`.
+The plot indicates that the dataset may include some influential observations. However, the cook's distances are very conservative as the threshold is set at `r 4 * mean(cooksd, na.rm = TRUE)`. Therefore, it is unlikely that these observations influence the model.
 
-We further inspect Cook's Distance with a different plot:
+To further test influential observations we use performance::check_outliers:
 
 ```{r}
-check_outliers(TaskSwitching_FullModel)
-plot(check_outliers(TaskSwitching_FullModel))
+check_outliers(Speed_RC_AdaptedModel)
+plot(check_outliers(Speed_RC_AdaptedModel))
 ```
 
-Usage of a less conservative limit (Cook's Distance > .5 for influential observations) indicates that none of the observations are influential. We trust this judgement after off-script experimentation indicated that removal of the most influential observation flagged earlier does not affect results.
+Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. Considering the conservative Cook's Distances, we assume that the model does not have influential outliers.
 
-#### Normality of Random Effects
+#### 3. Heteroscedasticity
 
-Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
+We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
 ```{r}
-random_intercept_UserId <- ranef(TaskSwitching_FullModel)$UserId$`(Intercept)`
+check_heteroscedasticity(Speed_RC_AdaptedModel)
+plot(check_heteroscedasticity(Speed_RC_AdaptedModel))
+```
+
+The test is not significant, indicating that the variances are homoscedastic in the model.
+
+We check categorical predictors separately with a Levene's test:
+
+```{r}
+leveneTest(residuals(Speed_RC_AdaptedModel) ~ reading_speed_measure_data$Condition)
+```
+
+```{r}
+leveneTest(residuals(Speed_RC_AdaptedModel) ~ reading_speed_measure_data$NativeEnglish)
+```
+
+The Levene's tests indicate that the assumption of equal variances is also met for condition and NativeEnglish.
+
+The model aligns with the assumption of homoscedasticity.
+
+#### 4. Normality of Random Effects
+
+Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts. The random effect of 'WindowWidth' was turned into a fixed effect in the model on reading speed.
+
+```{r}
+random_intercept_UserId <- ranef(Speed_RC_AdaptedModel)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
-The qqplot slightly varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed
+The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
 ```{r}
-random_intercept_StoryId <- ranef(TaskSwitching_FullModel)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Speed_RC_AdaptedModel)$StoryId$`(Intercept)`
 qqnorm(random_intercept_StoryId)
 qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
@@ -1015,109 +712,222 @@ shapiro.test(random_intercept_StoryId)
 
 StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
 
-The model aligns with all assumptions.
+**Assumptions conclusion**
 
-Inspection of the model indicates that StoryId accounts for no variance in the model, which may cause the singularity. According to @Bolker2022 this is a common occurrence. In this case, the random effect can be added in the model as a fixed effect to assess if this rectified the singularity issue. 
+The full model structure converged when WindowWidth was used as a continuous fixed effect rather than a categorical random effect. The adapted model aligns with all assumptions.
 
-#### Fit StoryId as a fixed effect
+### Interpret model
 
-To address singularity in the model, we attempt to fit the model with StoryId as a fixed rather than a random effect. This is because StoryId is estimated to account for zero variance in the model.
-
-We first set contrasts to StoryId:
+We then interpret model effects to interpret the results.
 
 ```{r}
-reading_speed_measure_data$StoryId <- as.factor(reading_speed_measure_data$StoryId)
-contrasts(reading_speed_measure_data$StoryId) <- contr.helmert.unweighted(reading_speed_measure_data$StoryId)
-contrasts(reading_speed_measure_data$StoryId)
+summary(Speed_RC_AdaptedModel)
 ```
 
-Create a new model structure with StoryId as a fixed effect:
+CCompetence (contextual competence), SCompetence:CInterest (an interaction between situational competence and contextual motivation), and SCompetence:Eexp1LongFormEFreq:Eexp2DeviceRecFreq (an interaction between situational competence and the two electronic experience measures) are significant predictors of reading rate.
+
+#### Hypotheses
+
+* H6a: Situational autonomous motivation is connected to lower reading speed variance when task competence is high.
+* H6b: Contextual autonomous motivation is connected to lower reading speed variance when task competence is high.
+* H6c: Task-relevant electronic experience is connected to lower reading speed variance when task competence is high.
+
+**H6a: Situational autonomous motivation is connected to lower reading speed variance when task competence is high.**
+
+This hypothesis was not supported as an interaction effect between Condition and situational competence was not a significant predictor of reading speed in the model.
 
 ```{r}
-FullStructure_AdjustedStoryId_RC <- (
-    "log(AbsReadingRate + 1) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + StoryId + (1 | UserId) + (1 | WindowWidth)"
+speed_effect_conditionscomp <- effect(
+    "Condition:SCompetence.sc",
+    Speed_RC_AdaptedModel
+)
+plot(speed_effect_conditionscomp,
+    multiline = TRUE
 )
 ```
 
-```{r}
-Speed_RC_AdjustedStoryId_Model <- lmer(
-    FullStructure_AdjustedStoryId_RC,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
+Therefore, our hypothesis H6a was not supported.
 
-The full model converges and it is no longer singular. This indicates that zero variance in StoryId was likely to cause the singularity.
+Condition was also not a significant predictor in the model, however, it was nearing significance at *p* =  .0577. This trend indicates that participants in the low-autonomy condition were likely to use slightly lower reading speeds compared to participants in the high-autonomy condition:
 
 ```{r}
-summary(Speed_RC_AdjustedStoryId_Model)
-plot(Speed_RC_AdjustedStoryId_Model)
+speed_effectplot_condition <- cat_plot(
+    Speed_RC_AdaptedModel,
+    pred = "Condition",
+    data =  reading_speed_measure_data,
+    plot.points = TRUE,
+    point.size = 2,
+    point.alpha = .2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Reading Speed as Proportion of Baseline Speed",
+        x = addline_format("Condition")
+    )
 ```
 
-Inspect model values:
+Therefore, unlike we expected participants' condition assignment and situational competence did not predict reading speed. Instead, a trend in the main effect of condition indicates that participants in the high autonomy condition were slightly more likely to use higher reading speeds than participants in the low-autonomy condition.
+
+**H6b: Contextual autonomous motivation is connected to lower reading speed variance when task competence is high.**
+
+An interaction between Contextual motivation (measured by CInterest) and situational competence (SCompetence) was expected to be a significant predictor of reading speed. Indeed, the interaction was significant:
 
 ```{r}
-fixef(Speed_RC_AdjustedStoryId_Model)
+speed_effectplot_cmotscomp <- interact_plot(
+    Speed_RC_AdaptedModel,
+    pred = "CInterest.sc",
+    modx = "SCompetence.sc",
+    data =  reading_speed_measure_data,
+    plot.points = TRUE,
+    point.size = 2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Reading Speed as Proportion of Baseline Speed",
+        x = addline_format("Contextual motivation score, measured by contextual reading interest,(centered and scaled)")
+    )
 ```
 
-StoryId may be collinear with other variables in the model. We assess this possibility:
+A high contextual motivation score was associated with a baseline-level reading speed regardless of situational competence. However, low situational competence paired with low contextual motivation was connected to faster than usual reading speeds, whereas a high situational competence and low contextual motivation was associated with baseline-level reading speeds.
+We would usually assume that readers slow down when the text is difficult to comprehend, but the opposite is seen for participants who are not motivated to read for fun.
+
+Therefore, our hypothesis was supported.
+
+**H6c: Task-relevant electronic experience is connected to lower reading speed variance when task competence is high**
+
+We expected a three-way interaction between situational competence and the two electronic reading experience measures to be a significant predictor of reading speed. Indeed, the interaction effect was significant:
 
 ```{r}
-check_collinearity(Speed_RC_AdjustedStoryId_Model)
-plot(check_collinearity(Speed_RC_AdjustedStoryId_Model))
-vif_values <- vif(Speed_RC_AdjustedStoryId_Model)
-# compare to original model structure:
-plot(check_collinearity(Speed_RC_FullModel))
+speed_effectplot_electronicexperiencescomp <-
+    interact_plot(Speed_RC_AdaptedModel,
+        pred = Eexp1LongformEFreq.sc,
+        modx = Eexp2DeviceRecFreq.sc,
+        mod2 = SCompetence.sc,
+        data = reading_speed_measure_data,
+        plot.points = TRUE,
+        point.alpha = .2,
+        point.size = 1,
+        jitter = .5,
+        interval = TRUE,
+        legend.main = addline_format("Electronic experience 2"),
+        mod2.labels = c("-1SD Situational Competence", "Mean Situational Competence", "+1SD Situational Competence"),
+        colors = c("orange", "darkred", "navy"),
+        point.shape = TRUE
+    ) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Reading Speed as Proportion of Baseline Speed",
+        x = addline_format("Electronic experience 1:,Frequency of reading longform texts electronically,(centered and scaled)"),
+        caption = addline_format("Legend variable: Frequency of using task-relevant digital devices,for recreational reading (centered and scaled)")
+    )
 ```
 
-Indeed, some of the variables in the model appear collinear, whereas this is not the case for the original model. Variance Inflation Factor (VIF) is very high for StoryId at `r vif_values[9]` (usually a VIF > 10 is taken as indication of high multicollinearity).
+The result indicates that when situational competence is low, a combination of both task-relevant electronic reading experience is associated with a baseline-level reading speed. When situational competence is high, on the other hand, this task-relevant electronic experience is associated with a higher than baseline reading speed. Therefore, task-relevant electronic experience may support participants engagement with the text when competence is low. This finding supports our hypotheses.
 
-Therefore, we assume that StoryId cannot be included in the model as random nor a fixed effect. As a random effect, StoryId accounts for zero variance which results in singularity, whereas as a fixed effect, StoryId is multicollinear with other predictors in the model.
+Whereas low task-relevant electronic experience (low score in both electronic measures) is connected to a similar patterns (when competence is high, speed tends to be higher than baseline, and when competence is low, speed tends to be baseline-level), a mismatch in electronic experience is associated with different trends. In particular, a low level of experience using task-relevant devices but a high level of experience in reading task-relevant text types electronically is associated with a higher than usual reading speed when competence is low, and a slow reading speed when competence is high. It is possible that participants without device-experience are not aware of device-relevant affordances or they may be more susceptible for shallowing effect than other participants.
 
-We therefore remove StoryId from the model and attempt to fit the model without it.
+#### Other results
 
-#### Fit reader characteristics model without StoryId
+In addition, reading speed was significantly predicted by contextual competence (CCompetence.sc).
 
-Considering that StoryId cannot be included in the model as a random effect (zero variance results in singularity) nor a fixed effect (multicollinear), we attempt to fit the reader characteristics model of reading speed without StoryId. This means that we cannot estimate differences between the different texts read during the study.
-
-Create a new model structure without StoryId:
+**Contextual Competence**
 
 ```{r}
-FullStructure_RemovedStoryId_RC <- (
-    "log(AbsReadingRate + 1) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId) + (1 | WindowWidth)"
-)
+speed_effectplot_contextualcompetence <- effect_plot(
+    Speed_RC_AdaptedModel,
+    pred = "CCompetence.sc",
+    data =  reading_speed_measure_data,
+    plot.points = TRUE,
+    point.size = 2,
+    interval = TRUE,
+    point.shape = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Reading Speed as Proportion of Baseline Speed",
+        x = addline_format("Contextual perceived competence, score (centered and scaled)")
+    )
 ```
 
-```{r}
-Speed_RC_RemovedStoryId_Model <- lmer(
-    FullStructure_RemovedStoryId_RC,
-    data = reading_speed_measure_data,
-    control = lmerControl(optimizer = "bobyqa"),
-    REML = TRUE
-)
-```
+Contextual competence is positively linked to reading rate, indicating that a higher perceived reading ability is associated with the tendency to use speeds that are higher than baseline. In contrast, a lower reading ability is connected to baseline-level reading speed.
 
-The full model converges and it is not singular.
+## Event Properties Model
 
-```{r}
-summary(Speed_RC_RemovedStoryId_Model)
-plot(Speed_RC_RemovedStoryId_Model)
-```
 
-Inspect model values:
 
-```{r}
-fixef(Speed_RC_RemovedStoryId_Model)
-```
 
-We check if removing StoryId from the model resolved multicollinearity:
 
-```{r}
-check_collinearity(Speed_RC_RemovedStoryId_Model)
-plot(check_collinearity(Speed_RC_RemovedStoryId_Model))
-```
 
-A quick assessment indicates that the model is no longer multicollinear.
-Thus we accept this model, and subject it to assumptions testing.
 
