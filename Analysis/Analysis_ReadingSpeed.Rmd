@@ -453,7 +453,7 @@ contrasts(reading_speed_measure_data$Condition) <- contr.helmert.unweighted(
 contrasts(reading_speed_measure_data$Condition)
 ```
 
-Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
+Next, we scale and center continuous variables. These variables names are appended with ".sc" as a reminder that the variable is scaled and centered.
 
 ```{r 'scale continuous variables'}
 # Situational competence
@@ -491,7 +491,6 @@ reading_speed_measure_data$DaysUntilDeadline.sc <-
         scale = TRUE
     )
 # Window Width
-reading_speed_measure_data$WindowWidth <- as.numeric(as.character(reading_speed_measure_data$WindowWidth))
 reading_speed_measure_data$WindowWidth.sc <-
     scale(reading_speed_measure_data$WindowWidth,
         center = TRUE,
