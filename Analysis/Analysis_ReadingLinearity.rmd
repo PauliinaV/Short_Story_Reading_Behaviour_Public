@@ -238,6 +238,7 @@ The reader characteristics model for linearity of reading takes the following st
 
 $Y_{i} = 
     \beta_{0} +
+    WindowWidth +
     DUD +
     Native +
     Cond +
@@ -252,12 +253,12 @@ $Y_{i} =
     EExp1 x EExp2 x SComp +
     u_{Subject} +
     u_{Story} +
-    u_{ScreenSize} +
     \varepsilon_{i}$ 
 
 where
 **$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
 **$\beta_{0}$** is the intercept
+**WindowWidth** indicates of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
 **Native** is a binary variable indicating whether the participant is a native speaker of English or not (responses - Yes/No, yes indicating that the participant is a native speaker).
 **Cond** represents autonomy condition (as a measure of situational motivation)
@@ -268,7 +269,6 @@ where
 **EExp2** is frequency of using task-relevant devices for any reading purpose
 **$u_{Subject}$** indicates a random intercept of subject indicator
 **$u_{Story}$** indicates a random intercept of story indicator
-**$u_{ScreenSize}$** indicates a random intercept of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
 Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, the remaining models (task switching and reading persistence) are modelled without 'Cond x SComp', 'CMot x SComp', and 'EExp1 x EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching and reading persistence are expected to be connected to motivation and electronic experience directly (main effects).
@@ -547,15 +547,21 @@ linearity_measure_data$DaysUntilDeadline.sc <-
         center = TRUE,
         scale = TRUE
     )
+# Window Width
+linearity_measure_data$WindowWidth.sc <-
+    scale(linearity_measure_data$WindowWidth,
+        center = TRUE,
+        scale = TRUE
+    )
 ```
 
 ### Modelling by Reader Characteristics
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 20 parameters (including two random effects and categorical variable levels), and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/20 = `r round(nrow(linearity_measure_data)/20, 2)`
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 16 parameters, and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/16 = `r round(nrow(linearity_measure_data)/16, 2)`
 
 ```{r}
 FullStructure_RC <- (
-    "StartsNonlinearity ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId)"
 )
 ```
 
@@ -568,149 +574,75 @@ Linearity_RC_FullModel <- glmer(
 )
 ```
 
-The full model is singular, and so it needs to be simplified.
+The full model is singular.
 
 ```{r}
 summary(Linearity_RC_FullModel)
 plot(Linearity_RC_FullModel)
 ```
 
-Inspect model values:
+Inspection of the model values indicates that the random intercept of StoryId is accounting for zero variance in the model. This can occur when the variance accounted for by the random intercept is minimal and thus the model fails to estimate variance, resulting in singularity. To address the issue, we attempt to fit the model with StoryId as a fixed effect rather than a random intercept:
 
 ```{r}
-fixef(Linearity_RC_FullModel)
-```
-
-### Model backward selection
-
-The fullmodel is singular, and thus its structure needs to be simplified. We remove predictors by backward stepwise selection, until convergence. The predictors with the lowest p-value is removed first.
-
-Find lowest p-value:
-```{r}
-summary(Linearity_RC_FullModel)
-```
-
-'DaysUntilDeadline.sc' has the lowest p-value and thus contributes the least to the model. It is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(FullStructure_RC, fixed("DaysUntilDeadline.sc + "))
-```
-
-re-fit the model with the simplified structure:
-
-```{r}
-Linearity_RC_ModelSelection1 <- glmer(
-    SimplifiedStructure,
-    data = linearity_measure_data,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
+FullStructure_RC_AdjustedStoryId <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId)"
 )
 ```
 
-The model remains singular, and so we identify another predictor to be removed:
+Including StoryId as a fixed effect rather than a random effect increases the amount of parameters in the model from 16 to 23. This isn't an issue, however, as the observations per parameter value still exceeds the threshold of 20 considering that `r nrow(linearity_measure_data)`/23 = `r round(nrow(linearity_measure_data)/23, 2)`
+
+Add contrasts to StoryId:
 
 ```{r}
-summary(Linearity_RC_ModelSelection1)
-plot(Linearity_RC_ModelSelection1)
-```
-
-'Condition:SCompetence.sc' has the lowest p-value and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+  Condition : SCompetence.sc "))
+contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(
+    linearity_measure_data$StoryId
+)
+contrasts(linearity_measure_data$StoryId)
 ```
 
 Re-fit the model:
 
 ```{r}
-Linearity_RC_ModelSelection2 <- glmer(
-    SimplifiedStructure,
+Linearity_RC_AdjustedModel <- glmer(
+    FullStructure_RC_AdjustedStoryId,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
 ```
 
-The model remains singular, and so we identify another predictor to be removed:
+The model is no longer singular. However, it is possible that StoryId is collinear with other predictors in the model, and thus we assess multicollinearity before proceeding:
 
 ```{r}
-summary(Linearity_RC_ModelSelection2)
-plot(Linearity_RC_ModelSelection2)
+car::vif(Linearity_RC_AdjustedModel)
 ```
 
-'CCompetence.sc' has the lowest p-value and so it is removed:
+Indeed, the Variance Inflation Factor (VIF) indicates that StoryId causes multicollinearity in the model. Therefore, it cannot be included as a fixed effect in the model and we remove it. This means that variation between different stories read cannot be estimated in the reader characteristics model.
 
 ```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("+ CCompetence.sc "))
+FullStructure_RC_RemovedStoryId <- (
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId)"
+)
 ```
 
 Re-fit the model:
 
 ```{r}
-Linearity_RC_ModelSelection3 <- glmer(
-    SimplifiedStructure,
+Linearity_RC_Model_RemovedStoryId <- glmer(
+    FullStructure_RC_RemovedStoryId,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
 ```
 
-The model remains singular, and so we identify another predictor to be removed:
+The model converges and it is not singular. We re-assess multicollinearity:
 
 ```{r}
-summary(Linearity_RC_ModelSelection3)
-plot(Linearity_RC_ModelSelection3)
+car::vif(Linearity_RC_Model_RemovedStoryId)
 ```
 
-'NativeEnglish' has the lowest p-value and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("NativeEnglish + "))
-```
-
-Re-fit the model:
-
-```{r}
-Linearity_RC_ModelSelection4 <- glmer(
-    SimplifiedStructure,
-    data = linearity_measure_data,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-The model remains singular, and so we identify another predictor to be removed:
-
-```{r}
-summary(Linearity_RC_ModelSelection4)
-plot(Linearity_RC_ModelSelection4)
-```
-
-'Condition' has the lowest p-value and so it is removed:
-
-```{r}
-SimplifiedStructure <- str_remove(SimplifiedStructure, fixed("Condition + "))
-```
-
-Re-fit the model:
-
-```{r}
-Linearity_RC_ModelSelection5 <- glmer(
-    SimplifiedStructure,
-    data = linearity_measure_data,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-The model converges, and it is no longer singular.
-We then inspect the model coefficients:
-
-```{r}
-summary(Linearity_RC_ModelSelection5)
-plot(Linearity_RC_ModelSelection5)
-fixef(Linearity_RC_ModelSelection5)
-```
+All predictors VIF is below 2.5, indicating that the model is no longer affected by multicollinearity. We assess this in more detail below in the assumptions.
 
 ### Model Assumptions
 
@@ -721,26 +653,26 @@ All generalised linear mixed models were tested for (1) multicollinearity, (2) u
 We check for multicollinearity first with a correlation matrix:
 
 ```{r}
-corrplot(cor(linearity_measure_data[, c(17, 19, 21:22)]), method = "number")
+corrplot(cor(linearity_measure_data[, c(30:36)]), method = "number")
 ```
 
-The two electronic experience measures are positively correlated, *r* = `r round(cor(linearity_measure_data$Eexp1LongformEFreq, linearity_measure_data$Eexp2DeviceRecFreq), 2)`. Other predictors in the model are not correlated with each other.
+Some of the predictors are highly correlated. For example, the two electronic experience measures are positively correlated, *r* = `r round(cor(linearity_measure_data$Eexp1LongformEFreq, linearity_measure_data$Eexp2DeviceRecFreq), 2)`. Similarly, contextual motivation is positively correlated with contextual competence scores, *r* = `r round(cor(linearity_measure_data$CInterest, linearity_measure_data$CCompetence), 2)`
 
-To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
+To check if these correlations are problematic, we assess Variance Inflation Factors (VIF) with check_collinearity from the performance package:
 
 ```{r}
-check_collinearity(Linearity_RC_ModelSelection5)
-plot(check_collinearity(Linearity_RC_ModelSelection5))
+check_collinearity(Linearity_RC_Model_RemovedStoryId)
+plot(check_collinearity(Linearity_RC_Model_RemovedStoryId))
 ```
 
-Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 1.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
+Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
 
 #### 2. Under- and Overdispersion
 
 Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
 
 ```{r}
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_RC_ModelSelection5, plot = F)
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_RC_Model_RemovedStoryId, plot = F)
 ```
 
 ```{r}
@@ -771,7 +703,7 @@ We test influential observations with Cook's Distance:
 
 ```{r}
 cooksd <-
-    cooks.distance(Linearity_RC_ModelSelection5)
+    cooks.distance(Linearity_RC_Model_RemovedStoryId)
 plot(cooksd,
     pch = "*",
     cex = 2,
@@ -798,10 +730,10 @@ The test and the plot indicate that none of the observations are influential. We
 
 #### 5. Normality of Random Effects
 
-Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId', and finally 'WindowWidth' random intercepts.
+Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId'. The random intercept of 'StoryId' was removed from the selected model.
 
 ```{r}
-random_intercept_UserId <- ranef(Linearity_RC_ModelSelection5)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Linearity_RC_Model_RemovedStoryId)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -809,32 +741,18 @@ shapiro.test(random_intercept_UserId)
 
 The qqplot varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed.
 
-```{r}
-random_intercept_StoryId <- ranef(Linearity_RC_ModelSelection5)$StoryId$`(Intercept)`
-qqnorm(random_intercept_StoryId)
-qqline(random_intercept_StoryId)
-shapiro.test(random_intercept_StoryId)
-```
+**Assumptions conclusion**
 
-StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
+To reach convergence and non-singularity, the random intercept of StoryId was removed from the model as it accounted for zero variance. We attempted to fit the model with StoryId as a fixed effect, however, the variable was ultimately removed due to high collinearity with other predictors in the model.
 
-```{r}
-random_intercept_WindowWidth <- ranef(Linearity_RC_ModelSelection5)$WindowWidth$`(Intercept)`
-qqnorm(random_intercept_WindowWidth)
-qqline(random_intercept_WindowWidth)
-shapiro.test(random_intercept_WindowWidth)
-```
-
-Again, the qqplot indicates that WindowWidth may vary from normality, however, considering that the variance is not extensive and the Shapiro Test is not significant, we assume that WindowWidth random intercept is normally distributed.
-
-The model aligns with all assumptions.
+The final, adjusted model aligns with all assumptions.
 
 ### Interpret reader characteristics model
 
 We then interpret model effects to interpret the results.
 
 ```{r}
-summary(Linearity_RC_ModelSelection5)
+summary(Linearity_RC_Model_RemovedStoryId)
 ```
 
 Only an interaction effect between the two task-relevant electronic experience measures is a signficant predictor of linearity of reading.
@@ -843,11 +761,7 @@ Only an interaction effect between the two task-relevant electronic experience m
 
 **H4a: We expect situational motivation (high-autonomy condition) to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
 
-This hypothesis was not supported as the interaction effect between Condition and situational competence was removed from the model during backward stepwise selection. Indeed, the main effect of condition was similarly removed, and therefore, participants in the high-autonomy and low-autonomy conditions did not differ significantly in their frequency of using nonlinear navigation during reading of the short story.
-
-**H4b: We expect contextual motivation to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
-
-This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
+This hypothesis was not supported as the interaction effect between Condition and situational competence was not a significant predictor of linearity.
 
 ```{r}
 source(
@@ -856,14 +770,12 @@ source(
         "/Functions/Functions_AddLine.R"
     )
 )
-
-linearity_effectplot_cmotscomp <- interact_plot(
-    Linearity_RC_ModelSelection5,
-    pred = "CInterest.sc",
-    modx = "SCompetence.sc",
-    data =  linearity_measure_data,
+linearity_rc_condscomp <- interact_plot(
+    Linearity_RC_Model_RemovedStoryId,
+    pred = SCompetence.sc,
     interval = TRUE,
-    legend.main = addline_format("Situation competence score,(centered and scaled)")
+    modx = Condition,
+    data = linearity_measure_data
 ) +
     theme_bw() +
     theme(
@@ -885,21 +797,58 @@ linearity_effectplot_cmotscomp <- interact_plot(
     ) +
     labs(
         y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Contextual motivation score, measured by contextual reading interest,(centered and scaled)")
+        x = addline_format("Situational competence score,(centered and scaled)")
     )
 ```
 
-Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation slightly less often when they found the text easy to read (high situational competence score). In contrast, a low contextual motivation score and high situational competence is associated with more frequent nonlinear navigation.
+As the interaction effect was not significant, the combination of situational competence and condition manipulation was not connected to participants' frequency of using nonlinear navigation. Therefore, our hypothesis H4a was not supported.
 
-However, the interaction was not significant and so the effect should not be interpreted further.
+**H4b: We expect contextual motivation to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+
+This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
+
+```{r}
+linearity_rc_cmotscomp <- interact_plot(
+    Linearity_RC_Model_RemovedStoryId,
+    pred = "SCompetence.sc",
+    modx = "CInterest.sc",
+    data =  linearity_measure_data,
+    interval = TRUE,
+    legend.main = addline_format("Contextual motivation score,(centered and scaled)")
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = "Odds of initiating nonlinear navigation",
+        x = addline_format("Situation competence score,(centered and scaled)")
+    )
+```
+
+Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation more often when they found the text difficult to read than when they reported that the story was easy to comprehend. In contrast, participants with a low contextual motivation score used on average less nonlinear navigation when the text was difficult to read, and more when the text was seen as easy. However, the effect is not significant and thus it should not be interpreted further.
 
 **H4c: We expect an interaction between task-relevant electronic experience measures to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
 
 This hypothesis was not supported as an interaction between the two electronic experience measures and situational competence was not a significant predictor of linearity of reading.
 
 ```{r}
-linearity_effectplot_eexpscomp <- interact_plot(
-    Linearity_RC_ModelSelection5,
+linearity_rc_eexpscomp <- interact_plot(
+    Linearity_RC_Model_RemovedStoryId,
     pred = "Eexp1LongformEFreq.sc",
     modx = "Eexp2DeviceRecFreq.sc",
     mod2 = "SCompetence.sc",
@@ -938,7 +887,7 @@ Although the three-way interaction between electronic experience measures and si
 
 ```{r}
 linearity_effectplot_eexp <- interact_plot(
-    Linearity_RC_ModelSelection5,
+    Linearity_RC_Model_RemovedStoryId,
     pred = "Eexp1LongformEFreq.sc",
     modx = "Eexp2DeviceRecFreq.sc",
     data =  linearity_measure_data,
@@ -969,7 +918,7 @@ linearity_effectplot_eexp <- interact_plot(
     )
 ```
 
-The finding indicated that a combination of high scores in the two task-relevant electronic reading experience measures was associated with lower likelihood of nonlinear navigation. In contrast, a low score in either measure with a high level of the other, was associated with more frequent nonlinear navigation. This indicates that electronic experience affected participants' linearity of reading.
+The finding indicated that a combination of high scores in the two task-relevant electronic reading experience measures was associated with a lower likelihood of nonlinear navigation. In contrast, a low score in either measure with a high level of the other, was associated with more frequent nonlinear navigation. This indicates that electronic experience affected participants' linearity of reading.
 
 ## Event properties model
 
@@ -979,7 +928,8 @@ The model takes the following structure:
 
 $Y_{i} = 
     \beta_{0} +
-    # control variable
+    # control variables
+    WindowWidth +
     DUD +
     # predictors
     Observation~k-1~ +
@@ -989,12 +939,12 @@ $Y_{i} =
     LocationInText +
     u_{Subject} +
     u_{Story} +
-    u_{ScreenSize} +
     \varepsilon_{i}$ 
 
 where <!-- fix below-->
 **$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
 **$\beta_{0}$** is the intercept
+**WindowWidth** indicates of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
 **Observation~k-1~**
 **Observation~k-2~**
@@ -1003,10 +953,9 @@ where <!-- fix below-->
 **LocationInText**
 **$u_{Subject}$** indicates a random intercept of subject indicator
 **$u_{Story}$** indicates a random intercept of story indicator
-**$u_{ScreenSize}$** indicates a random intercept of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
-First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions between all predictors remaining in the model, and select them backward stepwise until the model converges. This model selection is used to explore possible interactions that are meaningful to add without overfitting the model.
+First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions could be added between predictors measuring previous observations (Observation~k-1~ and Observation~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous observations and the other predictors in the model (e.g. Observation~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
 
 ### Create predictor variables
 
@@ -1022,7 +971,7 @@ linearity_measure_data$StartsNonlinearity_lag2 <- lag(linearity_measure_data$Sta
 The linearity_measure_data has `r nrow(linearity_measure_data)` observations.
 
 We create graphs to inspect linearity of reading and its connection to other variables.
-Graphs on the distribution of StartsNonlinearity and connection to random effects were created before the reader characteristics model, and so they are not repeated here.
+Graphs on the distribution of StartsNonlinearity and connection to random effects and control variables were created before the reader characteristics model, and so they are not repeated here.
 
 
 ### Connection to previous event
@@ -1145,6 +1094,12 @@ linearity_measure_data$DaysUntilDeadline.sc <-
         center = TRUE,
         scale = TRUE
     )
+# Window Width
+linearity_measure_data$WindowWidth.sc <-
+    scale(linearity_measure_data$WindowWidth,
+        center = TRUE,
+        scale = TRUE
+    )
 # Reading session number
 linearity_measure_data$ReadingSessionNumber.sc <-
     scale(linearity_measure_data$ReadingSessionNumber,
@@ -1167,15 +1122,15 @@ linearity_measure_data$PercentageLocation.sc <-
 
 ### Modelling by Event Properties
 
-#### Main effects
+#### Additive model
 
-First, we build the model structure consisting of only main effects and random intercepts. Refer to the beginning of the event properties section of this script to see information on how the model is built.
+First, we build the additive model structure consisting of only main effects and random intercepts. Refer to the beginning of the event properties section of this script to see information on how the model is built.
 
-The model includes 10 parameters before adding interactions (including intercept and the three random effects), and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/10 = `r round(nrow(linearity_measure_data)/10, 2)`
+The model includes 10 parameters before adding interactions, and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/10 = `r round(nrow(linearity_measure_data)/10, 2)`
 
 ```{r}
 AdditiveStructure_EP <- (
-    "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId)"
 )
 ```
 
@@ -1188,54 +1143,82 @@ Linearity_EP_AdditiveModel <- glmer(
 )
 ```
 
+The additive model is singular, and so we inspect the model values:
+
 ```{r}
 summary(Linearity_EP_AdditiveModel)
 plot(Linearity_EP_AdditiveModel)
 ```
 
-Inspect model values:
+Similarly to the reader characteristics model, story indicator accounts for zero variance in the event properties model of linearity. This is likely to be causing the singularity in the model. To address the issue, we attempt to fit StoryId as a fixed effect in the model:
 
 ```{r}
-fixef(Linearity_EP_AdditiveModel)
-```
-
-The model with all main effects converges, and so we can add all two-way interactions.
-
-#### Interactions
-
-We create a new model structure with interactions between all predictors of interest (all main effects apart from DaysUntilDeadline which is used as a control variable only). Only two-way interactions are included to avoid overfitting the model. The interactive model includes 32 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/32 = `r round(nrow(linearity_measure_data)/32, 2)`.
-
-```{r}
-InteractiveStructure_EP <- (
-    "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + StartsNonlinearity_lag1 : ReadingSessionNumber.sc + StartsNonlinearity_lag1 : TimeInReadingSession.sc + StartsNonlinearity_lag1 : PercentageLocation.sc +  StartsNonlinearity_lag2 : ReadingSessionNumber.sc + StartsNonlinearity_lag2 : TimeInReadingSession.sc + StartsNonlinearity_lag2 : PercentageLocation.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc +  ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
-)
-
-InteractiveStructure_EP2 <- ( # possible way to prior set interactions
-    "StartsNonlinearity ~ DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc +  ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId) + (1 | UserId) + (1 | WindowWidth)"
+AdditiveStructure_EP_Adjusted <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | UserId)"
 )
 ```
 
+Add contrasts to StoryId:
+
 ```{r}
-Linearity_EP_InteractiveModel <- glmer(
-    InteractiveStructure_EP2,
+linearity_measure_data$StoryId <- as.factor(linearity_measure_data$StoryId)
+contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(linearity_measure_data$StoryId)
+contrasts(linearity_measure_data$StoryId)
+```
+
+Re-fit the model with StoryId as a fixed effect:
+
+```{r}
+Linearity_EP_AdditiveModel_Adjusted <- glmer(
+    AdditiveStructure_EP_Adjusted,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
 ```
 
+The adjusted model reaches convergence and is no longer singular.
+Before proceeding, we assess if StoryId is causing multicollinearity in the model:
+
 ```{r}
-summary(Linearity_EP_InteractiveModel)
-plot(Linearity_EP_InteractiveModel)
+car::vif(Linearity_EP_AdditiveModel_Adjusted)
+```
+
+StoryId VIF is within reasonable limits, and therefore it can be retained in the model as a fixed effect.
+
+Considering that the model converges, we can add two-way interactions.
+
+#### Interactions
+
+We create a new model structure with interactions between all predictors of interest (see information at the beginning of the event properties section for an explanation of model selection). Only two-way interactions are included to avoid overfitting the model. Note that StoryId is fit as a fixed rather than a random effect due to singularity in the additive model structure. The interactive model includes 21 parameters. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/21 = `r round(nrow(linearity_measure_data)/21, 2)`.
+
+```{r}
+InteractiveStructure_EP_Adjusted <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | UserId)"
+)
+```
+
+```{r}
+Linearity_EP_InteractiveModel_Adjusted <- glmer(
+    InteractiveStructure_EP_Adjusted,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
+The full interactive model structure converges and is not singular.
+
+```{r}
+summary(Linearity_EP_InteractiveModel_Adjusted)
+plot(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
 Inspect model values:
 
 ```{r}
-fixef(Linearity_EP_InteractiveModel)
+fixef(Linearity_EP_InteractiveModel_Adjusted)
 ```
-
-The interactive model converges, and so there is no need for simplification of the model if the model assumptions are met.
 
 ### Model Assumptions
 
@@ -1249,7 +1232,7 @@ Any VIF > 5 is considered to be a strong indication of multicollinearity, and th
 We check for multicollinearity first with a correlation matrix:
 
 ```{r}
-corrplot(cor(linearity_measure_data[, c("ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
+corrplot(cor(linearity_measure_data[, c("WindowWidth.sc", "DaysUntilDeadline.sc", "ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
 ```
 
 Location in text and time in a reading session are positively correlated, *r* = `r round(cor(linearity_measure_data$PercentageLocation.sc, linearity_measure_data$TimeInReadingSession.sc), 2)`.
@@ -1257,103 +1240,11 @@ Location in text and time in a reading session are positively correlated, *r* = 
 To check if these correlations are problematic, we calculate VIF:
 
 ```{r}
-check_collinearity(Linearity_EP_InteractiveModel)
-plot(check_collinearity(Linearity_EP_InteractiveModel))
+check_collinearity(Linearity_EP_InteractiveModel_Adjusted)
+plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted))
 ```
 
-The 'check_collinearity' test from the 'performance' -package indicates a slightly inflated VIF value of 'StartsNonlinearity_lag1:StartsNonlinearity_lag2' (*VIF* = 3.82). Considering that the VIF is in the moderate range, we inspect whether removing the interaction has a significant effect on the model results interpretation (other than the removed predictor):
-
-```{r}
-SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag1 : StartsNonlinearity_lag2 "))
-```
-
-```{r}
-Linearity_EP_InteractiveModel_MulticollinearityTest <- glmer(
-    SimplifiedStructure_EP,
-    data = linearity_measure_data,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-Compare model results to original interactive model:
-
-```{r}
-summary(Linearity_EP_InteractiveModel_MulticollinearityTest)
-summary(Linearity_EP_InteractiveModel)
-```
-
-Inclusion of the interaction has a slight impact on model results, and therefore, the interaction effect should be removed.
-
-Multicollinearity is tested again after removal of "StartsNonlinearity_lag1 : StartsNonlinearity_lag2":
-
-```{r}
-check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest)
-plot(check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest))
-```
-
-The test indicates that an interaction effect between 'StartsNonlinearity_lag1' and 'ReadingSessionNumber.sc' has a moderate VIF (*VIF* = 2.86). Again, the impact of removal is inspected:
-
-```{r}
-SimplifiedStructure_EP <- str_remove(SimplifiedStructure_EP, fixed("+ StartsNonlinearity_lag1 : ReadingSessionNumber.sc "))
-```
-
-```{r}
-Linearity_EP_InteractiveModel_MulticollinearityTest2 <- glmer(
-    SimplifiedStructure_EP,
-    data = linearity_measure_data,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-Compare model results to original interactive model:
-
-```{r}
-summary(Linearity_EP_InteractiveModel_MulticollinearityTest2)
-summary(Linearity_EP_InteractiveModel_MulticollinearityTest)
-```
-
-Inclusion of the interaction has a slight impact on model results, and therefore, the interaction effect should be removed.
-
-Multicollinearity is tested again after removal of "StartsNonlinearity_lag1 : ReadingSessionNumber.sc":
-
-```{r}
-check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest2)
-plot(check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest2))
-```
-
-The test indicates that an interaction effect between 'StartsNonlinearity_lag1' and 'TimeInReadingSession.sc' has a moderate VIF (*VIF* = 3.90). Again, the impact of removal is inspected:
-
-```{r}
-SimplifiedStructure_EP <- str_remove(SimplifiedStructure_EP, fixed("+ StartsNonlinearity_lag1 : TimeInReadingSession.sc "))
-```
-
-```{r}
-Linearity_EP_InteractiveModel_MulticollinearityTest3 <- glmer(
-    SimplifiedStructure_EP,
-    data = linearity_measure_data,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-Compare model results to original interactive model:
-
-```{r}
-summary(Linearity_EP_InteractiveModel_MulticollinearityTest3)
-summary(Linearity_EP_InteractiveModel_MulticollinearityTest2)
-```
-
-Inclusion of the interaction has a slight impact on model results, and therefore, the interaction effect should be removed.
-Multicollinearity is tested again after removal of "StartsNonlinearity_lag1 : TimeInReadingSession.sc":
-
-```{r}
-check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest3)
-plot(check_collinearity(Linearity_EP_InteractiveModel_MulticollinearityTest3))
-```
-
-The test indicates low correlation between predictors, and so the model is now expected to align to the assumption of not having multicollinearity. We use Linearity_EP_InteractiveModel_MulticollinearityTest3 in the following assumptions checks.
+The model predictors do not seem to be multicollinear. All VIF < 4, and usually VIF > 5 is used as an indicator of potential multicollinearity.
 
 #### 2. Under- and Overdispersion
 
@@ -1361,7 +1252,7 @@ Under- and overdispersion occur when the data shows less or more variation, resp
 
 ```{r}
 set.seed(1234) # for reproducibility
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel, plot = F)
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_Adjusted, plot = F)
 ```
 
 ```{r}
@@ -1382,7 +1273,7 @@ We test influential observations with Cook's Distance:
 
 ```{r}
 cooksd <-
-    cooks.distance(Linearity_EP_InteractiveModel)
+    cooks.distance(Linearity_EP_InteractiveModel_Adjusted)
 plot(cooksd,
     pch = "*",
     cex = 2,
@@ -1397,15 +1288,15 @@ text(
 )
 ```
 
-The plot indicates that the dataset may include some highly influential observations. In particular, the plot highlights observations 254 and 60.
+The plot indicates that the dataset may include some highly influential observations. In particular, the plot highlights observation #254.
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
 ```{r}
-testOutliers(Linearity_EP_InteractiveModel)
+testOutliers(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
-Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. In order to assess the impact of the influential points indicated by Cook's Distance, we re-fit the model twice  without each influential observation to see if the results are altered.
+Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. To assess the impact of observation #254, we attempt to fit the model without it to see if its inclusion has an impact on model interpreations:
 
 **Fit the model without observation #254:**
 
@@ -1414,8 +1305,8 @@ subset_without_observation254 <- linearity_measure_data[c(1:253, 255:nrow(linear
 ```
 
 ```{r}
-Linearity_EP_InteractiveModel_influential254 <- glmer(
-    SimplifiedStructure_EP,
+Linearity_EP_InteractiveModel_Adjusted_influential254 <- glmer(
+    InteractiveStructure_EP_Adjusted,
     data = subset_without_observation254,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1425,17 +1316,19 @@ Linearity_EP_InteractiveModel_influential254 <- glmer(
 Inspect if model results are affected:
 
 ```{r}
-summary(Linearity_EP_InteractiveModel_influential254)
-summary(Linearity_EP_InteractiveModel_MulticollinearityTest3)
+summary(Linearity_EP_InteractiveModel_Adjusted_influential254)
+summary(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
-Removing observation #254 has an impact on model results. Removing the value results in a new significant interaction effect (ReadingSessionNumber and TimeInReadingSession). Therefore, the observation affects model interpretation and it should be removed from analyses.
+Removing observation #254 has an impact on model results. Removing the value removes a significant main effect (PercentageLocation). Removing the observation also decreases the significance of TimeInReadingSession and an interaction between TimeInReadingSession and PercentageLocation.
+
+Therefore, the observation affects model interpretation and it should be removed from analyses.
 
 Assess influential observations after removing point 254:
 
 ```{r}
 cooksd <-
-    cooks.distance(Linearity_EP_InteractiveModel_influential254)
+    cooks.distance(Linearity_EP_InteractiveModel_Adjusted_influential254)
 plot(cooksd,
     pch = "*",
     cex = 2,
@@ -1450,78 +1343,7 @@ text(
 )
 ```
 
-The plot indicates that the dataset still includes some influential observations. In particular, the plot highlights observation 60.
-
-**Fit the model without observation #60:**
-
-```{r}
-subset_without_observations254and60 <- subset_without_observation254[c(1:59, 61:nrow(subset_without_observation254)), ]
-```
-
-```{r}
-Linearity_EP_InteractiveModel_influential60and254 <- glmer(
-    SimplifiedStructure_EP,
-    data = subset_without_observations254and60,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-Inspect if model results are affected:
-
-```{r}
-summary(Linearity_EP_InteractiveModel_influential60and254)
-summary(Linearity_EP_InteractiveModel_influential254)
-```
-
-Removing observation #60 has an impact on model results. Removing the value results in a new significant interaction effect (StartsNonlinearity_lag2 and TimeInReadingSession). Therefore, the observation affects model interpretation and it should be removed from analyses.
-
-Assess influential observations after removing points 254 and 60:
-
-```{r}
-cooksd <-
-    cooks.distance(Linearity_EP_InteractiveModel_influential60and254)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
-```
-
-The plot indicates that the dataset still includes some influential observations. In particular, the plot highlights observation 263.
-
-**Fit the model without observation #263:**
-
-```{r}
-subset_without_3observations <- subset_without_observations254and60[c(1:262, 264:nrow(subset_without_observations254and60)), ]
-```
-
-```{r}
-Linearity_EP_InteractiveModel_3InfluentialPoints <- glmer(
-    SimplifiedStructure_EP,
-    data = subset_without_3observations,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-Inspect if model results are affected:
-
-```{r}
-summary(Linearity_EP_InteractiveModel_3InfluentialPoints)
-summary(Linearity_EP_InteractiveModel_influential60and254)
-```
-
-Removing observation #263 has no impact on model interpretation, and thus it is retained in the model and it is not considered to be influential.
-
-In following assumption checks we use Linearity_EP_InteractiveModel_influential60and254 that has two influential observations removed.
+The plot indicates that the dataset still includes some influential observations. However, the influential observations' Cook's Distance has considerably reduced. Experimentation off-script indicated that the most prominently highlighted observations in the plot (#283 and #60) did not have an influence on model interpretation and so they can be retained in the model.
 
 #### 4. Heteroscedasticity
 
@@ -1529,21 +1351,21 @@ Create a new simulated_model_output to test for heteroscedasticity:
 
 ```{r}
 set.seed(1234) # for reproducibility
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_influential60and254, plot = F)
+simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_Adjusted_influential254, plot = F)
 ```
 
 ```{r}
 testQuantiles(simulated_model_output)
 ```
 
-The quantile test for heteroscedasticity is significant, indicating that the model needs to be adjusted.
+The p-value is not significant, and the lines lie flat and horizontal in the plot, close to the reference lines. This indicates that the assumption of heteroscedasticity is fulfilled.
 
 #### 5. Normality of Random Effects
 
-Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId', and finally 'WindowWidth' random intercepts.
+Random effects should be normally distributed in multilevel models. We test this assumption by inspecting the normality of 'UserId'. 'StoryId' was fit in the model as a fixed effect and so it is not inspected.
 
 ```{r}
-random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_Adjusted_influential254)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -1551,166 +1373,64 @@ shapiro.test(random_intercept_UserId)
 
 The qqplot varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed.
 
-```{r}
-random_intercept_StoryId <- ranef(Linearity_EP_InteractiveModel)$StoryId$`(Intercept)`
-qqnorm(random_intercept_StoryId)
-qqline(random_intercept_StoryId)
-shapiro.test(random_intercept_StoryId)
-```
-
-StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
-
-```{r}
-random_intercept_WindowWidth <- ranef(Linearity_EP_InteractiveModel)$WindowWidth$`(Intercept)`
-qqnorm(random_intercept_WindowWidth)
-qqline(random_intercept_WindowWidth)
-shapiro.test(random_intercept_WindowWidth)
-```
-
-Again, the qqplot indicates that WindowWidth may vary from normality, however, considering that the variance is not extensive and the Shapiro Test is not significant, we assume that WindowWidth random intercept is normally distributed.
-
 **Assumptions conclusion**
 
-Two influential observations were found in assumption testing. These observations are removed from the model dataset and the model is re-fit.
+The model was fit with StoryId as a fixed rather than a random effect to resolve singularity in the model that was due to zero variance accounted for by the StoryId random intercept.
 
-```{r}
-subset_without_observation254and263 <- linearity_measure_data[c(1:253, 255:262, 264:nrow(linearity_measure_data)), ]
-```
+One influential observation was found in assumption testing. The observations was removed from the model dataset and the model was re-fit.
 
-```{r}
-Linearity_EP_InteractiveModel_influentialsremoved <- glmer(
-    InteractiveStructure_EP,
-    data = subset_without_observation254and263,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-**Re-test the model assumptions**
-
-The new model is tested for assumptions.
+The new model is re-tested for the assumptions of multicollinearity and dispersion that were tested before the influential observation was removed:
 
 1. Multicollinearity:
 
 ```{r}
-check_collinearity(Linearity_EP_InteractiveModel_influentialsremoved)
-plot(check_collinearity(Linearity_EP_InteractiveModel_influentialsremoved))
+check_collinearity(Linearity_EP_InteractiveModel_Adjusted_influential254)
+plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted_influential254))
 ```
 
-The collinearity test indicates that three different interaction effects may be collinear in the model.
-We test the impact of removing each of these one-by-one:
+The tests indicate that the adjusted model without the influential observation does not have significant multicollinearity.
+
+2. Over- and under-dispersion
 
 ```{r}
-SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag1 : StartsNonlinearity_lag2 "))
-```
-
-```{r}
-Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity1 <- glmer(
-    SimplifiedStructure_EP,
-    data = subset_without_observation254and263,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-```{r}
-anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity1)
-```
-
-Removing the interaction effect between 'StartsNonlinearity_lag1' and 'StartsNonlinearity_lag2' does not significantly change model results, and so the interaction is retained in the model.
-
-```{r}
-SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag1 : ReadingSessionNumber.sc "))
-```
-
-```{r}
-Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity2 <- glmer(
-    SimplifiedStructure_EP,
-    data = subset_without_observation254and263,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-```{r}
-anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity2)
-```
-
-Removing the interaction effect between 'StartsNonlinearity_lag1' and 'ReadingSessionNumber.sc' does not significantly change model results, and so the interaction is retained in the model.
-
-```{r}
-SimplifiedStructure_EP <- str_remove(InteractiveStructure_EP, fixed("+ StartsNonlinearity_lag2 : TimeInReadingSession.sc "))
-```
-
-```{r}
-Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity3 <- glmer(
-    SimplifiedStructure_EP,
-    data = subset_without_observation254and263,
-    family = binomial(),
-    control = glmerControl(optimizer = "bobyqa")
-)
-```
-
-```{r}
-anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved_multicollinearity3)
-```
-
-Removing the interaction effect between 'StartsNonlinearity_lag1' and 'TimeInReadingSession.sc' does have a significant effect on the model results. As a result, 
-
-As a result, 
-
-lag1 : per affects model results
-
-```{r}
-anova(Linearity_EP_InteractiveModel_influentialsremoved, Linearity_EP_InteractiveModel_influentialsremoved2)
-```
-
-sig in anova too
-
-```{r}
-
-```
-
-```{r 'all assumptions with updated model'}
-plot(check_collinearity(Linearity_EP_InteractiveModel_influentialsremoved2))
-set.seed(1234)
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_influentialsremoved, plot = F)
+# simulated_model_output was created above for the adjusted model without the influential point
 plotQQunif(simulated_model_output)
-testDispersion(simulated_model_output)
-testQuantiles(simulated_model_output)
-testOutliers(simulated_model_output)
-random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_influentialsremoved)$UserId$`(Intercept)`
-shapiro.test(random_intercept_UserId)
-random_intercept_StoryId <- ranef(Linearity_EP_InteractiveModel_influentialsremoved)$StoryId$`(Intercept)`
-shapiro.test(random_intercept_StoryId)
-random_intercept_WindowWidth <- ranef(Linearity_EP_InteractiveModel_influentialsremoved)$WindowWidth$`(Intercept)`
-shapiro.test(random_intercept_WindowWidth)
 ```
+
+The model does not deviate from the expected distribution according to the qqplot.
+
+```{r}
+testDispersion(simulated_model_output)
+```
+
+The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
+
+After the removal of one influential observation the model aligns will assumptions.
 
 ### Interpret reader characteristics model
 
 We then interpret model effects to interpret the results.
 
 ```{r}
-summary(Linearity_EP_InteractiveModel_influential254)
+summary(Linearity_EP_InteractiveModel_Adjusted_influential254)
 ```
 
 Linearity of reading is significantly predicted by
-1. A main effect of previous event (lag 1)
-2. A main effect of time in a reading session
-3. An interaction between previous event (lag 1) and location in text
-4. An interaction between event preceeding previous (lag 2) and time in a reading session
-5. An interaction between reading session number and location in text
-6. An interaction between time in a reading session and location in text
+1. A main effect of screensize (WindowWidth)
+2. A main effect of previous event (observation k-1, 'StartsNonlinearity_lag1')
+3. A main effect of the event preceeding previous (observation k-2, 'StartsNonlinearity_lag2')
+4. A main effect of time since the beginning of a reading session ('TimeInReadingSession')
+5. An interaction effect between reading session number and location in text
+6. An interaction effect between time in a reading session and location in text
 
 These findings are explored below by visualisations.
-First, we discuss the effect of previous events (1, 3, and 4). Secondly, we discuss the influence of reading session and location (2, 5, and 6)
+First, we discuss the effect of screen size (1). Second, we discuss the effect of previous events (2 and 3). Third, we discuss the influence of reading session and location (4, 5, and 6)
 
 Note that no hypotheses were set for the event properties models and they are used for explorative purposes only.
 
-#### Connection between subsequent events
+#### Effect of Screen Size
 
-The results of the model inidcated that previous event (lag 1) was a significant negative predictor of the odds of a nonlinear navigation being initiated.
+WindowWidth represents the width of a browser screen, and thus it is used as an indication of the participants' device (e.g. smartphones have smaller window widths than laptops with the browser window maximised to fit the screen), and text amount (larger windows have more text). WindowWidth was used only as a control variable in the model to account for the impact of device size and text layout, however, the main effect was a significant predictor of nonlinear navigation.
 
 ```{r}
 source(
@@ -1719,9 +1439,9 @@ source(
         "/Functions/Functions_AddLine.R"
     )
 )
-linearity_effectplot_previousevent <- effect_plot(
-    Linearity_EP_InteractiveModel_influential254,
-    pred = "StartsNonlinearity_lag1",
+linearity_ep_windowwidth <- effect_plot(
+    Linearity_EP_InteractiveModel_Adjusted_influential254,
+    pred = "WindowWidth.sc",
     data =  subset_without_observation254,
     interval = TRUE
 ) +
@@ -1745,24 +1465,22 @@ linearity_effectplot_previousevent <- effect_plot(
     ) +
     labs(
         y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Whether previous event initiated,nonlinear navigation or not")
+        x = addline_format("Window width in pixels,(centered and scaled)")
     )
 ```
- 
-The result indicates that participants were more likely to initiate nonlinear navigation if the previous event did not initiate nonlinearity. In other words, participants were unlikely to move between different types of nonlinear navigation (e.g. from a regression to a forward leap) in consecutive page-views.
 
-This main effect is affected by a significant interaction between the event on page(k-1) and location in text.
+Window width and nonlinearity are positively connecting, indicating that the odds of initiating nonlinearity increase when the e-reader is used on a larger device.
+
+#### Connection between subsequent events
+
+The results of the model indicated that previous event (lag 1) was a significant predictor of nonlinear navigation.
 
 ```{r}
-subset_without_observation254$StartsNonlinearity_lag1 <- as.factor(subset_without_observation254$StartsNonlinearity_lag1)
-
-linearity_effectplot_previouseventlocation <- interact_plot(
-    Linearity_EP_InteractiveModel_influential254,
-    pred = "PercentageLocation.sc",
-    modx = "StartsNonlinearity_lag1",
+linearity_ep_previousevent <- effect_plot(
+    Linearity_EP_InteractiveModel_Adjusted_influential254,
+    pred = "StartsNonlinearity_lag1",
     data =  subset_without_observation254,
-    interval = TRUE,
-    legend.main = addline_format("Whether previous event initiated,nonlinear navigation or not")
+    interval = TRUE
 ) +
     theme_bw() +
     theme(
@@ -1783,20 +1501,19 @@ linearity_effectplot_previouseventlocation <- interact_plot(
         legend.background = element_rect(color = "black", size = .5, linetype = "solid")
     ) +
     labs(
-        y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Location in text,(centered and scaled)")
+        y = addline_format("Odds of initiating nonlinear navigation,(Observation~k~)"),
+        x = addline_format("Whether previous event initiated,nonlinear navigation or not,(Observation~k-1~)")
     )
 ```
+ 
+The result indicates that participants were more likely to initiate nonlinear navigation if the previous event did not initiate nonlinearity. In other words, participants were unlikely to move between different types of nonlinear navigation (e.g. from a regression to a forward leap) in consecutive page-views.
 
-The interaction effect indicates that the odds of a participant initiating a nonlinear navigation event on page(k) following an event on page(k-1) that did not initiate nonlinearity remained roughly the same regardless of text location. However, when the event on page(k-1) initiated nonlinear navigation, the odds of nonlinear navigation being initiated again on page(k) increased towards the end of the text. If consecutive page-views initiate nonlinearity, the participant is likely to be using both regressions and forward leaps to move in the text. Therefore, participants alternated more in their navigation habits towards the end of the text, compared to the beginning.
-
-In addition to the event on page(k-1), the event in page(k-2) was a significant predictor of nonlinearity in interaction with time in a reading session.
+In addition to the event at observation~k-1~, the observation~k-2~ was a significant predictor of nonlinearity:
 
 ```{r}
-linearity_effectplot_lag2time <- interact_plot(
-    Linearity_EP_InteractiveModel_influential254,
-    pred = "TimeInReadingSession.sc",
-    modx = "StartsNonlinearity_lag2",
+linearity_ep_lag2 <- effect_plot(
+    Linearity_EP_InteractiveModel_Adjusted_influential254,
+    pred = "StartsNonlinearity_lag2",
     interval = TRUE,
     legend.main = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not")
 ) +
@@ -1819,146 +1536,117 @@ linearity_effectplot_lag2time <- interact_plot(
         legend.background = element_rect(color = "black", size = .5, linetype = "solid")
     ) +
     labs(
-        y = "Odds of initiating nonlinear navigation",
+        y = addline_format("Odds of initiating nonlinear navigation,(Observation~k~)"),
+        x = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not,(Observation~k-2~)")
+    )
+```
+
+The odds of a participant initiating nonlinearity at observation~k~ were higher if the observation that preceeded its previous (observation~k-2~) also initiated nonlinearity. This is in contrast to the main effect between linearity and observation~k-1~ which indicated that the odds of initiating nonlinearity were higher if the previous event (observation~k-1~) did not initiate nonlinearity. The finding indicates that although participants are unlikely to vary their linearity of reading in consecutive pages (observation~k~ and observation~k-1~), changes in linearity are common (e.g. between observation~k~ and observation~k-2~).
+
+#### Effect of Reading Sessions, Their Timing, and Location in Text
+
+Linearity of reading was significant predicted by the time since the beginning of a reading session.
+
+```{r}
+linearity_ep_time <- effect_plot(
+    Linearity_EP_InteractiveModel_Adjusted_influential254,
+    pred = "TimeInReadingSession.sc",
+    interval = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = addline_format("Odds of initiating nonlinear navigation"),
+        x = addline_format("Time since the beginning of the reading session,(centered and scaled)")
+    )
+```
+
+The main effect indicates that the odds of initiating nonlinear navigation were highest at the beginning of a reading session, and the likelihood of nonlinearity decreased further into the reading session. This indicates that participants may have used nonlinearity primarily at the beginning of reading sessions, potentially to assess the story structure or look-back on what they had read previously.
+
+The main effect was qualified by a significant interaction between time in a reading session and location in text.
+
+```{r}
+linearity_ep_timelocation <- interact_plot(
+    Linearity_EP_InteractiveModel_Adjusted_influential254,
+    pred = "TimeInReadingSession.sc",
+    modx = "PercentageLocation.sc",
+    legend.main = addline_format("Location in text,(centered and scaled)"),
+    interval = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = addline_format("Odds of initiating nonlinear navigation"),
+        x = addline_format("Time since the beginning of the reading session,(centered and scaled)")
+    )
+```
+
+The interaction effect indicates that the odds of nonlinear navigation are the highest if the participant is at the beginning of the story at the beginning of a reading session. However, the odds of nonlinear navigation decrease if the participant is reading the end of a text at the beginning of a reading session. In contrast, the odds of nonlinear navigation stay constant across time since the beginning of a reading session if a participant  is viewing the end of the story.
+
+Finally, linearity of reading was predicted by an interaction effect between reading session number and location in text.
+
+```{r}
+linearity_ep_locationRSNumb <- interact_plot(
+    Linearity_EP_InteractiveModel_Adjusted_influential254,
+    pred = "PercentageLocation.sc",
+    modx = "ReadingSessionNumber.sc",
+    legend.main = addline_format("Reading session number,(centered and scaled)"),
+    interval = TRUE
+) +
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 20),
+        axis.text.y = element_text(size = 20),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 20, vjust = 0.5),
+        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 16),
+        legend.title = element_text(size = 18),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 16),
+        strip.text.x = element_text(size = 16),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    ) +
+    labs(
+        y = addline_format("Odds of initiating nonlinear navigation"),
         x = addline_format("Location in text,(centered and scaled)")
     )
 ```
 
-The interaction effect indicates that the odds of a participant initiating nonlinear navigation in page(k) following a similar event in page(k-2) remained constant across the text. However, if the event in page(k-2) did not start a new nonlinear navigation event, the odds of nonlinear navigation being initiated in page(k) decreased towards the end of the text. This indicates that 
-
-
-
-
-a nonlinear navigation event that was initiated in the page-view preceeding the previous page-view (lag 2) remained constant regardless of participants' location in text. However, if the event two page-views apart from the current did not include a initiation of nonlinear navigation, the odds of initiating nonlinear navigation in the current event decreased towards the end of the text. In other words, participants were equally likely to initiate nonlinearity at the beginning of the text despite of previous events' nonlinearity, however, the likelihood of initiating nonlinearity became increasingly unlikely if the event
-
-
-**H4a: We expect situational motivation (high-autonomy condition) to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
-
-This hypothesis was not supported as the interaction effect between Condition and situational competence was removed from the model during backward stepwise selection. Indeed, the main effect of condition was similarly removed, and therefore, participants in the high-autonomy and low-autonomy conditions did not differ significantly in their frequency of using nonlinear navigation during reading of the short story.
-
-**H4b: We expect contextual motivation to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
-
-This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
-
-```{r}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_AddLine.R"
-    )
-)
-
-linearity_effectplot_cmotscomp <- interact_plot(
-    Linearity_ModelSelection5,
-    pred = "CInterest.sc",
-    modx = "SCompetence.sc",
-    data =  linearity_measure_data,
-    interval = TRUE,
-    legend.main = addline_format("Situation competence score,(centered and scaled)")
-) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
-    labs(
-        y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Contextual motivation score, measured by contextual reading interest,(centered and scaled)")
-    )
-```
-
-Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation slightly less often when they found the text easy to read (high situational competence score). In contrast, a low contextual motivation score and high situational competence is associated with more frequent nonlinear navigation.
-
-However, the interaction was not significant and so the effect should not be interpreted further.
-
-**H4c: We expect an interaction between task-relevant electronic experience measures to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
-
-This hypothesis was not supported as an interaction between the two electronic experience measures and situational competence was not a significant predictor of linearity of reading.
-
-```{r}
-linearity_effectplot_eexpscomp <- interact_plot(
-    Linearity_ModelSelection5,
-    pred = "Eexp1LongformEFreq.sc",
-    modx = "Eexp2DeviceRecFreq.sc",
-    mod2 = "SCompetence.sc",
-    data =  linearity_measure_data,
-    interval = TRUE,
-    legend.main = addline_format("Electronic experience measure 2: Device*"),
-    mod2.labels = c("-1SD Situational competence", "Mean of Situational Competence", "+1SD Situational Competence")
-) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
-    labs(
-        y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
-    )
-```
-
-Indeed, the effect of electronic experience was the same, despite of situational competence.
-
-Although the three-way interaction between electronic experience measures and situational competence did not significantly predict linearity of reading, a two-way interaction between the electronic experience measures was a significant predictor in the model.
-
-```{r}
-linearity_effectplot_eexp <- interact_plot(
-    Linearity_ModelSelection5,
-    pred = "Eexp1LongformEFreq.sc",
-    modx = "Eexp2DeviceRecFreq.sc",
-    data =  linearity_measure_data,
-    interval = TRUE,
-    legend.main = addline_format("Electronic experience measure 2: Device*")
-) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
-    labs(
-        y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
-    )
-```
-
-The finding indicated that a combination of high scores in the two task-relevant electronic reading experience measures was associated with lower likelihood of nonlinear navigation. In contrast, a low score in either measure with a high level of the other, was associated with more frequent nonlinear navigation. This indicates that electronic experience affected participants' linearity of reading.
-
+The interaction shows that nonlinear navigation was most likely in early reading sessions if the participants was reading of the text. However, the odds of initiating nonlinear navigation decrease further in the text in early reading sessions. In contrast, the odds of nonlinear navigation stay constant across the location of the text in latter reading sessions.
