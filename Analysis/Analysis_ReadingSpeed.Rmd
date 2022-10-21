@@ -902,8 +902,8 @@ $Y_{i} =
     WindowWidth +
     DUD +
     # predictors
-    Observation~k-1~ +
-    Observation~k-2~ +
+    Event~k-1~ +
+    Event~k-2~ +
     ReadingSessionNumber +
     TimeInReadingSession +
     LocationInText +
@@ -916,8 +916,8 @@ where
 **$\beta_{0}$** is the intercept
 **WindowWidth** is a continuous measure of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
-**Observation~k-1~**
-**Observation~k-2~**
+**Event~k-1~** reflects the previous ReadingRate event. If the current event is k, then Event k-1 indicates reading rate at k-1
+**Event~k-2~** reflects the ReadingRate event preceeding the previous. If the current event is k, then Event k-2 indicates reading rate at k-2
 **ReadingSessionNumber**
 **TimeInReadingSession**
 **LocationInText**
@@ -925,7 +925,7 @@ where
 **$u_{Story}$** indicates a random intercept of story indicator
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
-First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions can be added between predictors measuring previous observations (Observation~k-1~ and Observation~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous observations and the other predictors in the model (e.g. Observation~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
+First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions can be added between predictors measuring previous events (Event~k-1~ and Event~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous events and the other predictors in the model (e.g. Event~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
 
 This model selection is used to explore possible interactions that are meaningful to add without overfitting the model.
 
@@ -1043,13 +1043,13 @@ source(
 We scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
 ```{r 'scale continuous variables'}
-# Observation k-1
+# Event k-1
 reading_speed_measure_data$Observation_lag1.sc <-
     scale(reading_speed_measure_data$Observation_lag1,
         center = TRUE,
         scale = TRUE
     )
-# Observation k-2
+# Event k-2
 reading_speed_measure_data$Observation_lag2.sc <-
     scale(reading_speed_measure_data$Observation_lag2,
         center = TRUE,
@@ -1128,7 +1128,7 @@ The model with all main effects converges, and so we can add two-way interaction
 #### Interactions
 
 We create a new model structure with interactions between predictors of interest (all main effects apart from DaysUntilDeadline and WindowWidth which are used as control variables only).
-Only two-way interactions are included to avoid overfitting the model. No interactions are included between previous observations (Observation_lag1 and Observation_lag2) and other predictors in the model (e.g. ReadingSessionNumber) to avoid multicollinearity.
+Only two-way interactions are included to avoid overfitting the model. No interactions are included between previous events (Observation_lag1 and Observation_lag2) and other predictors in the model (e.g. ReadingSessionNumber) to avoid multicollinearity.
 
 The interactive model includes 15 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/15 = `r round(nrow(reading_speed_measure_data)/15, 2)`.
 
@@ -1307,7 +1307,7 @@ summary(Speed_EP_InteractiveModel)
 ```
 
 In the event properties model, the following variables are significant predictors of reading rate:
-(1) Main effect of Observation_lag1
+(1) Main effect of Observation_lag1 (Event~k-1~)
 (2) Main effect of PercentageLocation
 (3) Significant interaction effect between ReadingSessionNumber and PercentageLocation
 (4) Significant interaction effect between TimeInReadingSession and PercentageLocation
@@ -1346,13 +1346,13 @@ speed_ep_previouslag1 <- effect_plot(
     ) +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
-        x = addline_format("Observation~k-1~:,Reading speed on previous page,(centered and scaled)")
+        x = addline_format("Event~k-1~:,Reading speed on previous page,(centered and scaled)")
     )
 ```
 
-There is a slight positive trend which indicates that a high reading speed on previous page-view (observation k-1) predicts a high reading speed on the following page (observation k).
+There is a slight positive trend which indicates that a high reading speed on previous page-view (event k-1) predicts a high reading speed on the following page (event k).
 
-Interestingly, reading speed on the page before the previous (observation k-2) was not connected to reading speed (observation k).
+Interestingly, reading speed on the page before the previous (event k-2) was not connected to reading speed (event k).
 
 ```{r}
 speed_ep_previouslag2 <- effect_plot(
@@ -1382,7 +1382,7 @@ speed_ep_previouslag2 <- effect_plot(
     ) +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
-        x = addline_format("Observation~k-2~:,Reading speed on the page before previous page,(centered and scaled)")
+        x = addline_format("Event~k-2~:,Reading speed on the page before previous page,(centered and scaled)")
     )
 ```
 

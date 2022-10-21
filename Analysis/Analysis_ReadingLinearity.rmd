@@ -925,8 +925,8 @@ $Y_{i} =
     WindowWidth +
     DUD +
     # predictors
-    Observation~k-1~ +
-    Observation~k-2~ +
+    Event~k-1~ +
+    Event~k-2~ +
     ReadingSessionNumber +
     TimeInReadingSession +
     LocationInText +
@@ -939,8 +939,8 @@ where <!-- fix below-->
 **$\beta_{0}$** is the intercept
 **WindowWidth** indicates of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
-**Observation~k-1~**
-**Observation~k-2~**
+**Event~k-1~** reflects the previous StartsNonlinearity event at k-1 if the current event is k
+**Event~k-2~** reflects the event preceeding the previous StartsNonlinearity event at k-2 if the current event is k.
 **ReadingSessionNumber**
 **TimeInReadingSession**
 **LocationInText**
@@ -948,7 +948,7 @@ where <!-- fix below-->
 **$u_{Story}$** indicates a random intercept of story indicator
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
-First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions could be added between predictors measuring previous observations (Observation~k-1~ and Observation~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous observations and the other predictors in the model (e.g. Observation~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
+First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions could be added between predictors measuring previous navigation events (Event~k-1~ and Event~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous navigation events and the other predictors in the model (e.g. Event~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
 
 ### Create predictor variables
 
@@ -1410,8 +1410,8 @@ summary(Linearity_EP_InteractiveModel_Adjusted_influential254)
 
 Linearity of reading is significantly predicted by
 1. A main effect of screensize (WindowWidth)
-2. A main effect of previous event (observation k-1, 'StartsNonlinearity_lag1')
-3. A main effect of the event preceeding previous (observation k-2, 'StartsNonlinearity_lag2')
+2. A main effect of previous event (navigation event k-1, 'StartsNonlinearity_lag1')
+3. A main effect of the event preceeding previous (navigation event k-2, 'StartsNonlinearity_lag2')
 4. A main effect of time since the beginning of a reading session ('TimeInReadingSession')
 5. An interaction effect between reading session number and location in text
 6. An interaction effect between time in a reading session and location in text
@@ -1494,14 +1494,14 @@ linearity_ep_previousevent <- effect_plot(
         legend.background = element_rect(color = "black", size = .5, linetype = "solid")
     ) +
     labs(
-        y = addline_format("Odds of initiating nonlinear navigation,(Observation~k~)"),
-        x = addline_format("Whether previous event initiated,nonlinear navigation or not,(Observation~k-1~)")
+        y = addline_format("Odds of initiating nonlinear navigation,(Navigation Event~k~)"),
+        x = addline_format("Whether previous event initiated,nonlinear navigation or not,(Navigation Event~k-1~)")
     )
 ```
  
 The result indicates that participants were more likely to initiate nonlinear navigation if the previous event did not initiate nonlinearity. In other words, participants were unlikely to move between different types of nonlinear navigation (e.g. from a regression to a forward leap) in consecutive page-views.
 
-In addition to the event at observation~k-1~, the observation~k-2~ was a significant predictor of nonlinearity:
+In addition to the event at event~k-1~, the event~k-2~ was a significant predictor of nonlinearity:
 
 ```{r}
 linearity_ep_lag2 <- effect_plot(
@@ -1529,12 +1529,12 @@ linearity_ep_lag2 <- effect_plot(
         legend.background = element_rect(color = "black", size = .5, linetype = "solid")
     ) +
     labs(
-        y = addline_format("Odds of initiating nonlinear navigation,(Observation~k~)"),
-        x = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not,(Observation~k-2~)")
+        y = addline_format("Odds of initiating nonlinear navigation,(Navigation Event~k~)"),
+        x = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not,(Navigation Event~k-2~)")
     )
 ```
 
-The odds of a participant initiating nonlinearity at observation~k~ were higher if the observation that preceeded its previous (observation~k-2~) also initiated nonlinearity. This is in contrast to the main effect between linearity and observation~k-1~ which indicated that the odds of initiating nonlinearity were higher if the previous event (observation~k-1~) did not initiate nonlinearity. The finding indicates that although participants are unlikely to vary their linearity of reading in consecutive pages (observation~k~ and observation~k-1~), changes in linearity are common (e.g. between observation~k~ and observation~k-2~).
+The odds of a participant initiating nonlinearity at navigation event~k~ were higher if the event that preceeded its previous (event~k-2~) also initiated nonlinearity. This is in contrast to the main effect between linearity and navigation event~k-1~ which indicated that the odds of initiating nonlinearity were higher if the previous event (event~k-1~) did not initiate nonlinearity. The finding indicates that although participants are unlikely to vary their linearity of reading in consecutive pages (event~k~ and event~k-1~), changes in linearity are common (e.g. between event~k~ and event~k-2~).
 
 #### Effect of Reading Sessions, Their Timing, and Location in Text
 
