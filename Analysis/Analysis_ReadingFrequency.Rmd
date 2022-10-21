@@ -38,7 +38,7 @@ The full model structure was as follows, see below for brief explanations on ind
 ```
 TimeBetweenReadingSessions ~
 
-    # control variable:
+    # control variables:
     DaysUntilReadingDeadline +
 
     # demographic information:
@@ -56,11 +56,8 @@ TimeBetweenReadingSessions ~
     Device +
     TextTypes +
 
-    # Interactions
-    # Condition * SCompetence + # speed + linearity
-    # CInterest * SCompetence + # speed + linearity
+    # Interaction
     Device * TextTypes +
-    # Device * TextTypes * SCompetence # speed + linearity
 
     # Random effects
     (1 | UserId)
@@ -160,9 +157,10 @@ Participants with multiple reading sessions have their first reading session's T
 
 ```{r}
 reading_frequency_data <- filter(reading_frequency_data, !(is.na(TimeBetweenReadingSessions)))
+reading_frequency_data <- filter(reading_frequency_data, TimeBetweenReadingSessions != 0)
 ```
 
-The removal of NA has no impact on sample size: *n* = `r length(unique(reading_frequency_data$UserId))`
+sample size: *n* = `r length(unique(reading_frequency_data$UserId))`
 
 We then load in questionnaire data:
 
@@ -622,16 +620,19 @@ reading_frequency_data$DaysUntilDeadline.sc <-
 
 ## Model of reading frequency
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 12 parameters (including two random effects and categorical variable levels), and `r nrow(reading_frequency_data)` observations.
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 13 parameters, and `r nrow(reading_frequency_data)` observations.
+
+TOO LITTLE DATA ON READING FREQUENCY -- 37/13 < 20 observations per parameter. Do not analyse reading frequency
 
 ```{r}
 FullStructure <- (
-    "log(TimeBetweenReadingSessions + 2) ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc + (1 | StoryId) + (1 | UserId)"
+    "TimeBetweenReadingSessions ~ DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc + (1 | StoryId) + (1 | UserId)"
 )
 ```
 
 ```{r}
-ReadingFrequency_FullModel <- lmer(FullStructure,
+ReadingFrequency_FullModel <- lmer(
+    FullStructure,
     data = reading_frequency_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
