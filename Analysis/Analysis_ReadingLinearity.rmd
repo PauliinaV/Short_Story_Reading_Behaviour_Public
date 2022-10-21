@@ -8,13 +8,6 @@ library: "~/Extra/RPackages.bib"
 
 ## Introduction
 
-<!-- some notes -->
-* talk about datapoint or observation k that is predicted
-    * previous event is k-1, the one before that is k-2
-* create an illustration from a participants' linearity across pages? look at notebook pg43
-    * this could go into Prep_ReadingLinearityMeasure
-
-
 The purpose of this script is to analyse how linearly participants read the short story during the study.
 We aim to assess how frequently participants used nonlinearity during the study, how nonlinearity occurred, and whether autonomy condition, contextual reading motivation, and electronic reading experience are connected to this nonlinearity. See the full article for details.
 
@@ -24,9 +17,9 @@ In this analysis script, StartsNonlinearity is used as an outcome variable in **
 
 **Information on the hypotheses**
 
-* H6a: Situational autonomous motivation is connected to infrequent nonlinearity when task competence is high.
-* H6b: Contextual autonomous motivation is connected to infrequent nonlinearity when task competence is high.
-* H6c: Task-relevant electronic experience is connected to infrequent nonlinearity when task competence is high.
+* H6a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H6b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H6c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
 
 ## Setup
 
@@ -230,9 +223,9 @@ linearity_measure_data[, c(
 
 The reader characteristics model of linearity aims to address the following hypotheses:
 
-* H6a: Situational autonomous motivation is connected to infrequent nonlinearity when task competence is high.
-* H6b: Contextual autonomous motivation is connected to infrequent nonlinearity when task competence is high.
-* H6c: Task-relevant electronic experience is connected to infrequent nonlinearity when task competence is high.
+* H6a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H6b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H6c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
 
 The reader characteristics model for linearity of reading takes the following structure:
 
@@ -759,7 +752,11 @@ Only an interaction effect between the two task-relevant electronic experience m
 
 #### Hypotheses
 
-**H4a: We expect situational motivation (high-autonomy condition) to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+* H6a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H6b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H6c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+
+**H6a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
 
 This hypothesis was not supported as the interaction effect between Condition and situational competence was not a significant predictor of linearity.
 
@@ -801,9 +798,9 @@ linearity_rc_condscomp <- interact_plot(
     )
 ```
 
-As the interaction effect was not significant, the combination of situational competence and condition manipulation was not connected to participants' frequency of using nonlinear navigation. Therefore, our hypothesis H4a was not supported.
+As the interaction effect was not significant, the combination of situational competence and condition manipulation was not connected to participants' frequency of using nonlinear navigation. Therefore, our hypothesis H6a was not supported.
 
-**H4b: We expect contextual motivation to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+**H6b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
 
 This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
 
@@ -840,9 +837,9 @@ linearity_rc_cmotscomp <- interact_plot(
     )
 ```
 
-Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation more often when they found the text difficult to read than when they reported that the story was easy to comprehend. In contrast, participants with a low contextual motivation score used on average less nonlinear navigation when the text was difficult to read, and more when the text was seen as easy. However, the effect is not significant and thus it should not be interpreted further.
+Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation more often when they found the text difficult to read than when they reported that the story was easy to comprehend (in line with H6b). In contrast, participants with a low contextual motivation score used on average less nonlinear navigation when the text was difficult to read, and more when the text was seen as easy. However, the effect is not significant and thus it should not be interpreted further.
 
-**H4c: We expect an interaction between task-relevant electronic experience measures to be a negative predictor of nonlinear navigation frequency when situational competence is high.**
+**H6c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
 
 This hypothesis was not supported as an interaction between the two electronic experience measures and situational competence was not a significant predictor of linearity of reading.
 
