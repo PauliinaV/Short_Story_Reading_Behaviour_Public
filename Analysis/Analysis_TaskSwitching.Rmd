@@ -746,7 +746,7 @@ Only SCompetence, CInterest and CCompetence are significant predictors in the mo
 
 #### Hypotheses
 
-**H4a: We expect situational motivation (high-autonomy condition) to be a positive predictor of continuous engagement duration.**
+**H3a: We expect situational motivation (high-autonomy condition) to be a positive predictor of continuous engagement duration.**
 
 This hypothesis was not supported as Condition was not a significant predictor of task switching frequency in the model.
 
@@ -812,7 +812,7 @@ taskswitching_effectplot_condition <- cat_plot(
 
 Participants in the high-autonomy and low-autonomy conditions did not differ significantly in their continuous engagement durations
 
-**H4b: We expect contextual motivation to be a positive predictor of continuous engagement duration**
+**H3b: We expect contextual motivation to be a positive predictor of continuous engagement duration**
 
 Contextual motivation (measured by CInterest) was a significant predictor of continuous engagement duration.
 
@@ -864,9 +864,9 @@ taskswitching_effectplot_contextualmotivation <- effect_plot(
     ))
 ```
 
-Participants with a higher contextual motivations score engaged for longer continuously and thus task switched less frequently than participants with lower contextual motivation. Therefore, our hypothesis H4b was supported.
+Participants with a higher contextual motivations score engaged for longer continuously and thus task switched less frequently than participants with lower contextual motivation. Therefore, our hypothesis H3b was supported.
 
-**H4c: We expect an interaction between task-relevant electronic experience measures to be a positive predictor of continuous engagement duration**
+**H3c: We expect an interaction between task-relevant electronic experience measures to be a positive predictor of continuous engagement duration**
 
 This hypothesis was not supported as neither of the electronic experience measures was a significant predictor of task switching frequency in the model.
 
@@ -924,7 +924,7 @@ taskswitching_effectplot_electronicexperience <-
     ))
 ```
 
-The trend of the results is what we would expect - a combination of both types of electronic experience is associated with a slightly higher continuous engagement duration. However, the interaction is not significant, and therefore, hypothesis H4c was not supported.
+The trend of the results is what we would expect - a combination of both types of electronic experience is associated with a slightly higher continuous engagement duration. However, the interaction is not significant, and therefore, hypothesis H3c was not supported.
 
 #### Other results
 
