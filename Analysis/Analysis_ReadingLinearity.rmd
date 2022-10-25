@@ -1642,4 +1642,4 @@ linearity_ep_locationRSNumb <- interact_plot(
     )
 ```
 
-The interaction shows that nonlinear navigation was most likely in early reading sessions if the participants was reading of the text. However, the odds of initiating nonlinear navigation decrease further in the text in early reading sessions. In contrast, the odds of nonlinear navigation stay constant across the location of the text in latter reading sessions.
+The interaction shows that nonlinear navigation was most likely in early reading sessions if the participants was reading the beginning of the text. However, the odds of initiating nonlinear navigation decrease further in the text in early reading sessions. In contrast, the odds of nonlinear navigation stay constant across the location of the text in latter reading sessions.
