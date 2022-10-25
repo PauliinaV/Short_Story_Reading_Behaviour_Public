@@ -90,9 +90,9 @@ if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) 
 ```{r 'load data'}
 raw_questionnaire_data <- read.csv(
     paste0(
-            mypath_SSRBP,
-            "/Data/raw_questionnaire_data.csv"
-        ),
+        mypath_SSRBP,
+        "/Data/raw_questionnaire_data.csv"
+    ),
     header = TRUE,
     sep = ";",
     dec = ","
@@ -103,9 +103,9 @@ raw_questionnaire_data <- read.csv(
 str(raw_questionnaire_data)
 source(
     paste0(
-            mypath_SSRBP,
-            "Functions/Functions_VariableTypeConversion.R"
-        )
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
 )
 
 ## turn columns into factors that should be factors
