@@ -418,7 +418,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Load a function to create helmert contrasts for categorical variables:
 
-```{r 'load helmert contrasts functions'}
+```{r 'load helmert contrasts functions 1'}
 source(
     paste0(
         mypath_SSRBP,
@@ -455,7 +455,7 @@ contrasts(reading_speed_measure_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".sc" as a reminder that the variable is scaled and centered.
 
-```{r 'scale continuous variables'}
+```{r 'scale continuous variables 1'}
 # Situational competence
 reading_speed_measure_data$SCompetence.sc <-
     scale(reading_speed_measure_data$SCompetence,
@@ -1025,7 +1025,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Load a function to create helmert contrasts for categorical variables:
 
-```{r 'load helmert contrasts functions'}
+```{r 'load helmert contrasts functions 2'}
 source(
     paste0(
         mypath_SSRBP,
@@ -1042,7 +1042,7 @@ source(
 
 We scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-```{r 'scale continuous variables'}
+```{r 'scale continuous variables 2'}
 # Event k-1
 reading_speed_measure_data$Observation_lag1.sc <-
     scale(reading_speed_measure_data$Observation_lag1,
