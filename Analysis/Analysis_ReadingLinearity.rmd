@@ -468,7 +468,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Load a function to create helmert contrasts for categorical variables:
 
-```{r 'load helmert contrasts functions'}
+```{r 'load helmert contrasts functions rc'}
 source(
     paste0(
         mypath_SSRBP,
@@ -485,7 +485,7 @@ source(
 
 Contrasts for categorical variables:
 
-```{r 'categorical contrasts'}
+```{r 'categorical contrasts rc'}
 # whether native language is English or not
 linearity_measure_data$NativeEnglish <- as.factor(linearity_measure_data$NativeEnglish)
 contrasts(linearity_measure_data$NativeEnglish) <- contr.helmert.unweighted(linearity_measure_data$NativeEnglish)
@@ -505,7 +505,7 @@ contrasts(linearity_measure_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
 
-```{r 'scale continuous variables'}
+```{r 'scale continuous variables rc'}
 # Situational competence
 linearity_measure_data$SCompetence.sc <-
     scale(linearity_measure_data$SCompetence,
@@ -1050,7 +1050,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Load a function to create helmert contrasts for categorical variables:
 
-```{r 'load helmert contrasts functions'}
+```{r 'load helmert contrasts functions ep'}
 source(
     paste0(
         mypath_SSRBP,
@@ -1067,7 +1067,7 @@ source(
 
 Contrasts for categorical variables:
 
-```{r 'categorical contrasts'}
+```{r 'categorical contrasts ep'}
 # previous event (lag of 1)
 linearity_measure_data$StartsNonlinearity_lag1 <- as.factor(linearity_measure_data$StartsNonlinearity_lag1)
 contrasts(linearity_measure_data$StartsNonlinearity_lag1) <- contr.helmert.unweighted(linearity_measure_data$StartsNonlinearity_lag1)
@@ -1080,7 +1080,7 @@ contrasts(linearity_measure_data$StartsNonlinearity_lag2)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-```{r 'scale continuous variables'}
+```{r 'scale continuous variables ep'}
 # Days until reading deadline (control variable)
 linearity_measure_data$DaysUntilDeadline.sc <-
     scale(linearity_measure_data$FirstTimeUntilDeadlineDays,
