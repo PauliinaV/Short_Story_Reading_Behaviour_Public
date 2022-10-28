@@ -202,13 +202,15 @@ On average the FurthestPercentage reached was `r round(mean(reading_persistence_
 We compare the FurthestPercentage to Fig_ProgressGraphGroupedByParticipant.png (in Fig folder).
 The figure is printed below:
 
+<!-- this bit was commented out because it doesn't work when sourced, fix it -->
+
 ```{r}
-knitr::include_graphics(
-    paste0(
-        mypath_SSRBP,
-        "/Fig/Fig_ProgressGraphGroupedByParticipant.png"
-    )
-)
+# knitr::include_graphics(
+#    paste0(
+#        mypath_SSRBP,
+#        "/Fig/Fig_ProgressGraphGroupedByParticipant.png"
+#    )
+# )
 ```
 
 The figure shows each participants' reading progress with location in story (in percentages) on the x-axis and cumulative time spent reading (in minutes) on the y-axis. Each facet represents a single participant, with each participants' reading progress also colour coded.

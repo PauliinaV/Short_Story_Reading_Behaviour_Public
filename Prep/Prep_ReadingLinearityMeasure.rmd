@@ -26,6 +26,33 @@ Frequency of initiating nonlinearity was used as a measure of linearity of readi
 
 This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
 
+The working directory is not changed with setwd() because this script is knit remotely in other scripts.
+
+```{r 'working directory for my purposes'}
+mypath_SSRBP <- getwd()
+if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
+    # wrong working directory
+    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
+        # directory name isn't GITHUB, unlike I would expect
+        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
+            # GITHUB is in the path
+            ## use mypath_SSRBP instead of dirname()
+            mypath_SSRBP <- paste0(
+                mypath_SSRBP,
+                "/Short_Story_Reading_Behaviour_Public"
+            )
+        }
+    } else {
+        # directory name is GITHUB
+        # save correct working directory
+        mypath_SSRBP <- paste0(
+            dirname(mypath_SSRBP),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+    }
+}
+```
+
 ## Setup
 
 ```{r, setup}
@@ -43,7 +70,10 @@ To determine linearity, we use grouped_tracking_data that was created in Prep_Tr
 ```{r 'load data'}
 grouped_tracking_data <-
     read.csv(
-        "Data/wrangled_grouped_tracking_data.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/wrangled_grouped_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -53,7 +83,12 @@ grouped_tracking_data <- dplyr::select(grouped_tracking_data, -X, -X.1)
 
 ```{r 'change variable types'}
 str(grouped_tracking_data)
-source("Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 
 ## turn user and story indicators into factors
 grouped_tracking_data[, c(
@@ -229,7 +264,10 @@ Our aim is to measure linearity on each page-view, and so we need to merge group
 ```{r 'load wrangled tracking data'}
 tracking_data <-
     read.csv(
-        "Data/wrangled_tracking_data.csv",
+        paste0(
+            mypath_SSRBP,
+            "/Data/wrangled_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -385,9 +423,6 @@ Of the `r sum(tracking_data$IsNonlinearNavigation)` nonlinear navigation events,
 Usage of the different linearity types again varies between participants:
 ```{r}
 table(tracking_data$Linearity, tracking_data$UserId)
-ggplot(tracking_data, aes(x = Linearity, group = UserId, fill = UserId)) +
-    geom_bar(position = position_dodge(), stat = "count") +
-    theme_classic()
 ```
 
 Note that the amount of events is connected to participants' device size, and so users' event counts are not directly comparable.
@@ -472,9 +507,6 @@ Out of all events, `r sum(tracking_data$StartsNonlinearity)` iniate nonlinearity
 
 ```{r}
 table(tracking_data$StartsNonlinearity, tracking_data$UserId)
-ggplot(tracking_data, aes(x = StartsNonlinearity, group = UserId, fill = UserId)) +
-    geom_bar(position = position_dodge(), stat = "count") +
-    theme_classic()
 ```
 
 StartsNonlinearity also varies between participants. This measure is not connected to participants' number of events and so we can compare it between participants.
@@ -550,7 +582,7 @@ linearity_measure_data <- linearity_measure_data %>%
 The new df is saved for usage in analysis.
 The dataset has already been saved, and so the below sr code chunk is not run.
 
-```{r, eval=FALSE, echo=TRUE, save linearity df}
+```{r, eval=FALSE, echo=TRUE}
 write.csv2(
     linearity_measure_data,
     "linearity_measure_data.csv"
