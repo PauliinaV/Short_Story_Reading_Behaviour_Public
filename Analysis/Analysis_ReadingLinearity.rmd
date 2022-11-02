@@ -6,6 +6,7 @@ output: html_document
 library: "~/Extra/RPackages.bib"
 ---
 
+
 ## Introduction
 
 The purpose of this script is to analyse how linearly participants read the short story during the study.
@@ -38,6 +39,60 @@ library(effects)
 library(interactions)
 library(jtools)
 getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
+```
+
+```{r 'figure theme for consistency', echo=FALSE}
+figure_theme_with_top_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend_position <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.key = element_blank(),
+        legend.position = "none",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10)
+    )
 ```
 
 Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
@@ -189,7 +244,7 @@ linearity_measure_data <- merge(
 # measure and information about stories
 linearity_measure_data <- merge(
     linearity_measure_data,
-    story_information_data[, c(1:3, 10)],
+    story_information_data[, c(1:3, 11)],
     all.x = TRUE,
     by = "StoryId"
 )
@@ -296,7 +351,7 @@ linearity_measure_count <- linearity_measure_data %>%
     )
 ```
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = StartsNonlinearity, y = Count)) +
     geom_violin() +
     geom_jitter() +
@@ -305,7 +360,7 @@ ggplot(linearity_measure_count, aes(x = StartsNonlinearity, y = Count)) +
 
 Variation between participants:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = UserId, y = Count, colour = StartsNonlinearity)) +
     geom_point() +
     theme_classic()
@@ -313,7 +368,7 @@ ggplot(linearity_measure_count, aes(x = UserId, y = Count, colour = StartsNonlin
 
 Variation between different stories read:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = StoryId, y = Count, colour = StartsNonlinearity)) +
     geom_boxplot() +
     theme_classic()
@@ -321,7 +376,7 @@ ggplot(linearity_measure_count, aes(x = StoryId, y = Count, colour = StartsNonli
 
 We correct for story length to see if there are differences between different books read:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     linearity_measure_count,
     aes(x = StoryId, y = (Count / CharacterLength), colour = StartsNonlinearity)
@@ -334,7 +389,7 @@ ggplot(
 
 The impact of window width (size of device and amount of text visible):
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     linearity_measure_data,
     aes(x = StartsNonlinearity, y = WindowWidth, colour = UserId)
@@ -348,7 +403,7 @@ ggplot(
 
 We then visualise the effect of DaysUntilDeadline:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     linearity_measure_data,
     aes(x = StartsNonlinearity, y = FirstTimeUntilDeadlineDays, colour = UserId)
@@ -365,7 +420,7 @@ ggplot(
 
 Gender:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = Gender, y = Count, colour = StartsNonlinearity)) +
     geom_violin() +
     geom_jitter() +
@@ -377,7 +432,7 @@ ggplot(linearity_measure_count, aes(x = Gender, y = Count, colour = StartsNonlin
 
 Age:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = Age, y = Count, colour = StartsNonlinearity)) +
     geom_point() +
     theme_classic() +
@@ -388,7 +443,7 @@ ggplot(linearity_measure_count, aes(x = Age, y = Count, colour = StartsNonlinear
 
 Whether participants' native language is English or not:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = NativeEnglish, y = Count, colour = StartsNonlinearity)) +
     geom_violin() +
     geom_jitter() +
@@ -400,7 +455,7 @@ ggplot(linearity_measure_count, aes(x = NativeEnglish, y = Count, colour = Start
 
 ### Condition
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = Condition, y = Count, colour = StartsNonlinearity)) +
     geom_boxplot() +
     theme_classic()
@@ -412,7 +467,7 @@ Only situational competence is included in the model from the IMI variables, con
 
 Situational competence:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = SCompetence, y = Count, colour = StartsNonlinearity)) +
     geom_smooth() +
     geom_point() +
@@ -423,7 +478,7 @@ We then create visualisations for contextual measures of motivation: interest, a
 
 Contextual interest:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = CInterest, y = Count, colour = StartsNonlinearity)) +
     geom_smooth() +
     geom_point() +
@@ -432,7 +487,7 @@ ggplot(linearity_measure_count, aes(x = CInterest, y = Count, colour = StartsNon
 
 Contextual competence:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = CCompetence, y = Count, colour = StartsNonlinearity)) +
     geom_smooth() +
     geom_point() +
@@ -446,7 +501,7 @@ Electronic experience was measured by two variables: Eexp1LongFormEFreq - the fr
 
 Eexp1LongformEFreq (longfrom reading electronically):
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = Eexp1LongformEFreq, y = Count, colour = StartsNonlinearity)) +
     geom_smooth() +
     geom_point() +
@@ -455,7 +510,7 @@ ggplot(linearity_measure_count, aes(x = Eexp1LongformEFreq, y = Count, colour = 
 
 Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_count, aes(x = Eexp2DeviceRecFreq, y = Count, colour = StartsNonlinearity)) +
     geom_smooth() +
     geom_point() +
@@ -569,7 +624,7 @@ Linearity_RC_FullModel <- glmer(
 
 The full model is singular.
 
-```{r}
+```{r, include=FALSE}
 summary(Linearity_RC_FullModel)
 plot(Linearity_RC_FullModel)
 ```
@@ -645,15 +700,15 @@ All generalised linear mixed models were tested for (1) multicollinearity, (2) u
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r}
-corrplot(cor(linearity_measure_data[, c(30:36)]), method = "number")
+```{r, include=FALSE}
+# corrplot(cor(linearity_measure_data[, c(30:36)]), method = "number")
 ```
 
 Some of the predictors are highly correlated. For example, the two electronic experience measures are positively correlated, *r* = `r round(cor(linearity_measure_data$Eexp1LongformEFreq, linearity_measure_data$Eexp2DeviceRecFreq), 2)`. Similarly, contextual motivation is positively correlated with contextual competence scores, *r* = `r round(cor(linearity_measure_data$CInterest, linearity_measure_data$CCompetence), 2)`
 
 To check if these correlations are problematic, we assess Variance Inflation Factors (VIF) with check_collinearity from the performance package:
 
-```{r}
+```{r, include=FALSE}
 check_collinearity(Linearity_RC_Model_RemovedStoryId)
 plot(check_collinearity(Linearity_RC_Model_RemovedStoryId))
 ```
@@ -664,18 +719,18 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 
 Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
 
-```{r}
+```{r, include=FALSE}
 simulated_model_output <- simulateResiduals(fittedModel = Linearity_RC_Model_RemovedStoryId, plot = F)
 ```
 
-```{r}
-plotQQunif(simulated_model_output)
+```{r, include=FALSE}
+# plotQQunif(simulated_model_output)
 ```
 
 The model does not deviate from expected distribution according to the qqplot.
 
-```{r}
-testDispersion(simulated_model_output)
+```{r, include=FALSE}
+# testDispersion(simulated_model_output)
 ```
 
 The dispersion test is not significant, indicated that the model is not affected by under- or overdispersion.
@@ -684,8 +739,8 @@ The dispersion test is not significant, indicated that the model is not affected
 
 We use the same simulated_model_output created in step 2 to test heteroscedasticity
 
-```{r}
-testQuantiles(simulated_model_output)
+```{r, include=FALSE}
+# testQuantiles(simulated_model_output)
 ```
 
 The p-value is not significant, and the lines lie flat and horizontal in the plot, close to the reference lines. This indicates that the residuals are homoscedastic.
@@ -694,29 +749,29 @@ The p-value is not significant, and the lines lie flat and horizontal in the plo
 
 We test influential observations with Cook's Distance:
 
-```{r}
-cooksd <-
-    cooks.distance(Linearity_RC_Model_RemovedStoryId)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
+```{r, include=FALSE}
+# cooksd <-
+#     cooks.distance(Linearity_RC_Model_RemovedStoryId)
+# plot(cooksd,
+#     pch = "*",
+#     cex = 2,
+#     main = "Influential Obs by Cooks Distance"
+# )
+# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+# text(
+#     x = 1:length(cooksd) + 1,
+#     y = cooksd,
+#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+#     col = "red"
+# )
 ```
 
 The plot indicates that some observations may be influential. However, the Cook's Distance threshold is very conservative at `r round((4 * mean(cooksd, na.rm = TRUE)), 2)`.
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
-```{r}
-testOutliers(simulated_model_output)
+```{r, include=FALSE}
+# testOutliers(simulated_model_output)
 ```
 
 The test and the plot indicate that none of the observations are influential. We trust this judgement after off-script experimentation indicated that removal of the most influential observation flagged earlier does not affect results.
@@ -725,10 +780,10 @@ The test and the plot indicate that none of the observations are influential. We
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId'. The random intercept of 'StoryId' was removed from the selected model.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_UserId <- ranef(Linearity_RC_Model_RemovedStoryId)$UserId$`(Intercept)`
-qqnorm(random_intercept_UserId)
-qqline(random_intercept_UserId)
+# qqnorm(random_intercept_UserId)
+# qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
@@ -770,24 +825,7 @@ linearity_rc_condscomp <- interact_plot(
     modx = Condition,
     data = linearity_measure_data
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = "Odds of initiating nonlinear navigation",
         x = addline_format("Situational competence score,(centered and scaled)")
@@ -807,30 +845,19 @@ linearity_rc_cmotscomp <- interact_plot(
     modx = "CInterest.sc",
     data =  linearity_measure_data,
     interval = TRUE,
-    legend.main = addline_format("Contextual motivation score,(centered and scaled)")
+    legend.main = addline_format("Contextual motivation,score (centered and scaled)")
 ) +
-    theme_bw() +
+    figure_theme_without_legend_position +
     theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+        legend.position = c(.5, .8),
+        legend.direction = "vertical"
     ) +
     labs(
-        y = "Odds of initiating nonlinear navigation",
+        y = addline_format("Odds of initiating,nonlinear navigation"),
         x = addline_format("Situation competence score,(centered and scaled)")
-    )
+    ) +
+    coord_cartesian(ylim = c(0, 0.4), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4))
 ```
 
 Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation more often when they found the text difficult to read than when they reported that the story was easy to comprehend (in line with H5b). In contrast, participants with a low contextual motivation score used on average less nonlinear navigation when the text was difficult to read, and more when the text was seen as easy. However, the effect is not significant and thus it should not be interpreted further.
@@ -850,24 +877,7 @@ linearity_rc_eexpscomp <- interact_plot(
     legend.main = addline_format("Electronic experience measure 2: Device*"),
     mod2.labels = c("-1SD Situational competence", "Mean of Situational Competence", "+1SD Situational Competence")
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = "Odds of initiating nonlinear navigation",
         x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
@@ -885,29 +895,18 @@ linearity_effectplot_eexp <- interact_plot(
     modx = "Eexp2DeviceRecFreq.sc",
     data =  linearity_measure_data,
     interval = TRUE,
-    legend.main = addline_format("Electronic experience measure 2: Device*")
+    legend.main = addline_format("Electronic Experience 2")
 ) +
-    theme_bw() +
+    figure_theme_without_legend_position +
     theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+        legend.position = c(.5, .8),
+        legend.direction = "vertical"
     ) +
     labs(
-        y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
+        y = addline_format("Odds of initiating,nonlinear navigation"),
+        x = addline_format("Electronic Experience 1,(centered and scaled)") +
+            coord_cartesian(ylim = c(0, 0.4), expand = FALSE) +
+            scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4))
     )
 ```
 
@@ -973,7 +972,7 @@ We visualise connection to previous events to see if initiating nonlinearity on 
 
 Previous page-view:
 
-```{r}
+```{r, include=FALSE}
 table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$StartsNonlinearity_lag1)
 ggplot(
     linearity_measure_data,
@@ -985,7 +984,7 @@ ggplot(
 
 Two pages before the current page-view:
 
-```{r}
+```{r, include=FALSE}
 table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$StartsNonlinearity_lag1)
 ggplot(linearity_measure_data, aes(StartsNonlinearity, ..count..)) +
     geom_bar(aes(fill = StartsNonlinearity_lag2), position = "dodge") +
@@ -996,7 +995,7 @@ ggplot(linearity_measure_data, aes(StartsNonlinearity, ..count..)) +
 
 Reading session number:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_data, aes(x = StartsNonlinearity, y = ReadingSessionNumber, fill = StartsNonlinearity)) +
     geom_violin() +
     geom_jitter(alpha = .1) +
@@ -1007,7 +1006,7 @@ Nonlinearity may be more common in early reading sessions.
 
 Time in a reading session:
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_data, aes(
     x = StartsNonlinearity,
     y = FirstCumulativeRSTime,
@@ -1030,7 +1029,7 @@ linearity_measure_data$PercentageLocation <- (
 )
 ```
 
-```{r}
+```{r, include=FALSE}
 ggplot(linearity_measure_data, aes(
     x = StartsNonlinearity,
     y = (PercentageLocation) * 100,
@@ -1138,9 +1137,9 @@ Linearity_EP_AdditiveModel <- glmer(
 
 The additive model is singular, and so we inspect the model values:
 
-```{r}
+```{r, include=FALSE}
 summary(Linearity_EP_AdditiveModel)
-plot(Linearity_EP_AdditiveModel)
+# plot(Linearity_EP_AdditiveModel)
 ```
 
 Similarly to the reader characteristics model, story indicator accounts for zero variance in the event properties model of linearity. This is likely to be causing the singularity in the model. To address the issue, we attempt to fit StoryId as a fixed effect in the model:
@@ -1202,9 +1201,9 @@ Linearity_EP_InteractiveModel_Adjusted <- glmer(
 
 The full interactive model structure converges and is not singular.
 
-```{r}
+```{r, include=FALSE}
 summary(Linearity_EP_InteractiveModel_Adjusted)
-plot(Linearity_EP_InteractiveModel_Adjusted)
+# plot(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
 Inspect model values:
@@ -1224,15 +1223,15 @@ Any VIF > 5 is considered to be a strong indication of multicollinearity, and th
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r}
-corrplot(cor(linearity_measure_data[, c("WindowWidth.sc", "DaysUntilDeadline.sc", "ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
+```{r, include=FALSE}
+# corrplot(cor(linearity_measure_data[, c("WindowWidth.sc", "DaysUntilDeadline.sc", "ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
 ```
 
 Location in text and time in a reading session are positively correlated, *r* = `r round(cor(linearity_measure_data$PercentageLocation.sc, linearity_measure_data$TimeInReadingSession.sc), 2)`.
 
 To check if these correlations are problematic, we calculate VIF:
 
-```{r}
+```{r, include=FALSE}
 check_collinearity(Linearity_EP_InteractiveModel_Adjusted)
 plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted))
 ```
@@ -1243,19 +1242,19 @@ The model predictors do not seem to be multicollinear. All VIF < 4, and usually 
 
 Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
 
-```{r}
+```{r, include=FALSE}
 set.seed(1234) # for reproducibility
 simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_Adjusted, plot = F)
 ```
 
-```{r}
-plotQQunif(simulated_model_output)
+```{r, include=FALSE}
+# plotQQunif(simulated_model_output)
 ```
 
 The model does not deviate from the expected distribution according to the qqplot.
 
-```{r}
-testDispersion(simulated_model_output)
+```{r, include=FALSE}
+# testDispersion(simulated_model_output)
 ```
 
 The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
@@ -1264,29 +1263,29 @@ The dispersion test is not significant, indicating that the model is not affecte
 
 We test influential observations with Cook's Distance:
 
-```{r}
-cooksd <-
-    cooks.distance(Linearity_EP_InteractiveModel_Adjusted)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
+```{r, include=FALSE}
+# cooksd <-
+#     cooks.distance(Linearity_EP_InteractiveModel_Adjusted)
+# plot(cooksd,
+#     pch = "*",
+#     cex = 2,
+#     main = "Influential Obs by Cooks Distance"
+# )
+# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+# text(
+#     x = 1:length(cooksd) + 1,
+#     y = cooksd,
+#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+#     col = "red"
+# )
 ```
 
 The plot indicates that the dataset may include some highly influential observations. In particular, the plot highlights observation #254.
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
-```{r}
-testOutliers(Linearity_EP_InteractiveModel_Adjusted)
+```{r, include=FALSE}
+# testOutliers(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
 Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. To assess the impact of observation #254, we attempt to fit the model without it to see if its inclusion has an impact on model interpreations:
@@ -1319,21 +1318,21 @@ Therefore, the observation affects model interpretation and it should be removed
 
 Assess influential observations after removing point 254:
 
-```{r}
-cooksd <-
-    cooks.distance(Linearity_EP_InteractiveModel_Adjusted_influential254)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
+```{r, include=FALSE}
+# cooksd <-
+#     cooks.distance(Linearity_EP_InteractiveModel_Adjusted_influential254)
+# plot(cooksd,
+#     pch = "*",
+#     cex = 2,
+#     main = "Influential Obs by Cooks Distance"
+# )
+# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+# text(
+#     x = 1:length(cooksd) + 1,
+#     y = cooksd,
+#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+#     col = "red"
+# )
 ```
 
 The plot indicates that the dataset still includes some influential observations. However, the influential observations' Cook's Distance has considerably reduced. Experimentation off-script indicated that the most prominently highlighted observations in the plot (#283 and #60) did not have an influence on model interpretation and so they can be retained in the model.
@@ -1342,13 +1341,13 @@ The plot indicates that the dataset still includes some influential observations
 
 Create a new simulated_model_output to test for heteroscedasticity:
 
-```{r}
+```{r, include=FALSE}
 set.seed(1234) # for reproducibility
 simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_Adjusted_influential254, plot = F)
 ```
 
-```{r}
-testQuantiles(simulated_model_output)
+```{r, include=FALSE}
+# testQuantiles(simulated_model_output)
 ```
 
 The p-value is not significant, and the lines lie flat and horizontal in the plot, close to the reference lines. This indicates that the assumption of heteroscedasticity is fulfilled.
@@ -1357,10 +1356,10 @@ The p-value is not significant, and the lines lie flat and horizontal in the plo
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting the normality of 'UserId'. 'StoryId' was fit in the model as a fixed effect and so it is not inspected.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_Adjusted_influential254)$UserId$`(Intercept)`
-qqnorm(random_intercept_UserId)
-qqline(random_intercept_UserId)
+# qqnorm(random_intercept_UserId)
+# qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
@@ -1376,7 +1375,7 @@ The new model is re-tested for the assumptions of multicollinearity and dispersi
 
 1. Multicollinearity:
 
-```{r}
+```{r, include=FALSE}
 check_collinearity(Linearity_EP_InteractiveModel_Adjusted_influential254)
 plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted_influential254))
 ```
@@ -1385,15 +1384,15 @@ The tests indicate that the adjusted model without the influential observation d
 
 2. Over- and under-dispersion
 
-```{r}
+```{r, include=FALSE}
 # simulated_model_output was created above for the adjusted model without the influential point
-plotQQunif(simulated_model_output)
+# plotQQunif(simulated_model_output)
 ```
 
 The model does not deviate from the expected distribution according to the qqplot.
 
-```{r}
-testDispersion(simulated_model_output)
+```{r, include=FALSE}
+# testDispersion(simulated_model_output)
 ```
 
 The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
@@ -1438,24 +1437,7 @@ linearity_ep_windowwidth <- effect_plot(
     data =  subset_without_observation254,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
         y = "Odds of initiating nonlinear navigation",
         x = addline_format("Window width in pixels,(centered and scaled)")
@@ -1475,28 +1457,13 @@ linearity_ep_previousevent <- effect_plot(
     data =  subset_without_observation254,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
-        y = addline_format("Odds of initiating nonlinear navigation,(Navigation Event~k~)"),
-        x = addline_format("Whether previous event initiated,nonlinear navigation or not,(Navigation Event~k-1~)")
-    )
+        y = addline_format("Odds of initiating,nonlinear navigation (Event k)"),
+        x = addline_format("Whether nonlinearity was initiated in Event k-1")
+    ) +
+    coord_cartesian(ylim = c(0, 0.2), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2))
 ```
  
 The result indicates that participants were more likely to initiate nonlinear navigation if the previous event did not initiate nonlinearity. In other words, participants were unlikely to move between different types of nonlinear navigation (e.g. from a regression to a forward leap) in consecutive page-views.
@@ -1508,30 +1475,14 @@ linearity_ep_lag2 <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "StartsNonlinearity_lag2",
     interval = TRUE,
-    legend.main = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not")
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
-        y = addline_format("Odds of initiating nonlinear navigation,(Navigation Event~k~)"),
-        x = addline_format("Whether nonlinear navigation was initiated,in the event preceeding the previous or not,(Navigation Event~k-2~)")
-    )
+        y = addline_format("Odds of initiating,nonlinear navigation (Event k)"),
+        x = addline_format("Whether nonlinear navigation was,initiated in Event k-2")
+    ) +
+    coord_cartesian(ylim = c(0, 0.2), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2))
 ```
 
 The odds of a participant initiating nonlinearity at navigation event~k~ were higher if the event that preceeded its previous (event~k-2~) also initiated nonlinearity. This is in contrast to the main effect between linearity and navigation event~k-1~ which indicated that the odds of initiating nonlinearity were higher if the previous event (event~k-1~) did not initiate nonlinearity. The finding indicates that although participants are unlikely to vary their linearity of reading in consecutive pages (event~k~ and event~k-1~), changes in linearity are common (e.g. between event~k~ and event~k-2~).
@@ -1546,24 +1497,7 @@ linearity_ep_time <- effect_plot(
     pred = "TimeInReadingSession.sc",
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
         y = addline_format("Odds of initiating nonlinear navigation"),
         x = addline_format("Time since the beginning of the reading session,(centered and scaled)")
@@ -1582,24 +1516,7 @@ linearity_ep_timelocation <- interact_plot(
     legend.main = addline_format("Location in text,(centered and scaled)"),
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = addline_format("Odds of initiating nonlinear navigation"),
         x = addline_format("Time since the beginning of the reading session,(centered and scaled)")
@@ -1618,24 +1535,7 @@ linearity_ep_locationRSNumb <- interact_plot(
     legend.main = addline_format("Reading session number,(centered and scaled)"),
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = addline_format("Odds of initiating nonlinear navigation"),
         x = addline_format("Location in text,(centered and scaled)")

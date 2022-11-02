@@ -42,6 +42,60 @@ library(jtools)
 getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 ```
 
+```{r 'figure theme for consistency', echo=FALSE}
+figure_theme_with_top_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend_position <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.key = element_blank(),
+        legend.position = "none",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10)
+    )
+```
+
 Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts.
@@ -191,7 +245,7 @@ reading_speed_measure_data <- merge(
 # measure and information about stories
 reading_speed_measure_data <- merge(
     reading_speed_measure_data,
-    story_information_data[, c(1:3, 10)],
+    story_information_data[, c(1:3, 11)],
     all.x = TRUE,
     by = "StoryId"
 )
@@ -276,14 +330,14 @@ We create graphs to inspect speed of reading and its connection to other variabl
 
 ReadingRate is slightly skewed towards lower values, and so it could benefit from a log-transformation:
 
-```{r}
-hist(reading_speed_measure_data$ReadingRate)
-hist(log(reading_speed_measure_data$ReadingRate + 1))
+```{r, include=FALSE}
+# hist(reading_speed_measure_data$ReadingRate)
+# hist(log(reading_speed_measure_data$ReadingRate + 1))
 ```
 
 Variance between participants:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = UserId, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
@@ -291,7 +345,7 @@ ggplot(reading_speed_measure_data, aes(x = UserId, y = ReadingRate)) +
 
 Variance between different stories:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
@@ -299,7 +353,7 @@ ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate)) +
 
 We correct for story length to see if there are differences between different books read:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate / CharacterLength)) +
     geom_boxplot() +
     theme_classic()
@@ -307,7 +361,7 @@ ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate / CharacterL
 
 Variance across window widths (size of device and amount of text visible):
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -315,7 +369,7 @@ ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = ReadingRate)) +
 
 We then visualise the effect of DaysUntilDeadline:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -325,7 +379,7 @@ ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = Readi
 
 Gender:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = Gender, y = ReadingRate)) +
     geom_violin() +
     geom_jitter() +
@@ -334,7 +388,7 @@ ggplot(reading_speed_measure_data, aes(x = Gender, y = ReadingRate)) +
 
 Age:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = Age, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -342,7 +396,7 @@ ggplot(reading_speed_measure_data, aes(x = Age, y = ReadingRate)) +
 
 Whether participants' native language is English or not:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = ReadingRate)) +
     geom_violin() +
     geom_jitter() +
@@ -351,7 +405,7 @@ ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = ReadingRate)) +
 
 ### Condition
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = Condition, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
@@ -363,7 +417,7 @@ Only situational competence is included in the model from the IMI variables, con
 
 Situational competence:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = SCompetence, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -374,7 +428,7 @@ We then create visualisations for contextual measures of motivation: interest, a
 
 Contextual interest:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = CInterest, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -383,7 +437,7 @@ ggplot(reading_speed_measure_data, aes(x = CInterest, y = ReadingRate)) +
 
 Contextual competence:
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = CCompetence, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -397,7 +451,7 @@ Electronic experience was measured by two variables: Eexp1LongFormEFreq - the fr
 
 Eexp1LongformEFreq (longfrom reading electronically):
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -405,7 +459,7 @@ ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = ReadingRate))
 
 Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
 
-```{r}
+```{r, include=FALSE}
 ggplot(reading_speed_measure_data, aes(x = Eexp2DeviceRecFreq, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -521,11 +575,11 @@ The full model converges.
 
 Inspect model values:
 
-```{r}
+```{r, include=FALSE}
 summary(Speed_RC_FullModel)
 fixef(Speed_RC_FullModel)
-plot(Speed_RC_FullModel)
-plot(reading_speed_measure_data$ReadingRate, fitted(Speed_RC_FullModel))
+# plot(Speed_RC_FullModel)
+# plot(reading_speed_measure_data$ReadingRate, fitted(Speed_RC_FullModel))
 ```
 
 ### Model Assumptions
@@ -536,15 +590,15 @@ All lmer models were tested for (1) multicollinearity, (2) influential observati
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r}
-corrplot(cor(reading_speed_measure_data[, c(31:37)]), method = "number")
+```{r, include=FALSE}
+# corrplot(cor(reading_speed_measure_data[, c(31:37)]), method = "number")
 ```
 
 Some of the variables show high correlations. For example, contextual reading competence is correlated with situational competence (*r* = `r round(cor(reading_speed_measure_data$SCompetence, reading_speed_measure_data$CCompetence), 2)`) and contextual motivation (*r* = `r round(cor(reading_speed_measure_data$CCompetence, reading_speed_measure_data$CInterest), 2)`).
 
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
-```{r}
+```{r, include=FALSE}
 check_collinearity(Speed_RC_FullModel)
 plot(check_collinearity(Speed_RC_FullModel))
 ```
@@ -555,28 +609,28 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 
 We test influential observations with Cook's Distance:
 
-```{r}
-cooksd <-
-    cooks.distance(Speed_RC_FullModel)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
+```{r, include=FALSE}
+# cooksd <-
+#     cooks.distance(Speed_RC_FullModel)
+# plot(cooksd,
+#     pch = "*",
+#     cex = 2,
+#     main = "Influential Obs by Cooks Distance"
+# )
+# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+# text(
+#     x = 1:length(cooksd) + 1,
+#     y = cooksd,
+#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+#     col = "red"
+# )
 ```
 
 The plot indicates that the dataset may include some influential observations. However, the cook's distances are very conservative as the threshold is set at `r 4 * mean(cooksd, na.rm = TRUE)`. Therefore, it is unlikely that these observations influence the model.
 
 To further test influential observations we use performance::check_outliers:
 
-```{r}
+```{r, include=FALSE}
 check_outliers(Speed_RC_FullModel)
 plot(check_outliers(Speed_RC_FullModel))
 ```
@@ -587,7 +641,7 @@ Although Cook's Distance indicates that the model has influential observations, 
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
-```{r}
+```{r, include=FALSE}
 check_heteroscedasticity(Speed_RC_FullModel)
 plot(check_heteroscedasticity(Speed_RC_FullModel))
 ```
@@ -612,19 +666,19 @@ The model aligns with the assumption of homoscedasticity.
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_UserId <- ranef(Speed_RC_FullModel)$UserId$`(Intercept)`
-qqnorm(random_intercept_UserId)
-qqline(random_intercept_UserId)
+# qqnorm(random_intercept_UserId)
+# qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_StoryId <- ranef(Speed_RC_FullModel)$StoryId$`(Intercept)`
-qqnorm(random_intercept_StoryId)
-qqline(random_intercept_StoryId)
+# qqnorm(random_intercept_StoryId)
+# qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
 ```
 
@@ -634,27 +688,27 @@ StoryId aligns much worse with the reference line, however, this is expected con
 
 We first check normality of residuals by plotting model residuals and fitted values
 
-```{r}
-plot(resid(Speed_RC_FullModel), fitted(Speed_RC_FullModel))
+```{r, include=FALSE}
+# plot(resid(Speed_RC_FullModel), fitted(Speed_RC_FullModel))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
 
 To further check non-normality, we use a qqplot:
 
-```{r}
-qqnorm(residuals(Speed_RC_FullModel))
+```{r, include=FALSE}
+# qqnorm(residuals(Speed_RC_FullModel))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
-```{r}
-hist(resid(Speed_RC_FullModel), breaks = 100)
+```{r, include=FALSE}
+# hist(resid(Speed_RC_FullModel), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
-```{r}
+```{r, include=FALSE}
 # 0 - normal, neg - left skew, pos - right skew
 skewness(resid(Speed_RC_FullModel))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
@@ -664,7 +718,7 @@ kurtosis(resid(Speed_RC_FullModel))
 The residuals are slightly skewed to the right, and the distribution is slightly leptokurtic.
 Finally, we test normality with a Shapiro Wilkins test:
 
-```{r}
+```{r, include=FALSE}
 # Shapiro Wilk Test
 check_normality(Speed_RC_FullModel)
 ```
@@ -677,7 +731,7 @@ As a result, we assume that the residuals are distributed normally enough for ou
 
 **Assumptions conclusion**
 
-The adapted model aligns with all assumptions.
+The model aligns with all assumptions.
 
 ### Interpret model
 
@@ -695,7 +749,7 @@ CCompetence (contextual competence), SCompetence:CInterest (an interaction betwe
 
 This hypothesis was not supported as an interaction effect between Condition and situational competence was not a significant predictor of reading speed in the model.
 
-```{r}
+```{r, include=FALSE}
 speed_effect_conditionscomp <- effect(
     "Condition:SCompetence.sc",
     Speed_RC_FullModel
@@ -719,35 +773,19 @@ source(
 speed_effectplot_condition <- cat_plot(
     Speed_RC_FullModel,
     pred = "Condition",
+    pred.labels = c("High-Autonomy Condition", "Low-Autonomy Condition"),
     data =  reading_speed_measure_data,
     plot.points = TRUE,
-    point.size = 2,
+    point.size = 1,
     point.alpha = .2,
     interval = TRUE,
     point.shape = TRUE
 ) +
-    geom_hline(yintercept = 1, colour = "blue") +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    geom_hline(yintercept = 1, colour = "black") +
+    figure_theme_without_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
-        x = addline_format("Condition")
+        x = addline_format("Condition,")
     )
 ```
 
@@ -765,27 +803,14 @@ speed_effectplot_cmotscomp <- interact_plot(
     data =  reading_speed_measure_data,
     legend.main = "Contextual motivation score*",
     plot.points = TRUE,
-    point.size = 2,
+    point.size = 1,
     interval = TRUE,
     point.shape = TRUE
 ) +
-    theme_bw() +
+    figure_theme_without_legend_position +
     theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+        legend.position = c(0.5, .9),
+        legend.direction = "vertical"
     ) +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
@@ -819,28 +844,10 @@ speed_effectplot_electronicexperiencescomp <-
         colors = c("orange", "darkred", "navy"),
         point.shape = TRUE
     ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
-        x = addline_format("Situational competence score,(centered and scaled)"),
-        caption = addline_format("Legend variables:,Electronic experience 1:, Frequency of reading longform texts electronically,(centered and scaled), Elecronic experience 2:,Frequency of using task-relevant digital devices,for recreational reading (centered and scaled)")
+        x = addline_format("Situational competence score,(centered and scaled)")
     )
 ```
 
@@ -864,24 +871,7 @@ speed_effectplot_contextualcompetence <- effect_plot(
     interval = TRUE,
     point.shape = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Contextual perceived competence, score (centered and scaled)")
@@ -951,7 +941,7 @@ We visualise connection to previous events to see if reading speed on the previo
 
 Previous page-view:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     reading_speed_measure_data,
     aes(x = Observation_lag1, y = ReadingRate)
@@ -962,7 +952,7 @@ ggplot(
 
 Two pages before the current page-view:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     reading_speed_measure_data,
     aes(x = Observation_lag2, y = ReadingRate)
@@ -975,7 +965,7 @@ ggplot(
 
 Reading session number:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     reading_speed_measure_data,
     aes(x = ReadingSessionNumber, y = ReadingRate)
@@ -986,7 +976,7 @@ ggplot(
 
 Time in a reading session:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     reading_speed_measure_data,
     aes(x = FirstCumulativeRSTime, y = ReadingRate)
@@ -1007,7 +997,7 @@ reading_speed_measure_data$PercentageLocation <- (
 )
 ```
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     reading_speed_measure_data,
     aes(x = PercentageLocation * 100, y = ReadingRate)
@@ -1112,9 +1102,9 @@ Speed_EP_AdditiveModel <- lmer(
 
 The full additive model converges.
 
-```{r}
+```{r, include=FALSE}
 summary(Speed_EP_AdditiveModel)
-plot(Speed_EP_AdditiveModel)
+# plot(Speed_EP_AdditiveModel)
 ```
 
 Inspect model values:
@@ -1149,9 +1139,9 @@ Speed_EP_InteractiveModel <- lmer(
 
 The full interactive model structure converges.
 
-```{r}
+```{r, include=FALSE}
 summary(Speed_EP_InteractiveModel)
-plot(Speed_EP_InteractiveModel)
+# plot(Speed_EP_InteractiveModel)
 ```
 
 Inspect model values:
@@ -1168,15 +1158,15 @@ All linear mixed models were tested for (1) multicollinearity, (2) influential o
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r}
-corrplot(cor(remove_missing(reading_speed_measure_data[, c(36:37, 41:45)])), method = "number")
+```{r, include=FALSE}
+# corrplot(cor(remove_missing(reading_speed_measure_data[, c(36:37, 41:45)])), method = "number")
 ```
 
 None of the predictors show high correlations.
 
 We then calculate Variance Inflation Factors (VIF):
 
-```{r}
+```{r, include=FALSE}
 check_collinearity(Speed_EP_InteractiveModel)
 plot(check_collinearity(Speed_EP_InteractiveModel))
 ```
@@ -1187,28 +1177,28 @@ The model predictors do not seem to be multicollinear. All VIF < 2, and usually 
 
 We test influential observations with Cook's Distance:
 
-```{r}
-cooksd <-
-    cooks.distance(Speed_EP_InteractiveModel)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
+```{r, include=FALSE}
+# cooksd <-
+#     cooks.distance(Speed_EP_InteractiveModel)
+# plot(cooksd,
+#     pch = "*",
+#     cex = 2,
+#     main = "Influential Obs by Cooks Distance"
+# )
+# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+# text(
+#     x = 1:length(cooksd) + 1,
+#     y = cooksd,
+#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+#     col = "red"
+# )
 ```
 
 The plot indicates that the dataset may include some influential observations. However, the cook's distances are very conservative as the threshold is set at `r 4 * mean(cooksd, na.rm = TRUE)`. Therefore, it is unlikely that these observations influence the model.
 
 To further test influential observations we use performance::check_outliers:
 
-```{r}
+```{r, include=FALSE}
 check_outliers(Speed_EP_InteractiveModel)
 plot(check_outliers(Speed_EP_InteractiveModel))
 ```
@@ -1219,7 +1209,7 @@ Although Cook's Distance indicates that the model has influential observations, 
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
-```{r}
+```{r, include=FALSE}
 check_heteroscedasticity(Speed_EP_InteractiveModel)
 plot(check_heteroscedasticity(Speed_EP_InteractiveModel))
 ```
@@ -1231,19 +1221,19 @@ The model aligns with the assumption of homoscedasticity.
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_UserId <- ranef(Speed_EP_InteractiveModel)$UserId$`(Intercept)`
-qqnorm(random_intercept_UserId)
-qqline(random_intercept_UserId)
+# qqnorm(random_intercept_UserId)
+# qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_StoryId <- ranef(Speed_EP_InteractiveModel)$StoryId$`(Intercept)`
-qqnorm(random_intercept_StoryId)
-qqline(random_intercept_StoryId)
+# qqnorm(random_intercept_StoryId)
+# qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
 ```
 
@@ -1253,22 +1243,22 @@ StoryId aligns much worse with the reference line, however, this is expected con
 
 We first check normality of residuals by plotting model residuals and fitted values
 
-```{r}
-plot(resid(Speed_EP_InteractiveModel), fitted(Speed_EP_InteractiveModel))
+```{r, include=FALSE}
+# plot(resid(Speed_EP_InteractiveModel), fitted(Speed_EP_InteractiveModel))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
 
 To further check non-normality, we use a qqplot:
 
-```{r}
-qqnorm(residuals(Speed_EP_InteractiveModel))
+```{r, include=FALSE}
+# qqnorm(residuals(Speed_EP_InteractiveModel))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
-```{r}
-hist(resid(Speed_EP_InteractiveModel), breaks = 100)
+```{r, include=FALSE}
+# hist(resid(Speed_EP_InteractiveModel), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
@@ -1283,7 +1273,7 @@ kurtosis(resid(Speed_EP_InteractiveModel))
 The residuals are slightly skewed to the right, and the distribution is leptokurtic.
 Finally, we test normality with a Shapiro Wilkins test:
 
-```{r}
+```{r, include=FALSE}
 # Shapiro Wilk Test
 check_normality(Speed_EP_InteractiveModel)
 ```
@@ -1326,24 +1316,7 @@ speed_ep_previouslag1 <- effect_plot(
     point.alpha = .2,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Event~k-1~:,Reading speed on previous page,(centered and scaled)")
@@ -1362,24 +1335,7 @@ speed_ep_previouslag2 <- effect_plot(
     point.alpha = .2,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Event~k-2~:,Reading speed on the page before previous page,(centered and scaled)")
@@ -1400,24 +1356,7 @@ speed_ep_location <- effect_plot(
     point.alpha = .2,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = "Location in Text (%, centered and scaled)"
@@ -1435,31 +1374,15 @@ speed_ep_locationrsnumb <- interact_plot(
     Speed_EP_InteractiveModel,
     pred = PercentageLocation.sc,
     modx = ReadingSessionNumber.sc,
+    legend.main = addline_format("Reading Session,Number*"),
     plot.points = TRUE,
     point.alpha = .2,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
-        y = "Reading Speed as Proportion of Baseline Speed",
-        x = "Location in Text (%, centered and scaled)"
+        y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
+        x = addline_format("Location in Text,(%; centered and scaled)")
     )
 ```
 
@@ -1474,28 +1397,12 @@ speed_ep_locationtimeinrs <- interact_plot(
     Speed_EP_InteractiveModel,
     pred = PercentageLocation.sc,
     modx = TimeInReadingSession.sc,
+    legend.main = addline_format("Time in,Reading Session*"),
     plot.points = TRUE,
     point.alpha = .2,
     interval = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = "Location in Text (%, centered and scaled)"

@@ -98,6 +98,60 @@ library(interactions)
 library(jtools)
 ```
 
+```{r 'figure theme for consistency', echo=FALSE}
+figure_theme_with_top_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend_position <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.key = element_blank(),
+        legend.position = "none",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10)
+    )
+```
+
 Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts.
@@ -250,7 +304,7 @@ task_switching_data <- merge(
 # measure and information about stories
 task_switching_data <- merge(
     task_switching_data,
-    story_information_data[, c(1:3, 10)],
+    story_information_data[, c(1:3, 11)],
     all.x = TRUE,
     by = "StoryId"
 )
@@ -288,14 +342,14 @@ We create graphs to inspect task switching and its connection to other variables
 
 The task switching measure, ContinuousEngagementMinutes, is skewed towards lower values and the distribution may be improved by log-transformation.
 
-```{r}
-hist(task_switching_data$ContinuousEngagementMinutes, breaks = 50)
-hist(log(task_switching_data$ContinuousEngagementMinutes + 1), breaks = 50)
+```{r, include=FALSE}
+# hist(task_switching_data$ContinuousEngagementMinutes, breaks = 50)
+# hist(log(task_switching_data$ContinuousEngagementMinutes + 1), breaks = 50)
 ```
 
 Variation between participants:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = UserId, y = ContinuousEngagementMinutes)) +
     geom_boxplot() +
     geom_jitter() +
@@ -305,7 +359,7 @@ ggplot(task_switching_data, aes(x = UserId, y = ContinuousEngagementMinutes)) +
 
 Variation between different books read:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     task_switching_data,
     aes(x = StoryId, y = ContinuousEngagementMinutes)
@@ -318,7 +372,7 @@ ggplot(
 
 We correct for story length to see if there are differences between different books read:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = StoryId, y = (ContinuousEngagementMinutes / CharacterLength))) +
     geom_boxplot() +
     geom_jitter() +
@@ -328,7 +382,7 @@ ggplot(task_switching_data, aes(x = StoryId, y = (ContinuousEngagementMinutes / 
 
 We inspect individual variation within the different books read:
 
-```{r}
+```{r, include=FALSE}
 ggplot(
     task_switching_data,
     aes(x = StoryId, y = ContinuousEngagementMinutes)
@@ -381,12 +435,11 @@ TaskSwitchingVariance <-
         strip.text.x = element_text(size = 16)
     ) +
     scale_y_continuous(labels = function(UserId) format(UserId, width = 2))
-TaskSwitchingVariance
 ```
 
 Effect of DaysUntilDeadline:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = DaysUntilDeadline, y = ContinuousEngagementMinutes)) +
     geom_point(aes(colour = UserId), size = 3) +
     theme_classic() +
@@ -401,7 +454,7 @@ ggplot(task_switching_data, aes(x = DaysUntilDeadline, y = ContinuousEngagementM
 
 Gender:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = Gender, y = ContinuousEngagementMinutes)) +
     geom_violin() +
     geom_jitter(aes(colour = UserId)) +
@@ -414,7 +467,7 @@ ggplot(task_switching_data, aes(x = Gender, y = ContinuousEngagementMinutes)) +
 
 Age:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = Age, y = ContinuousEngagementMinutes)) +
     geom_point() +
     theme_classic() +
@@ -426,7 +479,7 @@ ggplot(task_switching_data, aes(x = Age, y = ContinuousEngagementMinutes)) +
 
 Whether participants' native language is English or not:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = NativeEnglish, y = ContinuousEngagementMinutes)) +
     geom_violin() +
     geom_jitter(aes(colour = UserId)) +
@@ -439,7 +492,7 @@ ggplot(task_switching_data, aes(x = NativeEnglish, y = ContinuousEngagementMinut
 
 ### Task switching and condition
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = Condition, y = ContinuousEngagementMinutes)) +
     geom_boxplot() +
     theme_classic() +
@@ -452,7 +505,7 @@ Only situational competence is included in the model from the IMI variables, con
 
 Situational competence:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = SCompetence, y = ContinuousEngagementMinutes)) +
     geom_smooth() +
     geom_point() +
@@ -467,7 +520,7 @@ We then create visualisations for contextual measures of motivation: interest, c
 
 Contextual interest:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = CInterest, y = ContinuousEngagementMinutes)) +
     geom_smooth() +
     geom_point() +
@@ -480,7 +533,7 @@ ggplot(task_switching_data, aes(x = CInterest, y = ContinuousEngagementMinutes))
 
 Contextual competence:
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = CCompetence, y = ContinuousEngagementMinutes)) +
     geom_smooth() +
     geom_point() +
@@ -498,7 +551,7 @@ Electronic experience was measured by two variables: Eexp1LongFormEFreq - the fr
 
 Eexp1LongformEFreq (longfrom reading electronically):
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = Eexp1LongformEFreq, y = ContinuousEngagementMinutes)) +
     geom_point() +
     theme_classic() +
@@ -510,7 +563,7 @@ ggplot(task_switching_data, aes(x = Eexp1LongformEFreq, y = ContinuousEngagement
 
 Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
 
-```{r}
+```{r, include=FALSE}
 ggplot(task_switching_data, aes(x = Eexp2DeviceRecFreq, y = ContinuousEngagementMinutes)) +
     geom_smooth() +
     geom_point() +
@@ -641,14 +694,14 @@ All models were tested for (1) multicollinearity, (2) heteroscedasticity, (3) in
 We check for multicollinearity first with a correlation matrix:
 
 ```{r}
-corrplot(cor(task_switching_data[, c(7, 13, 16, 18:21)]), method = "number")
+# corrplot(cor(task_switching_data[, c(7, 13, 16, 18:21)]), method = "number")
 ```
 
 Some of the variables show high correlations. For example, contextual reading competence is correlated with situational competence (*r* = `r round(cor(task_switching_data$SCompetence, task_switching_data$CCompetence), 2)`) and contextual motivation (*r* = `r round(cor(task_switching_data$CCompetence, task_switching_data$CInterest), 2)`).
 
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
-```{r}
+```{r, include=FALSE}
 check_collinearity(TaskSwitching_FullModel)
 plot(check_collinearity(TaskSwitching_FullModel))
 ```
@@ -659,7 +712,7 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
-```{r}
+```{r, include=FALSE}
 check_heteroscedasticity(TaskSwitching_FullModel)
 plot(check_heteroscedasticity(TaskSwitching_FullModel))
 ```
@@ -682,28 +735,28 @@ The assumption of equal variables is met for both Condition and NativeEnglish.
 
 We test influential observations with Cook's Distance:
 
-```{r}
-cooksd <-
-    cooks.distance(TaskSwitching_FullModel)
-plot(cooksd,
-    pch = "*",
-    cex = 2,
-    main = "Influential Obs by Cooks Distance"
-)
-abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-text(
-    x = 1:length(cooksd) + 1,
-    y = cooksd,
-    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-    col = "red"
-)
+```{r, include=FALSE}
+# cooksd <-
+#     cooks.distance(TaskSwitching_FullModel)
+# plot(cooksd,
+#     pch = "*",
+#     cex = 2,
+#     main = "Influential Obs by Cooks Distance"
+# )
+# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+# text(
+#     x = 1:length(cooksd) + 1,
+#     y = cooksd,
+#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+#     col = "red"
+# )
 ```
 
 The plot indicates that some observations may be influential. However, the Cook's Distance threshold is very conservative at `r round((4 * mean(cooksd, na.rm = TRUE)), 2)`.
 
 We further inspect Cook's Distance with a different plot:
 
-```{r}
+```{r, include=FALSE}
 check_outliers(TaskSwitching_FullModel)
 plot(check_outliers(TaskSwitching_FullModel))
 ```
@@ -714,19 +767,19 @@ Usage of a less conservative limit (Cook's Distance > .5 for influential observa
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
-```{r}
+```{r, include=FALSE}
 random_intercept_UserId <- ranef(TaskSwitching_FullModel)$UserId$`(Intercept)`
-qqnorm(random_intercept_UserId)
-qqline(random_intercept_UserId)
+# qqnorm(random_intercept_UserId)
+# qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
 The qqplot slightly varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed
 
-```{r}
+```{r, include=FALSE}
 random_intercept_StoryId <- ranef(TaskSwitching_FullModel)$StoryId$`(Intercept)`
-qqnorm(random_intercept_StoryId)
-qqline(random_intercept_StoryId)
+# qqnorm(random_intercept_StoryId)
+# qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
 ```
 
@@ -773,25 +826,9 @@ taskswitching_effectplot_condition <- cat_plot(
     point.shape = TRUE
 ) +
     theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
-        y = "Continuous engagement duration (min)",
+        y = addline_format("Continuous engagement duration,(min)"),
         x = addline_format("Condition")
     ) +
     coord_cartesian(ylim = c(0.6931472, 4.5)) +
@@ -822,30 +859,13 @@ taskswitching_effectplot_contextualmotivation <- effect_plot(
     pred = "CInterest.sc",
     data =  task_switching_data,
     plot.points = TRUE,
-    point.size = 2,
+    point.size = 1,
     interval = TRUE,
     point.shape = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
-        y = "Continuous engagement duration (min)",
+        y = addline_format("Continuous engagement duration,(min)"),
         x = addline_format("Contextual motivation score, measured by contextual reading interest,(centered and scaled)")
     ) +
     coord_cartesian(ylim = c(0.6931472, 4.5)) +
@@ -885,24 +905,7 @@ taskswitching_effectplot_electronicexperience <-
         colors = c("orange", "darkred", "navy"),
         point.shape = TRUE
     ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = "Continuous engagement duration (min)",
         x = addline_format("Electronic experience 1:,Frequency of reading longform texts electronically,(centered and scaled)"),
@@ -942,27 +945,10 @@ taskswitching_effectplot_situationalcompetence <- effect_plot(
     interval = TRUE,
     point.shape = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
-        y = "Continuous engagement duration (min)",
-        x = addline_format("Situational perceived competence, score (centered and scaled)")
+        y = addline_format("Continuous engagement duration,(min)"),
+        x = addline_format("Situational perceived competence,score (centered and scaled)")
     ) +
     coord_cartesian(ylim = c(0.6931472, 4.5)) +
     scale_y_continuous(breaks = c(
@@ -994,24 +980,7 @@ taskswitching_effectplot_contextualcompetence <- effect_plot(
     interval = TRUE,
     point.shape = TRUE
 ) +
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 20),
-        axis.text.y = element_text(size = 20),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 20, vjust = 0.5),
-        axis.title.y = element_text(size = 20, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 16),
-        strip.text.x = element_text(size = 16),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    ) +
+    figure_theme_without_legend +
     labs(
         y = "Continuous engagement duration (min)",
         x = addline_format("Contextual perceived competence, score (centered and scaled)")

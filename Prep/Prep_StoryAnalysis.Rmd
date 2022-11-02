@@ -141,6 +141,24 @@ StoryNameList <- c(
 )
 ```
 
+Add story summaries:
+
+```{r}
+Summaries <- data.frame(
+    Title = StoryNameList,
+    Summary = c(
+        "At thirty-seven Harrietta Fuller had been fifteen years on the stage. She had little money, a small stanch following, an exquisite technique, and her fur coat was beginning to look gnawed around the edges. Harrietta knew she wasn't a success. But Ken thought she was the most beauteous, witty, intelligent woman in the world, although he had never told her so, and Harrietta found herself wishing he would.",
+        "'There is a significant chance that one of our adversaries may target you, Saul. We see great changes coming, perhaps great wars, and whoever leads us must be one who can face any Challenge head-on.' Mentor said. Saul Maginot stood at the entryway for the shuttle. Mentor was considered a rogue AI and would be destroyed upon detection. If Saul were connected with the release or aid of a rogue AI, the destruction of his career would be the least of his problems.",
+        "Mr McCarthy had an appointment of importance to keep at three. From that appointment he never came back alive. A very serious case has been established against the son of the murdered man. But I shall approach this case from the point of view that what this young man says is true, and he is innocent, and we shall see whither that hypothesis will lead us.",
+        "Everywhere the ice was sparkling as though in derision of ourselves. 'Let every man take a plank, and hold it in front of him. Then, should anyone fall in (which God forbid!), the plank-ends will catch upon the ice to either side of him, and hold him up. None but a fool gets drowned.'",
+        "What might be the fate of a perfectly honest and intelligent stranger who should be turned adrift in London without a friend, and with no money but a million-pound-bank-note. Brother B said he would bet twenty thousand pounds that the man would live thirty days, anyway, on that million, and keep out of jail, too. Brother A took him up. They agreed that I filled the bill all around; so they elected me unanimously.",
+        "This place has an evil name among seafaring men. Even cannibals wouldn't live in such a God-forsaken place. Rainsford heard a sound. It came out of the darkness, a high screaming sound, the sound of an animal in an extremity of anguish and terror.",
+        "At times Derby would halt abruptly in his revelations, and I wondered whether his wife could possibly have divined his speech at a distance and cut him off through some unknown sort of telepathic mesmerism. The figure beside me seemed less like a lifelong friend than like some monstrous intrusion from outer space. He would let fall remarks about things 'going too far'.",
+        "Harry Lawton had come back. Eudora did not know him at first, but as they drew nearer each other, she knew. He had not made a failure of his life, even though it had not included Eudora and a fulfilled dream."
+    )
+)
+```
+
 ```{r}
 AllStories <- data.frame(
     Author = AuthorList,
@@ -151,6 +169,7 @@ AllStories <- data.frame(
     NumberOfSentences = NA,
     AverageSentenceLength = NA,
     SDSentenceLength = NA,
+    Summary = Summaries$Summary,
     Story = StoryText
 )
 ```
@@ -212,6 +231,7 @@ NinthStory <- data.frame(
     NumberOfSentences = NA,
     AverageSentenceLength = NA,
     SDSentenceLength = NA,
+    Summary = NA,
     Story = NA
 )
 AllStories <- rbind(

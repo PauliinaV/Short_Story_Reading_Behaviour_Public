@@ -18,6 +18,60 @@ library(tidyverse)
 library(gridExtra)
 ```
 
+```{r 'figure theme for consistency', echo=FALSE}
+figure_theme_with_top_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend_position <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.key = element_blank(),
+        legend.position = "none",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10)
+    )
+```
+
 ## Load data
 
 To create the timelines we use tracking data in which navigation blocks have been grouped together. This dataset was created and saved in Prep_TrackingDataWrangling.Rmd in Prep folder.
@@ -161,11 +215,11 @@ First, we create a variable that shows location in percentages at the beginning 
 ```{r}
 grouped_navigation_blocks_data$NBFirstPercentage <- (
     grouped_navigation_blocks_data$NBFirstStartLocation
-        / grouped_navigation_blocks_data$ChLength
+        / grouped_navigation_blocks_data$CharacterLength
 )
 grouped_navigation_blocks_data$NBLastPercentage <- (
     grouped_navigation_blocks_data$NBEndLocation
-        / grouped_navigation_blocks_data$ChLength
+        / grouped_navigation_blocks_data$CharacterLength
 )
 ```
 
@@ -197,7 +251,7 @@ graph_subset_data <- grouped_navigation_blocks_data %>%
         Point,
         Per,
         CumulativeDuration,
-        ChLength
+        CharacterLength
     )
 ```
 
@@ -258,6 +312,7 @@ We create multiple different versions of the progress graph in this section
 (1) A progress graph for each participant, arranged together to save space (saved as Fig_ProgressGraphGroupedByParticipant.png)
 (2) A progress graph for participants in the high-autonomy and low-autonomy conditions (saved as Fig_ProgressGraphGroupedByCondition.png)
 (3) Progress graphs for participants in each short story group, with a chronological abline (saved as Fig_ProgressGraphGroupedByStory.png)
+(4) A progress graph for the two short story groups with the most participant, used in the manuscript (saved as Fig_ProgressGraphTwoStory.png)
 
 ### 1. A progress graph for each participant
 
@@ -345,15 +400,11 @@ Graph2a <- ggplot(
 ```
 
 ```{r 'new labels for condition'}
-graph_subset_data <- graph_subset_data %>%
-    # Rename Conditions
-    mutate(
-        Condition = recode(
-            Condition,
-            "AutonomousCondition" = "High-Autonomy Condition",
-            "NonAutonomousCondition" = "Low-Autonomy Condition"
-        )
-    )
+graph_subset_data$Condition <- dplyr::recode(
+    graph_subset_data$Condition,
+    "AutonomousCondition" = "High-Autonomy Condition",
+    "NonAutonomousCondition" = "Low-Autonomy Condition"
+)
 ```
 
 ```{r 'setup for graph2'}
@@ -459,7 +510,7 @@ Graph31b <- Graph31a +
 ChronologicalAblineStoryId1 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId1$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId1$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -544,7 +595,7 @@ Graph32b <- Graph32a +
 ChronologicalAblineStoryId2 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId2$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId2$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -629,7 +680,7 @@ Graph33b <- Graph33a +
 ChronologicalAblineStoryId3 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId3$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId3$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -714,7 +765,7 @@ Graph34b <- Graph34a +
 ChronologicalAblineStoryId4 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId4$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId4$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -799,7 +850,7 @@ Graph35b <- Graph35a +
 ChronologicalAblineStoryId5 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId5$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId5$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -884,7 +935,7 @@ Graph36b <- Graph36a +
 ChronologicalAblineStoryId6 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId6$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId6$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -969,7 +1020,7 @@ Graph37b <- Graph37a +
 ChronologicalAblineStoryId7 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId7$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId7$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -1054,7 +1105,7 @@ Graph38b <- Graph38a +
 ChronologicalAblineStoryId8 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId8$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId8$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -1139,7 +1190,7 @@ Graph39b <- Graph39a +
 ChronologicalAblineStoryId9 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId9$ChLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId9$CharacterLength) / 5) / 250)),
     "label" = "Chronological"
 )
 ```
@@ -1221,3 +1272,36 @@ ggsave(
     dpi = 300
 )
 ```
+
+## 3. Progress graphs for two stories with most participants
+
+This graph is made for illustration purposes to be used in the manuscript.
+First, we find which stories have the highest number of participants:
+
+```{r}
+participant_story_count <- grouped_navigation_blocks_data %>%
+    group_by(StoryId) %>%
+    summarise(
+        ParticipantCount = length(unique(UserId))
+    )
+```
+
+StoryId 1 has 11 participants and StoryId 2 has 10 participants, and so we use these two stories.
+
+```{r}
+Graph31e_grid <- Graph31e + figure_theme_without_legend
+Graph32e_grid <- Graph32e + figure_theme_without_legend
+GridArrangedPlot <- grid.arrange(Graph31e_grid, Graph32e_grid, nrow = 1)
+```
+
+```{r, eval=FALSE}
+ggsave(
+    "Fig_ProgressGraphTwoStory.png",
+    plot = GridArrangedPlot,
+    width = 5,
+    height = 6,
+    units = "in",
+    dpi = 300
+)
+```
+
