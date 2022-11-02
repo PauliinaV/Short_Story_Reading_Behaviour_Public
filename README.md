@@ -2,6 +2,8 @@
 
 Data and analysis files from Vuorinen, Keller, & Tatler.
 
+All of the files have been written and planned by Vuorinen.
+
 Please cite as:
 
 ## Folder set up
