@@ -99,28 +99,11 @@ Save working directory so that this script can be used elsewhere, if required. T
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts.
 
-```{r 'working directory for my purposes'}
-mypath_SSRBP <- getwd()
-if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
-    # wrong working directory
-    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
-        # directory name isn't GITHUB, unlike I would expect
-        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
-            # GITHUB is in the path
-            ## use mypath_SSRBP instead of dirname()
-            mypath_SSRBP <- paste0(
-                mypath_SSRBP,
-                "/Short_Story_Reading_Behaviour_Public"
-            )
-        }
-    } else {
-        # directory name is GITHUB
-        # save correct working directory
-        mypath_SSRBP <- paste0(
-            dirname(mypath_SSRBP),
-            "/Short_Story_Reading_Behaviour_Public"
-        )
-    }
+```{r}
+if (exists("AnalysisFilePath")) {
+    mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
+} else {
+    mypath_SSRBP <- getwd()
 }
 ```
 
@@ -845,13 +828,9 @@ linearity_rc_cmotscomp <- interact_plot(
     modx = "CInterest.sc",
     data =  linearity_measure_data,
     interval = TRUE,
-    legend.main = addline_format("Contextual motivation,score (centered and scaled)")
+    legend.main = addline_format("Contextual motivation score")
 ) +
-    figure_theme_without_legend_position +
-    theme(
-        legend.position = c(.5, .8),
-        legend.direction = "vertical"
-    ) +
+    figure_theme_with_top_legend +
     labs(
         y = addline_format("Odds of initiating,nonlinear navigation"),
         x = addline_format("Situation competence score,(centered and scaled)")
@@ -880,8 +859,9 @@ linearity_rc_eexpscomp <- interact_plot(
     figure_theme_with_top_legend +
     labs(
         y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")
-    )
+        x = addline_format("Electronic experience measure 1, frequency of e-reading task-relevant text types,(centered and scaled)")) +
+    coord_cartesian(ylim = c(0, 0.4), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4))
 ```
 
 Indeed, the effect of electronic experience was the same, despite of situational competence.
@@ -895,19 +875,13 @@ linearity_effectplot_eexp <- interact_plot(
     modx = "Eexp2DeviceRecFreq.sc",
     data =  linearity_measure_data,
     interval = TRUE,
-    legend.main = addline_format("Electronic Experience 2")
-) +
-    figure_theme_without_legend_position +
-    theme(
-        legend.position = c(.5, .8),
-        legend.direction = "vertical"
-    ) +
+    legend.main = "Electronic Experience 2") +
+    figure_theme_with_top_legend +
     labs(
         y = addline_format("Odds of initiating,nonlinear navigation"),
-        x = addline_format("Electronic Experience 1,(centered and scaled)") +
-            coord_cartesian(ylim = c(0, 0.4), expand = FALSE) +
-            scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4))
-    )
+        x = addline_format("Electronic Experience 1,(centered and scaled)")) +
+    coord_cartesian(ylim = c(0, 0.4), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4))
 ```
 
 The finding indicated that a combination of high scores in the two task-relevant electronic reading experience measures was associated with a lower likelihood of nonlinear navigation. In contrast, a low score in either measure with a high level of the other, was associated with more frequent nonlinear navigation. This indicates that electronic experience affected participants' linearity of reading.
@@ -1460,10 +1434,10 @@ linearity_ep_previousevent <- effect_plot(
     figure_theme_without_legend +
     labs(
         y = addline_format("Odds of initiating,nonlinear navigation (Event k)"),
-        x = addline_format("Whether nonlinearity was initiated in Event k-1")
+        x = addline_format("Whether nonlinearity was,initiated in Event k-1")
     ) +
-    coord_cartesian(ylim = c(0, 0.2), expand = FALSE) +
-    scale_y_continuous(breaks = c(0, 0.1, 0.2))
+    coord_cartesian(ylim = c(0, 0.3), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3))
 ```
  
 The result indicates that participants were more likely to initiate nonlinear navigation if the previous event did not initiate nonlinearity. In other words, participants were unlikely to move between different types of nonlinear navigation (e.g. from a regression to a forward leap) in consecutive page-views.
@@ -1481,8 +1455,8 @@ linearity_ep_lag2 <- effect_plot(
         y = addline_format("Odds of initiating,nonlinear navigation (Event k)"),
         x = addline_format("Whether nonlinear navigation was,initiated in Event k-2")
     ) +
-    coord_cartesian(ylim = c(0, 0.2), expand = FALSE) +
-    scale_y_continuous(breaks = c(0, 0.1, 0.2))
+    coord_cartesian(ylim = c(0, 0.3), expand = FALSE) +
+    scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3))
 ```
 
 The odds of a participant initiating nonlinearity at navigation event~k~ were higher if the event that preceeded its previous (event~k-2~) also initiated nonlinearity. This is in contrast to the main effect between linearity and navigation event~k-1~ which indicated that the odds of initiating nonlinearity were higher if the previous event (event~k-1~) did not initiate nonlinearity. The finding indicates that although participants are unlikely to vary their linearity of reading in consecutive pages (event~k~ and event~k-1~), changes in linearity are common (e.g. between event~k~ and event~k-2~).

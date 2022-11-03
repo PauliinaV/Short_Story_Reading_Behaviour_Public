@@ -100,28 +100,11 @@ Save working directory so that this script can be used elsewhere, if required. T
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts.
 
-```{r 'working directory for my purposes'}
-mypath_SSRBP <- getwd()
-if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
-    # wrong working directory
-    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
-        # directory name isn't GITHUB, unlike I would expect
-        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
-            # GITHUB is in the path
-            ## use mypath_SSRBP instead of dirname()
-            mypath_SSRBP <- paste0(
-                mypath_SSRBP,
-                "/Short_Story_Reading_Behaviour_Public"
-            )
-        }
-    } else {
-        # directory name is GITHUB
-        # save correct working directory
-        mypath_SSRBP <- paste0(
-            dirname(mypath_SSRBP),
-            "/Short_Story_Reading_Behaviour_Public"
-        )
-    }
+```{r}
+if (exists("AnalysisFilePath")) {
+    mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
+} else {
+    mypath_SSRBP <- getwd()
 }
 ```
 
@@ -807,13 +790,9 @@ speed_effectplot_cmotscomp <- interact_plot(
     interval = TRUE,
     point.shape = TRUE
 ) +
-    figure_theme_without_legend_position +
-    theme(
-        legend.position = c(0.5, .9),
-        legend.direction = "vertical"
-    ) +
+    figure_theme_with_top_legend +
     labs(
-        y = "Reading Speed as Proportion of Baseline Speed",
+        y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
         x = addline_format("Situational competence score,(centered and scaled)")
     )
 ```
@@ -834,10 +813,7 @@ speed_effectplot_electronicexperiencescomp <-
         modx = Eexp2DeviceRecFreq.sc,
         mod2 = Eexp1LongformEFreq.sc,
         data = reading_speed_measure_data,
-        plot.points = TRUE,
-        point.alpha = .2,
-        point.size = 1,
-        jitter = .5,
+        plot.points = FALSE,
         interval = TRUE,
         legend.main = addline_format("Electronic experience 2"),
         mod2.labels = c("-1SD Electronic Experience 1", "Mean Electronic Experience 1", "+1SD Electronic Experience 1"),
@@ -846,8 +822,8 @@ speed_effectplot_electronicexperiencescomp <-
     ) +
     figure_theme_with_top_legend +
     labs(
-        y = "Reading Speed as Proportion of Baseline Speed",
-        x = addline_format("Situational competence score,(centered and scaled)")
+        y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
+        x = "Situational competence score (centered and scaled)"
     )
 ```
 
@@ -1374,15 +1350,14 @@ speed_ep_locationrsnumb <- interact_plot(
     Speed_EP_InteractiveModel,
     pred = PercentageLocation.sc,
     modx = ReadingSessionNumber.sc,
-    legend.main = addline_format("Reading Session,Number*"),
-    plot.points = TRUE,
-    point.alpha = .2,
+    legend.main = addline_format("Reading Session Number*"),
+    plot.points = FALSE,
     interval = TRUE
 ) +
     figure_theme_with_top_legend +
     labs(
         y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
-        x = addline_format("Location in Text,(%; centered and scaled)")
+        x = "Location in Text (%, centered and scaled)"
     )
 ```
 
@@ -1397,14 +1372,13 @@ speed_ep_locationtimeinrs <- interact_plot(
     Speed_EP_InteractiveModel,
     pred = PercentageLocation.sc,
     modx = TimeInReadingSession.sc,
-    legend.main = addline_format("Time in,Reading Session*"),
-    plot.points = TRUE,
-    point.alpha = .2,
+    legend.main = addline_format("Time in Reading Session*"),
+    plot.points = FALSE,
     interval = TRUE
 ) +
     figure_theme_with_top_legend +
     labs(
-        y = "Reading Speed as Proportion of Baseline Speed",
+        y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
         x = "Location in Text (%, centered and scaled)"
     )
 ```

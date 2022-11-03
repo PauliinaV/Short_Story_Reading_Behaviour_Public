@@ -28,28 +28,11 @@ This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts.
 
-```{r 'working directory for my purposes'}
-mypath_SSRBP <- getwd()
-if (!grepl("Short_Story_Reading_Behaviour_Public", mypath_SSRBP, fixed = TRUE)) {
-    # wrong working directory
-    if (!grepl("GITHUB", dirname(mypath_SSRBP), fixed = TRUE)) {
-        # directory name isn't GITHUB, unlike I would expect
-        if (grepl("GITHUB", mypath_SSRBP, fixed = TRUE)) {
-            # GITHUB is in the path
-            ## use mypath_SSRBP instead of dirname()
-            mypath_SSRBP <- paste0(
-                mypath_SSRBP,
-                "/Short_Story_Reading_Behaviour_Public"
-            )
-        }
-    } else {
-        # directory name is GITHUB
-        # save correct working directory
-        mypath_SSRBP <- paste0(
-            dirname(mypath_SSRBP),
-            "/Short_Story_Reading_Behaviour_Public"
-        )
-    }
+```{r}
+if (exists("AnalysisFilePath")) {
+    mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
+} else {
+    mypath_SSRBP <- getwd()
 }
 ```
 
