@@ -1,0 +1,459 @@
+---
+title: "Fig_TimelineGraph"
+author: "Pauliina Vuorinen"
+date: "26/09/2022-"
+output: html_document
+library: "~/Extra/RPackages.bib"
+---
+
+# Introduction
+
+The purpose of this script is to create graphs that show the contents of participants' reading sessions. A timeline plot is created which shows different engagement and reading speed types across time.
+
+## Setup
+
+```{r 'load packages'}
+library(tidyverse)
+library(dplyr)
+library(timelineS)
+```
+
+```{r 'figure theme for consistency', echo=FALSE}
+figure_theme_with_top_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend_position <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.key = element_blank(),
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10),
+        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+    )
+figure_theme_without_legend <-
+    theme_bw() +
+    theme(
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.ticks = element_blank(),
+        axis.title.x = element_text(size = 10, vjust = 0.5),
+        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
+        legend.key = element_blank(),
+        legend.position = "none",
+        plot.caption = element_text(size = 10),
+        strip.text.x = element_text(size = 10)
+    )
+```
+
+## Load data
+
+To create the timelines we use wrangled_tracking_data which was created in Prep_TrackingDataWrangling.Rmd.
+
+```{r 'load data'}
+wrangled_tracking_data <-
+    read.csv(
+        "Data/wrangled_tracking_data.csv",
+        header = TRUE,
+        sep = ";",
+        dec = ","
+    )
+wrangled_tracking_data <- select(wrangled_tracking_data, -X)
+```
+
+```{r 'change variable types'}
+str(wrangled_tracking_data)
+source("Functions/Functions_VariableTypeConversion.R")
+
+## turn columns into factors that should be factors
+wrangled_tracking_data[, c(
+    "UserId",
+    "StoryId",
+    "Direction",
+    "NavigationBlockDirection"
+)] <- convert.magic(
+    wrangled_tracking_data[, c(
+        "UserId",
+        "StoryId",
+        "Direction",
+        "NavigationBlockDirection"
+    )],
+    "factor"
+)
+## fix numeric columns that were automatically categorised as character
+wrangled_tracking_data[, c(
+    "BaselineSpeed",
+    "DurationMinutes",
+    "ReadingBlockDuration",
+    "EngagedReadingDuration",
+    "EngagedReadingSpeed",
+    "NavigationBlockDuration"
+)] <- convert.magic(
+    wrangled_tracking_data[, c(
+        "BaselineSpeed",
+        "DurationMinutes",
+        "ReadingBlockDuration",
+        "EngagedReadingDuration",
+        "EngagedReadingSpeed",
+        "NavigationBlockDuration"
+    )],
+    "numeric"
+)
+## turn reading block (page view) number,
+### reading session number, and
+#### navigation block number into ordered factors
+wrangled_tracking_data[, c(
+    "ReadingBlockNumber",
+    "ReadingSessionNumber",
+    "NavigationBlockNumber"
+)] <- convert.magic(
+    wrangled_tracking_data[, c(
+        "ReadingBlockNumber",
+        "ReadingSessionNumber",
+        "NavigationBlockNumber"
+    )],
+    "ordered"
+)
+## fix logical variables
+wrangled_tracking_data[, c(
+    "IsBlurred",
+    "IsDialogOpen",
+    "IsMenuOpen",
+    "IsInactive",
+    "IsReading",
+    "IsPageOpen",
+    "IsDurationFixed"
+)] <- convert.magic(
+    wrangled_tracking_data[, c(
+        "IsBlurred",
+        "IsDialogOpen",
+        "IsMenuOpen",
+        "IsInactive",
+        "IsReading",
+        "IsPageOpen",
+        "IsDurationFixed"
+    )],
+    "logical"
+)
+
+## fix date and time variable types
+wrangled_tracking_data$Date <-
+    as.Date(
+        wrangled_tracking_data$Date,
+        format = "%Y-%m-%d"
+    )
+TempTimeObject <- strsplit(wrangled_tracking_data$Time, " ")
+TempTimeObject <- sapply(TempTimeObject, '[[', 2)
+wrangled_tracking_data$TempTimeObject <- TempTimeObject
+wrangled_tracking_data <- dplyr::select(wrangled_tracking_data, -Time)
+names(wrangled_tracking_data)[which(colnames(wrangled_tracking_data) == "TempTimeObject")] <- "Time"
+op <-
+    options(digits.secs = 3)
+wrangled_tracking_data$Time <-
+    strptime(
+        wrangled_tracking_data$Time,
+        format = "%H:%M:%OS"
+    )
+```
+
+```{r 'order df'}
+# order by User, date, time and event id
+wrangled_tracking_data <-
+    wrangled_tracking_data[
+        with(
+            wrangled_tracking_data,
+            order(UserId, Date, Time, Id)
+        ),
+    ]
+```
+
+## Create new variables
+
+First, we create a variable that is used as the colours in the timelines. We want to study the contents of reading sessions, and so the colours will show different Engagement types (Engagement/Disengagement/Dialog), in addition to EngagedSpeedLabels_DR (grouped into Slower than Deep Reading/Deep Reading/Faster than deep reading). See more information about engagement types and speed labels in Info folder.
+
+```{r 'create timeline group variable'}
+wrangled_tracking_data$EngagedSpeedLabel <- as.character(
+    wrangled_tracking_data$EngagedSpeedLabel
+)
+wrangled_tracking_data$EngagedSpeedLabel_DR <- ifelse(
+    wrangled_tracking_data$EngagedSpeedLabel == "SlowReading",
+    "SlowerThanDeepReading",
+    ifelse(
+        wrangled_tracking_data$EngagedSpeedLabel == "Skimming" |
+        wrangled_tracking_data$EngagedSpeedLabel == "Scanning" |
+        wrangled_tracking_data$EngagedSpeedLabel == "Browsing",
+        "FasterThanDeepReading",
+        wrangled_tracking_data$EngagedSpeedLabel
+    )
+)
+# create 'TimelineEngagementType' used for colours in the plot
+## use speed labels for any engaged reading events, and
+### engagement types for disengagements and dialog events
+wrangled_tracking_data$TimelineEngagementType <- ifelse(
+    wrangled_tracking_data$Engagement == "Engagement",
+    wrangled_tracking_data$EngagedSpeedLabel_DR,
+    wrangled_tracking_data$Engagement
+)
+# turn into a factor and fix levels
+wrangled_tracking_data$TimelineEngagementType <- as.factor(
+    wrangled_tracking_data$TimelineEngagementType
+)
+wrangled_tracking_data$TimelineEngagementType <- factor(
+    wrangled_tracking_data$TimelineEngagementType,
+    levels = c(
+        "SlowerThanDeepReading",
+        "DeepReading",
+        "FasterThanDeepReading",
+        "Disengagement",
+        "Dialog",
+        "DisruptedEngagement"
+    )
+)
+```
+
+To calculate the timeline start and end times, we first create some tests:
+
+```{r 'create tests needed for timeline times'}
+wrangled_tracking_data$IsNewUser <- (
+    wrangled_tracking_data$UserId
+    != lag(wrangled_tracking_data$UserId, 1)
+)
+wrangled_tracking_data$IsNewReadingSession <- (
+    wrangled_tracking_data$ReadingSessionNumber
+    != lag(wrangled_tracking_data$ReadingSessionNumber, 1)
+)
+# change 1st values to TRUE
+wrangled_tracking_data$IsNewReadingSession[is.na(wrangled_tracking_data$IsNewReadingSession)] <- TRUE
+wrangled_tracking_data$IsNewUser[is.na(wrangled_tracking_data$IsNewUser)] <- TRUE
+
+wrangled_tracking_data$IsLastEventInAReadingSession <- (
+    lead(wrangled_tracking_data$IsNewUser, 1) |
+    lead(wrangled_tracking_data$IsNewReadingSession, 1)
+)
+# change last value to TRUE
+wrangled_tracking_data$IsNewReadingSession[is.na(wrangled_tracking_data$IsLastEventInAReadingSession)] <- TRUE
+```
+
+We then create timeline event durations.
+CumulativeRSTime is used in the timelines as events' start and end times.
+Whereas the start time is the previous events' cumulative reading session duration (CumulativeRSTime), the end time is the current event's CumulativeRSTime. Each event's cumulative time includes that event's duration, and thus a CumulativeRSTime reflects the end of the current event and the beginning of the next event in the same reading session.
+
+Exceptions are done for the first and last event in a reading session:
+
+* The event that begins a new reading session is given a start time of 0
+* The event that ends the reading session is given CumulativeRSTime, if the event type is Engagement (Engagement == Engagement). However, if the last event is a disengagement or a dialog event, the event's end time is set to equal the start time. This is because disengagements and dialog events (events such as 'close' or 'openMenu') often appear at the end of a reading session, and they indicate that the participant is leaving the e-reader.
+
+```{r}
+# Start time is previous event's cumulative time
+## if the current event is not a new user or reading session
+### else, set to 0
+wrangled_tracking_data$TimelineStartTime <- ifelse(
+    !wrangled_tracking_data$IsNewUser &
+        !wrangled_tracking_data$IsNewReadingSession,
+        lag(wrangled_tracking_data$CumulativeRSTime, 1),
+        0
+)
+# End time == Start time if
+## the event is the last event and Engagement != Engagement
+### else, End time == CumulativeRSTime
+wrangled_tracking_data$TimelineEndTime <- ifelse(
+    wrangled_tracking_data$IsLastEventInAReadingSession &
+    (wrangled_tracking_data$Engagement != "Engagement"),
+    wrangled_tracking_data$TimelineStartTime,
+    wrangled_tracking_data$CumulativeRSTime
+)
+```
+
+## Create timelines
+
+Select five random participants:
+
+```{r}
+set.seed(122)
+sample <- sample(
+    unique(wrangled_tracking_data$UserId),
+    5
+)
+sample_wrangled_tracking_data <- filter(
+    wrangled_tracking_data,
+    UserId == sample[1] |
+    UserId == sample[2] |
+    UserId == sample[3] |
+    UserId == sample[4] |
+    UserId == sample[5]
+)
+```
+
+Create a plot without artefacts
+
+```{r}
+# modify UserId for labelling
+sample_wrangled_tracking_data$UserId_Labelled <- dplyr::recode(
+    sample_wrangled_tracking_data$UserId,
+    "14" = paste0("User", " ", "14"),
+    "49" = paste0("User", " ", "49"),
+    "53" = paste0("User", " ", "53"),
+    "58" = paste0("User", " ", "58"),
+    "60" = paste0("User", " ", "60")
+)
+
+# create one plot
+invisible(
+    TimelinePlotPartOne <- timelineG(
+        sample_wrangled_tracking_data,
+          start = "TimelineStartTime",
+          end = "TimelineEndTime",
+          names = "ReadingSessionNumber",
+          phase = "TimelineEngagementType",
+          width = 6,
+          group1 = "UserId_Labelled",
+          group2 = NA,
+        theme = theme_bw() +
+            theme(
+            plot.margin = margin(0.5, 0.5, 0.5, 0.5, "cm"),
+            panel.grid.minor = element_blank(),
+            panel.background = element_blank(),
+            axis.line = element_line(colour = "black"),
+            axis.text.x = element_text(size = 20),
+            axis.text.y = element_text(size = 20),
+            axis.ticks = element_blank(),
+            axis.title.x = element_text(size = 20, vjust = 0.5),
+            axis.title.y = element_text(
+                size = 20,
+                angle = 90,
+                vjust = 0.5,
+                margin = unit(c(0, 0.5, 0, 0), "cm")),
+            plot.title = element_text(size = 20),
+            legend.text = element_text(size = 12),
+            legend.title = element_text(size = 15),
+            legend.key = element_blank(),
+          #  legend.position = "top",
+           # legend.direction = "vertical",
+            strip.background = element_blank(),
+            strip.text = element_blank(),
+            strip.placement = "top",
+            panel.spacing = unit(1, "cm"),
+            panel.border = element_rect(colour = "black", fill = NA),
+            legend.background = element_rect(color="black", size=.5, linetype="solid")),
+        other = labs(
+            x = "Time in minutes",
+            y = "Reading sessions",
+            colour = "Engagement type"))
+)
+TimelinePlotPartTwo <- TimelinePlotPartOne +
+    scale_color_manual(
+        values = (
+            colours = c(
+                "SlowerThanDeepReading" = "red",
+                "DeepReading" = "#D8B70A",
+                "FasterThanDeepReading" = "#077307",
+                "Disengagement" = "black",
+                "Dialog" = "#d590be",
+                "DisruptedEngagement" = "orange")),
+        labels = c(
+            "Slower than Deep Reading",
+            "Deep Reading",
+            "Faster than Deep Reading",
+            "Disengagement",
+            "Dialog",
+            "Disrupted Engagement"
+        )) +
+        geom_text(aes(label = UserId_Labelled), x = Inf, y = Inf, hjust = 1.5, vjust = 1.5, size = 5)
+TimelinePlotPartTwo
+```
+
+```{r, eval=FALSE}
+ggsave("Fig_TimelinePlot_Sample.png", plot = TimelinePlotPartTwo, dpi = 300, height = 20, width = 25, units = "cm")
+```
+
+```{r}
+# create multiple plots in a pdf
+
+i = 1
+#plot_list = list()
+pdf("Fig_UserTimelines.pdf") # this also includes the basic coloured timelines - had to manually edit for now
+for (user in levels(wrangled_tracking_data$UserId)) {
+  UserSubset <- filter(wrangled_tracking_data, UserId == user)
+  
+    TLPlot <- timelineG(
+    UserSubset,
+    start = "TimelineStartTime",
+    end = "TimelineEndTime",
+    names = "ReadingSessionNumber",
+    phase = "TimelineEngagementType",
+    width = 5,
+    group1 = "UserId",
+    group2 = NA,
+    theme = theme(
+      legend.position = "left",
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.background = element_blank(),
+      axis.line = element_line(colour = "black")
+    ),
+    #text = element_text(
+    #size = 14, family = "Microsoft Sans Serif")),
+    other = labs(x = "Time in minutes",
+                 y = "Reading session",
+                 colour = "Engagement type",
+                 caption = user) +
+                 
+  ) +
+    scale_color_manual(
+        values = (
+            colours = c(
+                "SlowerThanDeepReading" = "red",
+                "DeepReading" = "#D8B70A",
+                "FasterThanDeepReading" = "#077307",
+                "Disengagement" = "black",
+                "Dialog" = "#d590be",
+                "DisruptedEngagement" = "orange")),
+        labels = c(
+            "Slower than Deep Reading",
+            "Deep Reading",
+            "Faster than Deep Reading",
+            "Disengagement",
+            "Dialog",
+            "Disrupted Engagement"
+        )) +
+        geom_vline(xintercept =
+            (wrangled_tracking_data[wrangled_tracking_data$IsNewReadingSession == TRUE, ]$TimelineStartTime),
+               colour = "lightgray")
+    TLPlot2
+
+  print(user) # tells which user's plot has been drawn
+  #plot_list[[i]] = GridPlot
+  #print(plot_list[[i]])
+  
+  i = i + 1
+  
+}
+dev.off()
+
+```
