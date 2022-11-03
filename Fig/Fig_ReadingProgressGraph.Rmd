@@ -510,7 +510,7 @@ Graph31b <- Graph31a +
 ChronologicalAblineStoryId1 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId1$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId1$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -595,7 +595,7 @@ Graph32b <- Graph32a +
 ChronologicalAblineStoryId2 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId2$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId2$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -680,7 +680,7 @@ Graph33b <- Graph33a +
 ChronologicalAblineStoryId3 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId3$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId3$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -765,7 +765,7 @@ Graph34b <- Graph34a +
 ChronologicalAblineStoryId4 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId4$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId4$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -850,7 +850,7 @@ Graph35b <- Graph35a +
 ChronologicalAblineStoryId5 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId5$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId5$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -935,7 +935,7 @@ Graph36b <- Graph36a +
 ChronologicalAblineStoryId6 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId6$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId6$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -1020,7 +1020,7 @@ Graph37b <- Graph37a +
 ChronologicalAblineStoryId7 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId7$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId7$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -1105,7 +1105,7 @@ Graph38b <- Graph38a +
 ChronologicalAblineStoryId8 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId8$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId8$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -1190,7 +1190,7 @@ Graph39b <- Graph39a +
 ChronologicalAblineStoryId9 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
-    "slope" = (100 / ((unique(StoryId9$CharacterLength) / 5) / 250)),
+    "slope" = (100 / ((unique(StoryId9$CharacterLength) / 5) / 260)),
     "label" = "Chronological"
 )
 ```
@@ -1273,7 +1273,7 @@ ggsave(
 )
 ```
 
-## 3. Progress graphs for two stories with most participants
+## 4. Progress graphs for one story with 5 random participants
 
 This graph is made for illustration purposes to be used in the manuscript.
 First, we find which stories have the highest number of participants:
@@ -1286,20 +1286,94 @@ participant_story_count <- grouped_navigation_blocks_data %>%
     )
 ```
 
-StoryId 1 has 11 participants and StoryId 2 has 10 participants, and so we use these two stories.
+StoryId 1 has 11 participants, and so we use StoryId 1.
+
+Randomly select five participants who read StoryId 1:
 
 ```{r}
-Graph31e_grid <- Graph31e + figure_theme_without_legend
-Graph32e_grid <- Graph32e + figure_theme_without_legend
-GridArrangedPlot <- grid.arrange(Graph31e_grid, Graph32e_grid, nrow = 1)
+set.seed(122)
+five_participants <- sample(unique(StoryId1$UserId), 5)
 ```
+
+Re-create a figure for StoryId 1 with only these five participants:
+
+```{r}
+StoryId1_sample <- filter(StoryId1,
+    UserId == five_participants[1] |
+    UserId == five_participants[2] |
+    UserId == five_participants[3] |
+    UserId == five_participants[4] |
+    UserId == five_participants[5])
+```
+
+```{r}
+Graph4a <- ggplot(
+    StoryId1_sample,
+    aes(
+        x = GraphDuration,
+        y = Per * 100,
+        colour = UserId
+    )
+)
+```
+
+```{r}
+Graph4b <- Graph4a +
+    geom_line(size = .9) +
+    labs(
+        y = "Location in Story (%)",
+        x = "Cumulative time spent reading (min)",
+    ) +
+    coord_cartesian(xlim = c(0, 100), ylim = c(0, 120), expand = FALSE) +
+    scale_y_continuous(breaks = c(50, 100)) +
+    scale_x_continuous(breaks = c(0, 30, 60, 90))
+```
+
+```{r}
+ChronologicalAblineStoryId1 <- data.frame(
+    "intercept" = 0,
+    # slope value is (100/((character length/5)/population average speed))
+    "slope" = (100 / ((unique(StoryId1_sample$CharacterLength) / 5) / 260)),
+    "label" = "Chronological"
+)
+```
+
+```{r}
+Graph4c <- Graph4b +
+    geom_abline(
+        data = ChronologicalAblineStoryId1,
+        aes(
+            intercept = intercept,
+            slope = slope,
+            colour = label
+        ),
+        linetype = "longdash",
+        size = 1,
+        colour = "black"
+    )
+```
+
+```{r}
+Graph4d <- Graph4c +
+    figure_theme_without_legend
+```
+
+```{r, warning=FALSE}
+Graph4e <- Graph4d +
+    coord_flip(
+        ylim = c(0, 100),
+        xlim = c(0, 90)
+    )
+Graph4e
+```
+
 
 ```{r, eval=FALSE}
 ggsave(
-    "Fig_ProgressGraphTwoStory.png",
-    plot = GridArrangedPlot,
+    "Fig_ProgressGraphStoryId1.png",
+    plot = Graph31e,
     width = 5,
-    height = 6,
+    height = 5,
     units = "in",
     dpi = 300
 )
