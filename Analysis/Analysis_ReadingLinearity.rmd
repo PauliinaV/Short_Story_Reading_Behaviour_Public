@@ -828,7 +828,7 @@ linearity_rc_cmotscomp <- interact_plot(
     modx = "CInterest.sc",
     data =  linearity_measure_data,
     interval = TRUE,
-    legend.main = addline_format("Contextual motivation score")
+    legend.main = addline_format("Contextual,motivation score")
 ) +
     figure_theme_with_top_legend +
     labs(
@@ -875,7 +875,7 @@ linearity_effectplot_eexp <- interact_plot(
     modx = "Eexp2DeviceRecFreq.sc",
     data =  linearity_measure_data,
     interval = TRUE,
-    legend.main = "Electronic Experience 2") +
+    legend.main = addline_format("Electronic,Experience 2")) +
     figure_theme_with_top_legend +
     labs(
         y = addline_format("Odds of initiating,nonlinear navigation"),
@@ -927,8 +927,8 @@ First, we select the fixed effects in the model backward stepwise until the mode
 
 
 ```{r}
-linearity_measure_data$StartsNonlinearity_lag1 <- lag(linearity_measure_data$StartsNonlinearity, 1)
-linearity_measure_data$StartsNonlinearity_lag2 <- lag(linearity_measure_data$StartsNonlinearity, 2)
+linearity_measure_data$Observation_lag1 <- lag(linearity_measure_data$StartsNonlinearity, 1)
+linearity_measure_data$Observation_lag2 <- lag(linearity_measure_data$StartsNonlinearity, 2)
 ```
 
 
@@ -947,21 +947,21 @@ We visualise connection to previous events to see if initiating nonlinearity on 
 Previous page-view:
 
 ```{r, include=FALSE}
-table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$StartsNonlinearity_lag1)
+table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$Observation_lag1)
 ggplot(
     linearity_measure_data,
     aes(StartsNonlinearity, ..count..)
 ) +
-    geom_bar(aes(fill = StartsNonlinearity_lag1), position = "dodge") +
+    geom_bar(aes(fill = Observation_lag1), position = "dodge") +
     theme_classic()
 ```
 
 Two pages before the current page-view:
 
 ```{r, include=FALSE}
-table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$StartsNonlinearity_lag1)
+table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$Observation_lag1)
 ggplot(linearity_measure_data, aes(StartsNonlinearity, ..count..)) +
-    geom_bar(aes(fill = StartsNonlinearity_lag2), position = "dodge") +
+    geom_bar(aes(fill = Observation_lag2), position = "dodge") +
     theme_classic()
 ```
 
@@ -1042,13 +1042,13 @@ Contrasts for categorical variables:
 
 ```{r 'categorical contrasts ep'}
 # previous event (lag of 1)
-linearity_measure_data$StartsNonlinearity_lag1 <- as.factor(linearity_measure_data$StartsNonlinearity_lag1)
-contrasts(linearity_measure_data$StartsNonlinearity_lag1) <- contr.helmert.unweighted(linearity_measure_data$StartsNonlinearity_lag1)
-contrasts(linearity_measure_data$StartsNonlinearity_lag1)
+linearity_measure_data$Observation_lag1 <- as.factor(linearity_measure_data$Observation_lag1)
+contrasts(linearity_measure_data$Observation_lag1) <- contr.helmert.unweighted(linearity_measure_data$Observation_lag1)
+contrasts(linearity_measure_data$Observation_lag1)
 # two events back (lag of 2)
-linearity_measure_data$StartsNonlinearity_lag2 <- as.factor(linearity_measure_data$StartsNonlinearity_lag2)
-contrasts(linearity_measure_data$StartsNonlinearity_lag2) <- contr.helmert.unweighted(linearity_measure_data$StartsNonlinearity_lag2)
-contrasts(linearity_measure_data$StartsNonlinearity_lag2)
+linearity_measure_data$Observation_lag2 <- as.factor(linearity_measure_data$Observation_lag2)
+contrasts(linearity_measure_data$Observation_lag2) <- contr.helmert.unweighted(linearity_measure_data$Observation_lag2)
+contrasts(linearity_measure_data$Observation_lag2)
 ```
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
@@ -1096,7 +1096,7 @@ The model includes 10 parameters before adding interactions, and `r nrow(lineari
 
 ```{r}
 AdditiveStructure_EP <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId)"
 )
 ```
 
@@ -1120,7 +1120,7 @@ Similarly to the reader characteristics model, story indicator accounts for zero
 
 ```{r}
 AdditiveStructure_EP_Adjusted <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | UserId)"
 )
 ```
 
@@ -1160,7 +1160,7 @@ We create a new model structure with interactions between all predictors of inte
 
 ```{r}
 InteractiveStructure_EP_Adjusted <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + StartsNonlinearity_lag1 + StartsNonlinearity_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + StartsNonlinearity_lag1 : StartsNonlinearity_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1 : Observation_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | UserId)"
 )
 ```
 
@@ -1383,8 +1383,8 @@ summary(Linearity_EP_InteractiveModel_Adjusted_influential254)
 
 Linearity of reading is significantly predicted by
 1. A main effect of screensize (WindowWidth)
-2. A main effect of previous event (navigation event k-1, 'StartsNonlinearity_lag1')
-3. A main effect of the event preceeding previous (navigation event k-2, 'StartsNonlinearity_lag2')
+2. A main effect of previous event (navigation event k-1, 'Observation_lag1')
+3. A main effect of the event preceeding previous (navigation event k-2, 'Observation_lag2')
 4. A main effect of time since the beginning of a reading session ('TimeInReadingSession')
 5. An interaction effect between reading session number and location in text
 6. An interaction effect between time in a reading session and location in text
@@ -1427,7 +1427,7 @@ The results of the model indicated that previous event (lag 1) was a significant
 ```{r}
 linearity_ep_previousevent <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
-    pred = "StartsNonlinearity_lag1",
+    pred = "Observation_lag1",
     data =  subset_without_observation254,
     interval = TRUE
 ) +
@@ -1447,7 +1447,7 @@ In addition to the event at event~k-1~, the event~k-2~ was a significant predict
 ```{r}
 linearity_ep_lag2 <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
-    pred = "StartsNonlinearity_lag2",
+    pred = "Observation_lag2",
     interval = TRUE,
 ) +
     figure_theme_without_legend +

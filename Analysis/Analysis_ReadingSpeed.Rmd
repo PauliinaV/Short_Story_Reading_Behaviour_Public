@@ -784,7 +784,7 @@ speed_effectplot_cmotscomp <- interact_plot(
     pred = "SCompetence.sc",
     modx = "CInterest.sc",
     data =  reading_speed_measure_data,
-    legend.main = "Contextual motivation score*",
+    legend.main = addline_format("Contextual,motivation score"),
     plot.points = TRUE,
     point.size = 1,
     interval = TRUE,
@@ -815,7 +815,7 @@ speed_effectplot_electronicexperiencescomp <-
         data = reading_speed_measure_data,
         plot.points = FALSE,
         interval = TRUE,
-        legend.main = addline_format("Electronic experience 2"),
+        legend.main = addline_format("Electronic,experience 2"),
         mod2.labels = c("-1SD Electronic Experience 1", "Mean Electronic Experience 1", "+1SD Electronic Experience 1"),
         colors = c("orange", "darkred", "navy"),
         point.shape = TRUE
@@ -1350,7 +1350,7 @@ speed_ep_locationrsnumb <- interact_plot(
     Speed_EP_InteractiveModel,
     pred = PercentageLocation.sc,
     modx = ReadingSessionNumber.sc,
-    legend.main = addline_format("Reading Session Number*"),
+    legend.main = addline_format("Reading Session,Number"),
     plot.points = FALSE,
     interval = TRUE
 ) +
@@ -1372,7 +1372,7 @@ speed_ep_locationtimeinrs <- interact_plot(
     Speed_EP_InteractiveModel,
     pred = PercentageLocation.sc,
     modx = TimeInReadingSession.sc,
-    legend.main = addline_format("Time in Reading Session*"),
+    legend.main = addline_format("Time in Reading,Session"),
     plot.points = FALSE,
     interval = TRUE
 ) +
