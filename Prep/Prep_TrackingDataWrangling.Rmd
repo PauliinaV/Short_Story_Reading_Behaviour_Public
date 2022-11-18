@@ -582,6 +582,16 @@ table(reading_session_artefacts$UserId)
 
 In total `r nrow(reading_session_artefacts)` reading sessions are identified as artefacts, from `r length(unique(reading_session_artefacts$UserId))` different participants (`r round(length(unique(reading_session_artefacts$UserId))/(length(unique(raw_tracking_data$UserId)))*100, 2)`% of participants).
 
+Save dataset of reading session artefacts. The df has already been saved and so the below code is not run:
+
+```{r, eval=FALSE}
+## NOT RUN:
+write.csv2(
+    reading_session_artefacts,
+    "reading_session_artefacts.csv"
+)
+```
+
 Remove reading session artefacts:
 
 ```{r 'remove reading session artefacts'}
