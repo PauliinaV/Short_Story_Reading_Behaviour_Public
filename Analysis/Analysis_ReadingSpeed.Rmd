@@ -787,6 +787,7 @@ speed_effectplot_cmotscomp <- interact_plot(
     legend.main = addline_format("Contextual,motivation score"),
     plot.points = TRUE,
     point.size = 1,
+    point.alpha = .2,
     interval = TRUE,
     point.shape = TRUE
 ) +
