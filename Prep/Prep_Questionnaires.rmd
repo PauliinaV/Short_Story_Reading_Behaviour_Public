@@ -48,7 +48,7 @@ library(corrplot)
 library(ltm)
 ```
 
-```{r}
+```{r 'external-file-call'}
 if (exists("AnalysisFilePath")) {
     mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
 } else {
@@ -145,7 +145,7 @@ all_questions_data <- raw_questionnaire_data %>%
 
 We check participants' demographic information, including their gender, age, and whether English is their native language or not. First, we create a new dataset with only these columns:
 
-```{r 'create a dataset on demographics'}
+```{r 'create-a-dataset-on-demographics'}
 demographics_data <-
     all_answer_data[, c(1, 22:24)]
 names(demographics_data)[2:4] <- c("Age", "Gender", "NativeEnglish")
@@ -419,10 +419,10 @@ The questionnaire consists of multiple different components:
 
 Similarly to IMI-R, we create scores for the subcomponents by summing the scores together. We also inspect cronbach's alpha to assess the internal consistency of IMI in our sample.
 
-In addition to these three subcomponents, the version of the IMI that we used in the study had questions on 'effort' and 'pressure' subcomponents as well. Whereas effort indicates how effortful participants found reading of the short story, pressure indicates whether participants experienced feelings of pressure to read to story. These two components were not included in analyses because of three reasons: (1) we had not determined hypotheses concerning the subcomponents and thus they were not considered to be important variables, (2) feedback from participants indicated that the items in the 'effort' subcomponent were ambiguous. Indeed, putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story. (3) The subcomponents showed poor psychometric properties: the 'pressure' component had poor internal consistency (Cronbach's alpha < .5), whereas the 'effort' component was not correlated with the other elements in the questionnaire. Due to these reasons, the 'effort' and 'pressure' scores were not used in analyses,
+In addition to these three subcomponents, the version of the IMI that we used in the study had questions on 'effort' and 'pressure' subcomponents as well. Whereas effort indicates how effortful participants found reading of the short story, pressure indicates whether participants experienced feelings of pressure to read to story. These two components were not included in analyses because of three reasons: (1) we had not determined hypotheses concerning the subcomponents and thus they were not considered to be important variables, (2) feedback from participants indicated that the items in the 'effort' subcomponent were ambiguous. Indeed, putting a lot of effort in reading a text can indicate of positive investment in the activity, or a negative burden of completing the short story. (3) The subcomponents showed poor psychometric properties: the 'pressure' component had poor internal consistency (Cronbach's alpha < .5), whereas the 'effort' component was not correlated with the other elements in the questionnaire. Due to these reasons, the 'effort' and 'pressure' scores were not used in analyses.
 
 First, we create a dataset with only the responses to IMI and tidy the answers to usable format:
-```{r 'create dataset for IMI'}
+```{r 'create-dataset-for-IMI'}
 # select correct columns from all_answer_data
 IMI_data <- all_answer_data[, c(
     1,
@@ -449,7 +449,7 @@ IMI_data <- IMI_data %>%
 
 Missing responses need to be removed, and so we check if IMI-R has any missing responses.
 
-```{r 'remove missing values', include=FALSE}
+```{r 'remove-missing-values', include=FALSE}
 any(is.na(IMI_data))
 ```
 
@@ -457,8 +457,7 @@ IMI has no missing responses, and so *n* remains `r nrow(IMI_data)`
 
 Some of the IMI items are reverse coded. The scores of these items are reversed:
 
-```{r 'reverse IMI questions'}
-# reversed questions
+```{r 'reverse-IMI-questions'}
 ReversedItemsIMI <- c(
     "questionnaire22_9",
     "questionnaire22_10",
