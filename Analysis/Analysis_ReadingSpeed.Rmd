@@ -567,7 +567,7 @@ fixef(Speed_RC_FullModel)
 
 ### Model Assumptions
 
-All lmer models were tested for (1) multicollinearity, (2) influential observations, (3) heteroscedasticity, (4) normality of random effects, and (5) normality of random effects
+All lmer models were tested for (1) multicollinearity, (2) influential observations, (3) heteroscedasticity, and (4) normality of random effects
 
 #### 1. Multicollinearity
 
