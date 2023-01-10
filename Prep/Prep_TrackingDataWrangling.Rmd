@@ -575,6 +575,14 @@ reading_session_details$PotentialReadingSessionArtefact <-
     )
 ```
 
+We save information about reading sessions for usage in the manuscript:
+
+```{r 'save-reading-session-details'}
+# write.csv2(
+#      reading_session_details,
+#      "reading_session_details.csv")
+```
+
 We then create a new dataframe to inspect which sessions were flagged as artefacts.
 
 ```{r 'check artefacts'}
