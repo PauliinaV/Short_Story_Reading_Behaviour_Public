@@ -12,7 +12,6 @@ The purpose of this script is to create a dataframe that collects together infor
 
 First, we compute a measure of word frequency and number of different words in each story to capture text complexity.
 Second, we add information about length of each story in words and characters.
-Finally, we add information about the average rating of each story.
 
 Nine short stories were included in the study, however, only eight stories are analysed in the script. The final short story was thought to have a Creative Commons licence, but after the study recruitment was finished, it was realised that the story was attributed the licence in error. As a result, this story is not shared or named in the files. Word frequency, length, and average rating were captured for this story similarly to the eight other stories, but the code is not included in this script.
 
@@ -166,9 +165,6 @@ AllStories <- data.frame(
     AverageWordFrequency = NA,
     SDWordFrequency = NA,
     NumberOfWords = NA,
-    NumberOfSentences = NA,
-    AverageSentenceLength = NA,
-    SDSentenceLength = NA,
     Summary = Summaries$Summary,
     Story = StoryText
 )
@@ -228,9 +224,6 @@ NinthStory <- data.frame(
     AverageWordFrequency = 3.834,
     SDWordFrequency = 14.2885,
     NumberOfWords = 1608,
-    NumberOfSentences = NA,
-    AverageSentenceLength = NA,
-    SDSentenceLength = NA,
     Summary = NA,
     Story = NA
 )
@@ -249,65 +242,7 @@ ggplot(AllStories, aes(x = NumberOfWords, y = AverageWordFrequency, colour = Aut
 cor.test(AllStories$AverageWordFrequency, AllStories$NumberOfWords)
 ```
 
-Number of words and average word frequency are not significantly correlated with each other.
-
-## Number of Sentences and Sentence length
-
-In addition to word frequency, we want estimates on the number of different sentences in the short stories and the average sentence length.
-
-```{r}
-for (story in 1:length(AuthorList)) {
-    # create a subset for one story:
-    temporary_df <- filter(
-        AllStories,
-        Author == AuthorList[story]
-    )
-    # Separate sentences
-    Sentences <- str_split(
-        temporary_df$Story,
-        pattern = "[.!?]\\s"
-    )
-    Sentences <- unlist(Sentences)
-    # count number of sentences
-    AllStories[AllStories$Author == AuthorList[story], "NumberOfSentences"] <- length(Sentences)
-    # count sentence length
-    sentences_data <- data.frame(
-        Sentences = Sentences,
-        NumberOfWords = NA
-    )
-    sentences_data$NumberOfWords <- str_count(sentences_data$Sentences, " ")
-    # counting spaces misestimates sentence length by 1
-    ## because there is no space at the end of the sentence
-    ### Therefore, we +1 to each sentence word count
-    sentences_data$NumberOfWords <- sentences_data$NumberOfWords + 1
-    # count average sentence length:
-    AllStories[AllStories$Author == AuthorList[story], "AverageSentenceLength"] <- mean(
-        sentences_data$NumberOfWords
-    )
-    AllStories[AllStories$Author == AuthorList[story], "SDSentenceLength"] <- sd(
-        sentences_data$NumberOfWords
-    )
-}
-```
-
-Sentence information for the ninth story were calculated separately. We add this information to the AllStories dataframe:
-
-```{r}
-AllStories[AllStories$Author == "Unnamed", "NumberOfSentences"] <- 460
-AllStories[AllStories$Author == "Unnamed", "AverageSentenceLength"] <- 16.2283
-AllStories[AllStories$Author == "Unnamed", "SDSentenceLength"] <- 11.7276
-```
-
-The average number of sentences in a story is `r round(mean(AllStories$NumberOfSentences), 2)` and the average number of words in a sentence is `r round(mean(AllStories$AverageSentenceLength), 2)`
-
-```{r}
-ggplot(AllStories, aes(x = NumberOfSentences, y = AverageSentenceLength, colour = Author)) +
-    geom_point() +
-    theme_classic()
-cor.test(AllStories$AverageSentenceLength, AllStories$NumberOfSentences)
-```
-
-Average sentence length and number of sentences are significant negatively correlated. This means that stories that had longer sentences were likely to have fewer sentences than stories with shorter sentences.
+Number of unique words and average word frequency are not significantly correlated with each other.
 
 ## Story indicators and length
 
@@ -368,7 +303,7 @@ AllStories <- merge(AllStories, StoryInformation, by = "Author")
 
 ## Story Ratings
 
-Participants were assigned to read a short story based on their interest ratings. These interest ratings were gathered by asking participants to read through a descriptive summary of each story (see the manuscript for more information) and rate their interest in reading each one in full. Half of the participants were then assigned to the high-autonomy condition in which they were given the story that they rated as most enjoyable, whereas the other half were placed in the low-autonomy groud and given a story that they rated as least enjoyable.
+Participants were assigned to read a short story based on their interest ratings. These interest ratings were gathered by asking participants to read through a descriptive summary of each story (see the manuscript for more information) and rate their interest in reading each one in full. Half of the participants were then assigned to the high-autonomy condition in which they were given the story that they rated as most enjoyable, whereas the other half were placed in the low-autonomy group and given a story that they rated as least enjoyable.
 
 The ratings were done on a 5-point Likert-scale from *“not at all interested”* to *“very interested”*.
 
@@ -525,8 +460,8 @@ The dataframe is saved for usage in other scripts.
 The data has already been saved, and so the below r code chunk is not run.
 
 ```{r, eval=FALSE, echo=TRUE, save wrangled data}
-write.csv2(
-    AllStories,
-    "story_information_data.csv"
-)
+# write.csv2(
+#     AllStories,
+#     "story_information_data.csv"
+# )
 ```
