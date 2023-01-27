@@ -227,7 +227,7 @@ linearity_measure_data <- merge(
 # measure and information about stories
 linearity_measure_data <- merge(
     linearity_measure_data,
-    story_information_data[, c(1:3, 11)],
+    story_information_data[, c(1:3, 8)],
     all.x = TRUE,
     by = "StoryId"
 )
