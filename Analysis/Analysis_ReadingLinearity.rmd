@@ -677,7 +677,9 @@ All predictors VIF is below 2.5, indicating that the model is no longer affected
 
 ### Model Assumptions
 
-All generalised linear mixed models were tested for (1) multicollinearity, (2) under- and overdispersion, (3) heteroscedasticity, (4) influential observations, and (5) normality of random effects.
+All generalised linear mixed models were tested for (1) multicollinearity, (2) heteroscedasticity, (3) influential observations, and (4) normality of random effects.
+
+Under- and overdispersion was not tested considering that the observations cannot be effectively grouped by predictors (see https://stats.stackexchange.com/a/200848).
 
 #### 1. Multicollinearity
 
@@ -698,27 +700,7 @@ plot(check_collinearity(Linearity_RC_Model_RemovedStoryId))
 
 Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2.5, and usually VIF > 5 is used as an indicator of potential multicollinearity.
 
-#### 2. Under- and Overdispersion
-
-Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
-
-```{r, include=FALSE}
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_RC_Model_RemovedStoryId, plot = F)
-```
-
-```{r, include=FALSE}
-# plotQQunif(simulated_model_output)
-```
-
-The model does not deviate from expected distribution according to the qqplot.
-
-```{r, include=FALSE}
-# testDispersion(simulated_model_output)
-```
-
-The dispersion test is not significant, indicated that the model is not affected by under- or overdispersion.
-
-#### 3. Heteroscedasticity
+#### 2. Heteroscedasticity
 
 We use the same simulated_model_output created in step 2 to test heteroscedasticity
 
@@ -728,7 +710,7 @@ We use the same simulated_model_output created in step 2 to test heteroscedastic
 
 The p-value is not significant, and the lines lie flat and horizontal in the plot, close to the reference lines. This indicates that the residuals are homoscedastic.
 
-#### 4. Influential Observations
+#### 3. Influential Observations
 
 We test influential observations with Cook's Distance:
 
@@ -759,7 +741,7 @@ We further inspect outliers using the simulated_model_output and DHARMa's outlie
 
 The test and the plot indicate that none of the observations are influential. We trust this judgement after off-script experimentation indicated that removal of the most influential observation flagged earlier does not affect results.
 
-#### 5. Normality of Random Effects
+#### 4. Normality of Random Effects
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId'. The random intercept of 'StoryId' was removed from the selected model.
 
@@ -1188,7 +1170,9 @@ fixef(Linearity_EP_InteractiveModel_Adjusted)
 
 ### Model Assumptions
 
-All generalised linear mixed models were tested for (1) multicollinearity, (2) under- and overdispersion, (3) influential observations, (4) heteroscedasticity, and (5) normality of random effects.
+All generalised linear mixed models were tested for (1) multicollinearity, (2) influential observations, (3) heteroscedasticity, and (4) normality of random effects.
+
+Under- and overdispersion was not tested considering that the observations cannot be effectively grouped by predictors (see https://stats.stackexchange.com/a/200848).
 
 #### 1. Multicollinearity
 
@@ -1212,28 +1196,7 @@ plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted))
 
 The model predictors do not seem to be multicollinear. All VIF < 4, and usually VIF > 5 is used as an indicator of potential multicollinearity.
 
-#### 2. Under- and Overdispersion
-
-Under- and overdispersion occur when the data shows less or more variation, respectively, than what we would expect. We test dispersion with simulation-based tests from DHARMa:
-
-```{r, include=FALSE}
-set.seed(1234) # for reproducibility
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_Adjusted, plot = F)
-```
-
-```{r, include=FALSE}
-# plotQQunif(simulated_model_output)
-```
-
-The model does not deviate from the expected distribution according to the qqplot.
-
-```{r, include=FALSE}
-# testDispersion(simulated_model_output)
-```
-
-The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
-
-#### 3. Influential Observations
+#### 2. Influential Observations
 
 We test influential observations with Cook's Distance:
 
@@ -1311,7 +1274,7 @@ Assess influential observations after removing point 254:
 
 The plot indicates that the dataset still includes some influential observations. However, the influential observations' Cook's Distance has considerably reduced. Experimentation off-script indicated that the most prominently highlighted observations in the plot (#283 and #60) did not have an influence on model interpretation and so they can be retained in the model.
 
-#### 4. Heteroscedasticity
+#### 3. Heteroscedasticity
 
 Create a new simulated_model_output to test for heteroscedasticity:
 
@@ -1326,7 +1289,7 @@ simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_Interacti
 
 The p-value is not significant, and the lines lie flat and horizontal in the plot, close to the reference lines. This indicates that the assumption of heteroscedasticity is fulfilled.
 
-#### 5. Normality of Random Effects
+#### 4. Normality of Random Effects
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting the normality of 'UserId'. 'StoryId' was fit in the model as a fixed effect and so it is not inspected.
 
