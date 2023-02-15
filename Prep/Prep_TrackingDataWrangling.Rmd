@@ -8,13 +8,13 @@ library: "~/Extra/RPackages.bib"
 
 ## Introduction
 
-The purpose of this script is to clean the raw reading behaviour tracking data for our analysis.
+The purpose of this script is to clean the raw reading behaviour tracking data for analysis.
 
 ## Setup
 
 Load libraries, set working directory
 
-```{r, setup}
+```{r 'setup'}
 library(psych)
 library(tidyverse)
 library(tidyr)
@@ -35,7 +35,7 @@ Load raw data from Data -folder and change variable types. See documents in Info
 
 The raw tracking dataset has 10,390 tracking events from 62 participants (before exclusions).
 
-```{r, load-data}
+```{r 'load-data'}
 raw_tracking_data <-
     read.csv(
         "Data/preprocessed_raw_tracking_data.csv",
@@ -48,7 +48,7 @@ nrow(raw_tracking_data)
 length(unique(raw_tracking_data$UserId))
 ```
 
-```{r, change variable types}
+```{r 'change-variable-types'}
 str(raw_tracking_data)
 names(raw_tracking_data)[names(raw_tracking_data) == "BookId"] <- "StoryId"
 source("Functions/Functions_VariableTypeConversion.R")
@@ -127,7 +127,7 @@ raw_tracking_data$Time <-
     )
 ```
 
-```{r, order df}
+```{r 'order-df'}
 # order by User, date, time and event id
 raw_tracking_data <-
     raw_tracking_data[
@@ -138,27 +138,27 @@ raw_tracking_data <-
     ]
 ```
 
-All events that have been tracked outside the e-reader (IsReading == FALSE) need to be removed. The e-reader tracks some usage of the website landing page in order to determine when participants leave the e-reader. However, these events are not useful for the analysis and so they are removed:
+All events that have been tracked outside the e-reader (IsReading == FALSE) are removed. The e-reader tracks some usage of the website landing page in order to determine when participants leave the e-reader. However, these events are not useful for the analysis and so they are removed:
 
-```{r 'remove events outside e-reader'}
+```{r 'remove-events-outside-e-reader'}
 raw_tracking_data <- filter(
     raw_tracking_data,
     IsReading != FALSE
 )
 ```
 
-Removing the !IsReading events reduces the amount of events from 10,390 to 9,244
+Removing the !IsReading events reduces the amount of events from 10,390 to `r nrow(raw_tracking_data)`
 
 ## Exclusion criteria
 
 Sixty-two participants were recruited to take part in the study. Two of the participants did not finish the study, and so they are excluded from the sample. The final *n* = 60.
 
-```{r, exclusion}
+```{r 'exclusion'}
 raw_tracking_data <-
     filter(
         raw_tracking_data,
         (UserId != "33") &
-            (UserId != "61")
+        (UserId != "61")
     )
 ```
 
@@ -167,20 +167,22 @@ raw_tracking_data <-
 Fix unrealistic and misleading values in the tracking data. These errors arise from accidental miscoding during the collection of the tracking data, or alternative data formatting.
 
 1. Reading block numbers (page views) were recorded as zero when the participant was not viewing a page. This is misleading, and so zeros are turned to NAs.
-```{r, fix reading block formatting}
+
+```{r 'fix-reading-block-formatting'}
 raw_tracking_data[, "ReadingBlockNumber"][raw_tracking_data[, "ReadingBlockNumber"] == 0] <- NA
 ```
 
 2. Inactive timeout events are erroneously coded as 'engagements' in the raw data. The inactive timeout indicates that the page view has been masked due to > 5mins of inactivity, and therefore, these event types should be coded as 'disengagements'.
-```{r, fix inactiveTimeout engagement type}
+
+```{r 'fix-inactiveTimeout-engagement-type'}
 raw_tracking_data[raw_tracking_data$Type == "inactiveTimeout", ]$Engagement <- "Disengagement"
 ```
 
 ### Adjustments to event and navigation block durations
 
-Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because duration is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
+Event durations are important not only because they can tell us about how long an event lasted, but 'DurationMinutes' is also used to create cumulative durations (such as 'EngagementDuration'). The event durations are calculated by deducting an event's start time from the following event's start time. Therefore, the durations of events in the middle and the beginning of a reading session are accurate as long as all events are present in the tracking data. The last event in a reading session, however, has an excessive duration because it is miscalculated by comparing the event to the next one that is in a new reading session. This excessive duration is adjusted in two different ways, depending on whether the event is categorised as a 'disengagement' or an 'engagement'.
 
-```{r, find last event in reading session}
+```{r 'find-last-event-in-reading-session'}
 # make sure the df is correctly ordered
 raw_tracking_data <-
     raw_tracking_data[
@@ -204,25 +206,26 @@ raw_tracking_data$IsLastEventInReadingSession <-
 ```
 
 117 of the last reading session events are disengagements and five are engagements:
-```{r, check last event in reading session engagement types}
+
+```{r 'check-last-event-in-reading-session-engagement-types'}
 table(
     raw_tracking_data$Engagement,
     raw_tracking_data$IsLastEventInReadingSession
 )
 ```
 
-**Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see event types in info folder, document X), the duration of the event is recorded as 0. This is because a disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so its duration is arbitrary.
+**Disengagements.** If the last event in a reading session is a disengagement, such as 'close' or 'logout' (see more information on event types in Info folder), the duration of the event is recorded as 0. This is because a disengagement at the end of a reading session indicates of the participants' intention to leave the e-reader system, and so its duration is arbitrary.
 
 **Engagements.** Engagements that have a duration of >5min indicate of a missing tracking event. This can happen for a couple different reasons:
 
 * A reading session ending in an 'engagement' indicates that the final disengagement event (triggered by the closure of the e-reader system, for example, event of type 'logout') is missing.
-* In the middle of a reading session, an engagement event that has a duration of >5min is also indicative of a missing event: if an engagement event lasts for longer than 5 minutes, the data is missing a 'blur' and an 'inactiveTimeout' event from the tracking data. This is because the e-reader system automatically masks the text after 5 minutes of inactivity which triggers the 'blur' and 'inactiveTimeout' events
+* In the middle of a reading session, an engagement event that has a duration of >5min is also indicative of a missing event: if an engagement event lasts for longer than 5 minutes, the data is missing a 'blur' and an 'inactiveTimeout' event from the tracking data. This is because the e-reader system automatically masks the text after 5 minutes of inactivity which triggers the 'blur' and 'inactiveTimeout' events.
 
-Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails. The tracking works on the client side, but no temporary data storage is implemented to store events collected and so these events are not included in the tracking data.
+Missing events occur when the system doesn't have the time to record an event, for example, when the e-reader system is abruptly closed or when network connection fails. The tracking works on the client side, but no temporary data storage is implemented to store events collected and so these events are lost.
 
-Correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes
+Correctly recorded engagements should last for a maximum of 5 minutes before the e-reader system masks the text. Therefore, excessive engagement durations are checked by filtering the dataset for engagements that last for longer than 5.1 minutes to allow a slow delay in the mask appearing.
 
-```{r, find excessive engagement durations}
+```{r 'find-excessive-engagement-durations'}
 excessive_engagement_durations_subdata <-
     filter(
         raw_tracking_data,
@@ -238,7 +241,7 @@ The excessive durations are adjusted by creating new variables:
     * Set to 5 minutes for engagement events and to 0 for non-engagement events.
     * If an event is not the last event in a reading session or an excessive engagement duration, the event duration does not need to be adjusted and so AdjustedEventDuration = DurationMinutes
 
-```{r 'adjustments to event durations'}
+```{r 'adjustments-to-event-durations'}
 for (row in 1:nrow(raw_tracking_data)) {
     if (raw_tracking_data[row, "Engagement"] == "Engagement" &
         raw_tracking_data[row, "DurationMinutes"] > 5.1) {
@@ -258,14 +261,14 @@ for (row in 1:nrow(raw_tracking_data)) {
 }
 ```
 
-```{r, check AdjustedEventDuration 1/2}
+```{r 'check-AdjustedEventDuration-1/2'}
 table(
     raw_tracking_data$IsAdjustedDuration,
     raw_tracking_data$Engagement
 )
 ```
 
-The above code shows that `r sum(raw_tracking_data$IsAdjustedDuration)` event durations were adjusted.
+`r sum(raw_tracking_data$IsAdjustedDuration)` event durations were adjusted.
 
 Next:
 
@@ -273,7 +276,7 @@ Next:
     * NavigationBlockDuration sums together the durations of all events that belong in the same navigation block (events that include navigation in the same direction at roughly the same speed)
     * NavigationBlockDuration is therefore influenced by the error in event durations. We adjust navigation block duration by summing AdjustedEventDuration for each UserId and each NavigationBlockNumber
 
-```{r, adjust navigation block durations}
+```{r 'adjust-navigation-block-durations'}
 adjusted_navigationblock_duration <- raw_tracking_data %>%
     group_by(UserId, NavigationBlockNumber) %>%
     summarise(
@@ -288,9 +291,9 @@ raw_tracking_data <-
     )
 ```
 
-Finally, create a new dataframe without unadjusted event duration and navigation block duration to avoid confusion. 'AdjustedEventDuration' and 'AdjustedNavigationBlockDuration' are then renamed to 'DurationMinutes' and 'NavigationBlockDuration' for simplicity.
+Finally, we create a new dataframe without unadjusted event duration and navigation block duration to avoid confusion. 'AdjustedEventDuration' and 'AdjustedNavigationBlockDuration' are then renamed to 'DurationMinutes' and 'NavigationBlockDuration' for simplicity.
 
-```{r, remove unadjusted durations}
+```{r 'remove-unadjusted-durations'}
 adjusted_durations_data <- raw_tracking_data %>%
     select(-DurationMinutes, -NavigationBlockDuration)
 names(adjusted_durations_data)[names(adjusted_durations_data) == "AdjustedEventDuration"] <- "DurationMinutes"
@@ -301,18 +304,18 @@ names(adjusted_durations_data)[names(adjusted_durations_data) == "AdjustedNaviga
 
 Each event is given an engagement type that reflects how participants are using the e-reader at a time. Engagements can be divided in four groups:
 
-(1) Disengagement: the participant is not using the e-reader. The text is not visible, or the user is outside of the e-reader.
-(2) Dialog: the participant is using the menus or responding to the location prompt.
+(1) Disengagement: the participant is not using the e-reader or the text is not visible.
+(2) Dialog: the participant is using the menus or reading information sheets.
 (3) Engagement: the participant is engaged in using the e-reader, the text is visible and the e-reader is active.
-(4) DisruptedEngagement: the participant is engaged in using the e-reader, but only for 15 seconds or less continuously. The participant may have opened the e-reader by accident, or they may not be ready to resume the reading activity. The threshold of 15s is used in accordance to a study by @Iqbal2007 who used >15 seconds as an indicator of resumed engagement in the primary activity during a work engagement study.
+(4) DisruptedEngagement: the participant is engaged in using the e-reader, but only for 15 seconds or less continuously. The participant may have opened the e-reader by accident, or they may not be ready to resume the reading activity. The threshold of 15s is used in accordance to a study by @Iqbal2007 who used >15 seconds as an indicator of resumed engagement in the primary activity in a work engagement study.
 
-The raw data includes a variable called 'Engagement' which tells us about the engagement category of each event. However, DisruptedEngagements are not differentiated from Engagements in the raw data. Therefore, we adjust 'Engagement' to include the DisruptedEngagement category.
+The raw data includes a variable called 'Engagement' which tells us about the engagement category of each event. However, DisruptedEngagements are not differentiated from Engagements in the raw data. Therefore, the 'Engagement' column is adjusted.
 
-In order to do this, we need to determine how long each engagement category lasts continuously. Participants may have multiple events of the same engagement type consecutively and, for example, to check whether an engagement is longer than 15 seconds, these events need to be grouped together and given a continuous duration. We call this 'continuous engagement duration' (or occassionally, CED for short).
+In order to do this, we need to determine how long each engagement type lasts continuously. Participants may have multiple events of the same engagement type consecutively, and to check whether an engagement is longer than 15 seconds, these events need to be grouped together and calculated a continuous duration. We call this 'continuous engagement duration' (or occassionally, CED for short).
 
 First, we create a new dataframe to record detail on which events have the same engagement type:
 
-```{r}
+```{r 'create-CED-dataset'}
 CED_id_data <- data.frame(
     adjusted_durations_data$UserId,
     adjusted_durations_data$ReadingSessionNumber,
@@ -343,7 +346,7 @@ adjusted_durations_data <-
 
 Third, record 'EngagementTypeId' by looping through all events and checking if the current and previous event have the same engagement type:
 
-```{r 'create EngagementTypeId'}
+```{r 'create-EngagementTypeId'}
 # 'y' for the current row in the data
 ## used to e.g. save to a correct row in CED_id_data
 y <- 1
@@ -383,20 +386,21 @@ for (user in levels(adjusted_durations_data$UserId)) {
         }
     }
     print((round(((y / nrow(adjusted_durations_data)) * 100), 2)))
+    # the loop prints % done
 }
 ```
 
-Check if the loop had an unforeseen cases:
+Check if the loop had any unforeseen cases:
 
 ```{r}
 any(CED_id_data$EngagementTypeId == "CHECK")
 ```
 
-The loop worked well (in addition to automatic checks like this, all calculations have been manually checked)
+The loop worked well (in addition to automatic checks like this, all calculations have been manually checked).
 
 Next, we merge the CED_id_data with adjusted_durations_data:
 
-```{r 'merge CED_id_data with adjusted_durations_data'}
+```{r 'merge-CED_id_data-with-adjusted_durations_data'}
 adjusted_durations_data <- merge(
     adjusted_durations_data,
     CED_id_data,
@@ -409,9 +413,9 @@ adjusted_durations_data <- merge(
 )
 ```
 
-We can then calculate continuous durations into a new dataframe, and merge it with adjusted_durations_data:
+We can then calculate continuous durations into a new dataframe, and then merge them with adjusted_durations_data:
 
-```{r}
+```{r 'calculate-CED'}
 CED_data <- adjusted_durations_data %>%
     group_by(UserId, EngagementTypeId, Engagement, ReadingSessionNumber) %>%
     summarise(
@@ -435,7 +439,7 @@ adjusted_durations_data <- merge(
 Now that we have information on each continuous engagement category's duration, we can use the durations to re-categorise events' engagement types.
 If `(Engagement == Engagement) & (ContinuousEngagementSeconds <= 15)`, the event is categorised as 'DisruptedEngagement' rather than an 'Engagement'. Else, the engagement category remains the same.
 
-```{r}
+```{r 'identify-disrupted-engagements'}
 adjusted_durations_data$AdjustedEngagement <- NA
 adjusted_durations_data$Engagement <- as.character(adjusted_durations_data$Engagement)
 
@@ -447,9 +451,9 @@ for (row in 1:nrow(adjusted_durations_data)) {
         adjusted_durations_data[row, "AdjustedEngagement"] <- adjusted_durations_data[row, "Engagement"]
     }
     print((round(((row / nrow(adjusted_durations_data)) * 100), 2)))
+    # the loop prints % done
 }
 ```
-
 
 Check AdjustedEngagement and how it is different from Engagement:
 
@@ -458,7 +462,9 @@ any(is.na(adjusted_durations_data$AdjustedEngagement))
 table(adjusted_durations_data$AdjustedEngagement, adjusted_durations_data$Engagement)
 ```
 
-We then remove the original engagement category value from the data to reduce mistakes. For simplicity, we then rename the AdjustedEngagement variable as 'Engagement':
+In total, `r sum(adjusted_durations_data$AdjustedEngagement == "DisruptedEngagement")` engagements were re-categorised as disrupted engagements.
+
+We then remove the original engagement category value from the data to reduce mistakes. For simplicity, we rename the AdjustedEngagement variable as 'Engagement':
 
 ```{r}
 adjusted_durations_data <- dplyr::select(
@@ -470,21 +476,21 @@ names(adjusted_durations_data)[which(colnames(adjusted_durations_data) == "Adjus
 
 ### Reading session artefacts
 
-The data analysis for the current study was focused on engaged reading, and so very short reading sessions or sessions that only consist of disengagement events were not considered to be meaningful. Reading sessions with little reading may have occurred when participants attempted to resume a reading session but became quickly distracted by other things, or if they accidentally opened the browser tab with the e-reader.
+The data analysis for the current study is focused on engaged reading, and so very short reading sessions or sessions that only consist of disengagement events were not considered to be meaningful. Reading sessions with little reading may have occurred when participants attempted to resume a reading session but became quickly distracted by other things, or if they accidentally opened the browser tab in which the e-reader was open.
 
-We expected an intentional reading session to be captured by the following criteria:
+We expected intentional reading sessions to be captured by the following criteria:
 
 1. Reading sessions should last more than a minute,
 2. Less than 95% of the reading session duration should be disengagement events,
 3. Less than 85% of the reading session duration should be disengagement and dialog events
 
-To ensure that this threshold was meaningful and did not remove any reading sessions of interest, we compared the identified session artefacts to visualisations of participants' reading session timelines. See Fig_UserTimelinesWithArtefacts.pdf in Fig folder for reading session timelines with information on which artefacts were identified.
+To ensure that these thresholds was meaningful and did not remove any reading sessions of interest, we compared the identified session artefacts to visualisations of participants' reading session timelines. See Fig_UserTimelinesWithArtefacts.pdf in Fig folder for reading session timelines with information on which artefacts were identified.
 
 Comparison to the visualisations indicated that these three criteria were sufficient in detecting reading session artefacts.
 
 Create a new df for saving information about reading sessions:
 
-```{r}
+```{r 'create-dataset-for-detail-on-readingsessions'}
 UserList <- levels(adjusted_durations_data$UserId)
 reading_session_details <- data.frame(
     UserId = factor(),
@@ -499,7 +505,7 @@ reading_session_details <- data.frame(
 )
 ```
 
-```{r 'identify reading session artefacts'}
+```{r 'calculate-detail-on-readingsessions-to-identify-artefacts'}
 firstrow <- 1
 adjusted_durations_data$ReadingSessionNumber <-
     as.numeric(
@@ -556,15 +562,14 @@ for (user in UserList) {
 }
 ```
 
-Some of the participants' reading sessions are very short, and therefore they are identified as potential artefacts. This may be due to participants having the e-reader open on a separate tab on their computer or mobile device, if the tab is momentarily opened and then closed, the e-reader records a new event in a new reading session
-
 ```{r}
 hist(reading_session_details$EngagementProportion, breaks = 100)
 ```
 
-These potential reading session artefacts are identified based on criteria:
+Some of the participants' reading sessions are very short, and therefore they are likely to be artefacts.
+We identify these potential reading session artefacts on the three criteria:
 
-```{r}
+```{r 'identify-artefacts'}
 reading_session_details$PotentialReadingSessionArtefact <-
     ifelse(
         ((reading_session_details$SessionLength < 1) | # criteria 2
@@ -575,7 +580,7 @@ reading_session_details$PotentialReadingSessionArtefact <-
     )
 ```
 
-We save information about reading sessions for usage in the manuscript:
+Information about reading sessions is saved for usage in the manuscript. This code is not run a the dataframe has already been saved, and it can found in the 'Data' folder.
 
 ```{r 'save-reading-session-details'}
 # write.csv2(
@@ -585,7 +590,7 @@ We save information about reading sessions for usage in the manuscript:
 
 We then create a new dataframe to inspect which sessions were flagged as artefacts.
 
-```{r 'check artefacts'}
+```{r 'check-artefacts'}
 reading_session_artefacts <-
     filter(
         reading_session_details,
@@ -597,19 +602,18 @@ table(reading_session_artefacts$UserId)
 
 In total `r nrow(reading_session_artefacts)` reading sessions are identified as artefacts, from `r length(unique(reading_session_artefacts$UserId))` different participants (`r round(length(unique(reading_session_artefacts$UserId))/(length(unique(raw_tracking_data$UserId)))*100, 2)`% of participants).
 
-Save dataset of reading session artefacts. The df has already been saved and so the below code is not run:
+We save a copy of the reading_session_artefacts for later usage. Again, this dataset has already been saved and it can be found in the 'Data' folder.
 
-```{r, eval=FALSE}
-## NOT RUN:
-write.csv2(
-    reading_session_artefacts,
-    "reading_session_artefacts.csv"
-)
+```{r 'save-reading_session_artefacts', eval=FALSE}
+# write.csv2(
+#     reading_session_artefacts,
+#     "reading_session_artefacts.csv"
+# )
 ```
 
-Remove reading session artefacts:
+We then remove the reading session artefacts from the tracking data:
 
-```{r 'remove reading session artefacts'}
+```{r 'remove-reading-session-artefacts'}
 # merge dfs
 adjusted_durations_data <- merge(
     adjusted_durations_data,
@@ -626,22 +630,12 @@ artefacts_removed_tracking_data <-
 
 Removal of the artefacts reduces the number of events in the full dataset from `r nrow(adjusted_durations_data)` to `r nrow(artefacts_removed_tracking_data)`. The sample remains *n* = `r length(unique(artefacts_removed_tracking_data$UserId))`
 
-```{r}
-# order by User, date, time and event id
-artefacts_removed_tracking_data <-
-    artefacts_removed_tracking_data[
-        with(
-            artefacts_removed_tracking_data,
-            order(UserId, Date, Time, Id)
-        ),
-    ]
-```
-
 ## Add additional variables
 
 We then calculate some additional variables that will be useful later.
-EndLocation tells us about what is the last visible character on the page (as count of characters from the beginning of the story).
-VisibleColumns indicates whether the text is divided in one or two columns. The number of columns depends on how wide the user's browser window is. Any 'WindowWidth' that is larger than 1192 pixels is shown the text in two columns, whereas smaller browser windows are shown the text in one column. See Figure XX in the paper for the visualisation of different column set ups.
+
+* EndLocation tells us about what is the last visible character on the page (as count of characters from the beginning of the story).
+* VisibleColumns indicates whether the text is divided in one or two columns. The number of columns depends on how wide the user's browser window is. Any 'WindowWidth' that is larger than 1192 pixels is shown the text in two columns, whereas smaller browser windows are shown the text in one column. See Figure 2 in the paper for the visualisation of different column set ups.
 
 First, check that artefacts_removed_tracking_data is correctly ordered:
 
@@ -658,7 +652,7 @@ artefacts_removed_tracking_data <-
 
 Then create variables:
 
-```{r 'add column and end location information, cumulative time'}
+```{r 'add-column-and-end-location-information'}
 artefacts_removed_tracking_data$EndLocation <- (
     artefacts_removed_tracking_data$StartLocation +
         artefacts_removed_tracking_data$VisibleCharacterCount
@@ -670,7 +664,7 @@ artefacts_removed_tracking_data$VisibleColumns <- ifelse(
 )
 ```
 
-```{r 'cumulative time in a reading session'}
+```{r 'cumulative-time-in-a-reading-session'}
 # cumulative time in a reading session (RS),
 ## cumulative time when Engagement == "Engagement" in RS, and
 ### cumulative time when Engagement == "Engagement" across RSs
@@ -691,7 +685,7 @@ artefacts_removed_tracking_data <- as.data.frame(artefacts_removed_tracking_data
 
 Add information about the different books in the dataset:
 
-```{r 'add book information'}
+```{r 'add-book-information'}
 story_information_data <-
     read.csv(
         "Data/story_information_data.csv",
@@ -712,16 +706,17 @@ artefacts_removed_tracking_data$Percentage <- (
 
 Look into the amount of time that each participant spent engaged in using the e-reader:
 
-```{r 'create summary df for total engagement time'}
+```{r 'create-summary-df-for-total-engagement-time'}
 participant_engagement_time <- artefacts_removed_tracking_data %>%
     group_by(UserId) %>%
     summarise(TotalEngagedTime = max(CumulativeEngagementTime))
 ```
 
-```{r}
+```{r 'plot-engagement-time'}
 ggplot(participant_engagement_time) +
     geom_point(aes(x = UserId, y = (TotalEngagedTime / 60))) +
-    ggtitle("Total engagement time in hours")
+    labs(y = "Total engagement time in hours", x = "Participant indicator") +
+    theme_classic()
 ```
 
 - The x-axis of the graph shows each participant, whereas the y-axis represents total engagement time in hours. On average participants spent `r round(mean(participant_engagement_time$TotalEngagedTime), 2)` minutes using the e-reader. 
@@ -894,6 +889,7 @@ for (i in levels(artefacts_removed_tracking_data$UserId)) {
             rbind(grouped_navigation_blocks_data, temporary_df[1, ])
     }
     print(loopcount / length(levels(artefacts_removed_tracking_data$UserId)) * 100)
+    # the loop prints % done
     loopcount <- loopcount + 1
 }
 ```
@@ -901,18 +897,18 @@ for (i in levels(artefacts_removed_tracking_data$UserId)) {
 ## Save wrangled tracking data
 
 The wrangled tracking data is saved for usage in other scripts to compute reading behaviour measures and to eventually analyse the results.
-The dataset has already been saved, and so the below r code chunk is not run.
+The dataset has already been saved, and so the below r code chunks are not run.
 
 ```{r 'save-wrangled-data', eval=FALSE, echo=TRUE, save wrangled data}
-write.csv2(
-    artefacts_removed_tracking_data,
-    "wrangled_tracking_data.csv"
-)
+# write.csv2(
+#     artefacts_removed_tracking_data,
+#     "wrangled_tracking_data.csv"
+# )
 ```
 
 ```{r 'save-grouped-wrangled-data', eval=FALSE, echo=TRUE}
-write.csv2(
-    grouped_navigation_blocks_data,
-    "wrangled_grouped_tracking_data.csv"
-)
+# write.csv2(
+#     grouped_navigation_blocks_data,
+#     "wrangled_grouped_tracking_data.csv"
+# )
 ```
