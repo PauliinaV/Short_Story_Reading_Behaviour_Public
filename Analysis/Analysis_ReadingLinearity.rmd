@@ -1,11 +1,11 @@
 ---
 title: "Analysis_ReadingLinearity"
 author: "Pauliina Vuorinen"
-date: "27/06/2022-"
+date: "27/06/2022-07/03/2023"
 output: html_document
-library: "~/Extra/RPackages.bib"
+library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
+csl : ~/Extra/apa-7th-ed.csl
 ---
-
 
 ## Introduction
 
@@ -18,13 +18,13 @@ In this analysis script, StartsNonlinearity is used as an outcome variable in **
 
 **Information on the hypotheses**
 
-* H5a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
-* H5b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
-* H5c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H4a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H4b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H4c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
 
 ## Setup
 
-```{r, setup}
+```{r 'setup'}
 library(tidyverse)
 library(dplyr)
 library(psych)
@@ -41,65 +41,15 @@ library(jtools)
 getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 ```
 
-```{r 'figure theme for consistency', echo=FALSE}
-figure_theme_with_top_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    )
-figure_theme_without_legend_position <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.key = element_blank(),
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    )
-figure_theme_without_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.key = element_blank(),
-        legend.position = "none",
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10)
-    )
-```
 
-Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
+Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files.
 
-The working directory is not changed with setwd() because this script is knit remotely in other scripts.
+The working directory is not changed with setwd() because this script is knit remotely in other scripts. If using remotely, define 'AnalysisFilePath'. AnalysisFilePath refers to this exact file location, and so path to the main folder "Short_Story_Reading_Behaviour_Public" is two folders lower.
 
-```{r}
+```{r 'setwd'}
+getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
+# If AnalysisFilePath is not defined, use setwd() to refer to the main folder
+# setwd()
 if (exists("AnalysisFilePath")) {
     mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
 } else {
@@ -107,9 +57,51 @@ if (exists("AnalysisFilePath")) {
 }
 ```
 
+```{r 'load-figure-theme-for-consistency', echo=FALSE, warning="hide"}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Fig/Fig_FigureTheme.R"
+    )
+)
+```
+
+```{r 'load-helmert-contrasts-functions'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.weighted.R"
+    )
+)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.unweighted.R"
+    )
+)
+```
+
+```{r 'source-functions-for-line-adding'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_AddLine.R"
+    )
+)
+```
+
+```{r 'source-function-for-variabletype-conversion'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
+```
+
 ## Load data and check variable types
 
-```{r, load data}
+```{r 'load-data'}
 # load data
 linearity_measure_data <-
     read.csv(
@@ -126,7 +118,7 @@ linearity_measure_data <- dplyr::select(linearity_measure_data, -X) # remove row
 
 We then load in data from questionnaires:
 
-```{r 'load predictors: questionnaires'}
+```{r 'load-predictors:-questionnaires'}
 # IMI
 IMI_scores <-
     read.csv(
@@ -179,7 +171,7 @@ demographics_data <- dplyr::select(demographics_data, -X) # remove row numbers
 
 Load in information about the stories that participants read:
 
-```{r}
+```{r 'load-information-about-stories'}
 story_information_data <-
     read.csv(
         paste0(
@@ -195,7 +187,7 @@ story_information_data <- dplyr::select(story_information_data, -X) # remove row
 
 We then merge these dataframes together:
 
-```{r 'merge dfs'}
+```{r 'merge-dfs'}
 # measure and IMI
 linearity_measure_data <- merge(
     linearity_measure_data,
@@ -235,14 +227,8 @@ linearity_measure_data <- merge(
 
 ## Change variable types
 
-```{r 'change variable types'}
+```{r 'change-variable-types'}
 str(linearity_measure_data)
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_VariableTypeConversion.R"
-    )
-)
 
 ## turn columns into factors that should be factors
 linearity_measure_data[, c(
@@ -261,9 +247,9 @@ linearity_measure_data[, c(
 
 The reader characteristics model of linearity aims to address the following hypotheses:
 
-* H5a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
-* H5b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
-* H5c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H4a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H4b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
+* H4c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
 
 The reader characteristics model for linearity of reading takes the following structure:
 
@@ -276,14 +262,13 @@ $Y_{i} =
     SComp +
     CMot +
     CComp +
-    EExp1 +
-    EExp2 +
+    TR-EExp1 +
+    TR-EExp2 +
     Cond x SComp +
     CMot x SComp +
-    EExp1 x EExp2 +
-    EExp1 x EExp2 x SComp +
-    u_{Subject} +
-    u_{Story} +
+    TR-EExp1 x TR-EExp2 +
+    TR-EExp1 x TR-EExp2 x SComp +
+    u_{Story / Subject} +
     \varepsilon_{i}$ 
 
 where
@@ -296,13 +281,12 @@ where
 **SComp** is participants' situational competence (perception of competence to read the story), measured by the subcomponent of 'competence' from the IMI questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
 **CMot** is participants' contextual reading motivation, measured by the subcomponent of contextual interest from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
 **CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
-**EExp1** is frequency of using any electronic devices for long-form text reading purposes
-**EExp2** is frequency of using task-relevant devices for any reading purpose
-**$u_{Subject}$** indicates a random intercept of subject indicator
-**$u_{Story}$** indicates a random intercept of story indicator
+**TR-EExp1** is frequency of using any electronic devices for long-form text reading purposes
+**TR-EExp2** is frequency of using task-relevant devices for any reading purpose
+**$u_{Story / Subject}$** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
-Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, the remaining models (task switching and reading persistence) are modelled without 'Cond x SComp', 'CMot x SComp', and 'EExp1 x EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching and reading persistence are expected to be connected to motivation and electronic experience directly (main effects).
+Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, the remaining models (task switching and reading persistence) are modelled without 'Cond x SComp', 'CMot x SComp', and 'TR-EExp1 x TR-EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching and reading persistence are expected to be connected to motivation and electronic experience directly (main effects).
 
 ### Visualise outcome variable and predictors
 
@@ -312,7 +296,7 @@ We create graphs to inspect linearity of reading and its connection to other var
 
 The linearity measure, StartsNonlinearity, is a binary variable (whether each event initiates nonlinearity or not, TRUE/FALSE). To visualise it, we create counts:
 
-```{r}
+```{r 'count-summary-df'}
 linearity_measure_count <- linearity_measure_data %>%
     group_by(
         UserId,
@@ -375,7 +359,7 @@ The impact of window width (size of device and amount of text visible):
 ```{r, include=FALSE}
 ggplot(
     linearity_measure_data,
-    aes(x = StartsNonlinearity, y = WindowWidth, colour = UserId)
+    aes(x = StartsNonlinearity, y = WindowWidth)
 ) +
     geom_jitter(size = 2) +
     theme_classic() +
@@ -389,7 +373,7 @@ We then visualise the effect of DaysUntilDeadline:
 ```{r, include=FALSE}
 ggplot(
     linearity_measure_data,
-    aes(x = StartsNonlinearity, y = FirstTimeUntilDeadlineDays, colour = UserId)
+    aes(x = StartsNonlinearity, y = FirstTimeUntilDeadlineDays)
 ) +
     geom_jitter(size = 2) +
     theme_classic() +
@@ -504,26 +488,9 @@ ggplot(linearity_measure_count, aes(x = Eexp2DeviceRecFreq, y = Count, colour = 
 
 Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
 
-Load a function to create helmert contrasts for categorical variables:
-
-```{r 'load helmert contrasts functions rc'}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.weighted.R"
-    )
-)
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.unweighted.R"
-    )
-)
-```
-
 Contrasts for categorical variables:
 
-```{r 'categorical contrasts rc'}
+```{r 'categorical-contrasts-rc'}
 # whether native language is English or not
 linearity_measure_data$NativeEnglish <- as.factor(linearity_measure_data$NativeEnglish)
 contrasts(linearity_measure_data$NativeEnglish) <- contr.helmert.unweighted(linearity_measure_data$NativeEnglish)
@@ -543,7 +510,7 @@ contrasts(linearity_measure_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
 
-```{r 'scale continuous variables rc'}
+```{r 'scale-continuous-variables-rc'}
 # Situational competence
 linearity_measure_data$SCompetence.sc <-
     scale(linearity_measure_data$SCompetence,
@@ -588,33 +555,32 @@ linearity_measure_data$WindowWidth.sc <-
 
 ### Modelling by Reader Characteristics
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 16 parameters, and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/16 = `r round(nrow(linearity_measure_data)/16, 2)`
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 16 parameters, and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/16 = `r round(nrow(linearity_measure_data)/16, 2)`
 
-```{r}
-FullStructure_RC <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId)"
+```{r 'define-fullmodel-structure'}
+FullStructure_RC_nested <- (
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId / UserId)"
 )
 ```
 
-```{r}
-Linearity_RC_FullModel <- glmer(
-    FullStructure_RC,
+```{r 'fit-model'}
+Linearity_RC_FullModel_nested <- glmer(
+    FullStructure_RC_nested,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
 ```
 
-The full model is singular.
-
-```{r, include=FALSE}
-summary(Linearity_RC_FullModel)
-plot(Linearity_RC_FullModel)
+```{r}
+summary(Linearity_RC_FullModel_nested)
 ```
+
+The full model is singular.
 
 Inspection of the model values indicates that the random intercept of StoryId is accounting for zero variance in the model. This can occur when the variance accounted for by the random intercept is minimal and thus the model fails to estimate variance, resulting in singularity. To address the issue, we attempt to fit the model with StoryId as a fixed effect rather than a random intercept:
 
-```{r}
+```{r 'define-structure-without-storyid-re'}
 FullStructure_RC_AdjustedStoryId <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId)"
 )
@@ -624,7 +590,7 @@ Including StoryId as a fixed effect rather than a random effect increases the am
 
 Add contrasts to StoryId:
 
-```{r}
+```{r 'add-contrasts-to-storyid'}
 contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(
     linearity_measure_data$StoryId
 )
@@ -633,7 +599,7 @@ contrasts(linearity_measure_data$StoryId)
 
 Re-fit the model:
 
-```{r}
+```{r 'fit-adjusted-model'}
 Linearity_RC_AdjustedModel <- glmer(
     FullStructure_RC_AdjustedStoryId,
     data = linearity_measure_data,
@@ -650,7 +616,7 @@ car::vif(Linearity_RC_AdjustedModel)
 
 Indeed, the Variance Inflation Factor (VIF) indicates that StoryId causes multicollinearity in the model. Therefore, it cannot be included as a fixed effect in the model and we remove it. This means that variation between different stories read cannot be estimated in the reader characteristics model.
 
-```{r}
+```{r 'define-structure-wo-storyid'}
 FullStructure_RC_RemovedStoryId <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | UserId)"
 )
@@ -658,7 +624,7 @@ FullStructure_RC_RemovedStoryId <- (
 
 Re-fit the model:
 
-```{r}
+```{r 'fit-adjusted-model-2'}
 Linearity_RC_Model_RemovedStoryId <- glmer(
     FullStructure_RC_RemovedStoryId,
     data = linearity_measure_data,
@@ -679,7 +645,7 @@ All predictors VIF is below 2.5, indicating that the model is no longer affected
 
 All generalised linear mixed models were tested for (1) multicollinearity, (2) heteroscedasticity, (3) influential observations, and (4) normality of random effects.
 
-Under- and overdispersion was not tested considering that the observations cannot be effectively grouped by predictors (see https://stats.stackexchange.com/a/200848).
+Under- and overdispersion were not tested considering that the observations cannot be effectively grouped by predictors (see https://stats.stackexchange.com/a/200848).
 
 #### 1. Multicollinearity
 
@@ -736,6 +702,8 @@ The plot indicates that some observations may be influential. However, the Cook'
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
 ```{r, include=FALSE}
+set.seed(1234) # for reproducibility
+simulated_model_output <- DHARMa::simulateResiduals(Linearity_RC_Model_RemovedStoryId)
 # testOutliers(simulated_model_output)
 ```
 
@@ -772,17 +740,11 @@ Only an interaction effect between the two task-relevant electronic experience m
 
 #### Hypotheses
 
-**H5a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
+**H4a: Situational autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
 
 This hypothesis was not supported as the interaction effect between Condition and situational competence was not a significant predictor of linearity.
 
 ```{r}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_AddLine.R"
-    )
-)
 linearity_rc_condscomp <- interact_plot(
     Linearity_RC_Model_RemovedStoryId,
     pred = SCompetence.sc,
@@ -797,9 +759,9 @@ linearity_rc_condscomp <- interact_plot(
     )
 ```
 
-As the interaction effect was not significant, the combination of situational competence and condition manipulation was not connected to participants' frequency of using nonlinear navigation. Therefore, our hypothesis H5a was not supported.
+As the interaction effect was not significant, the combination of situational competence and condition manipulation was not connected to participants' frequency of using nonlinear navigation. Therefore, our hypothesis H4a was not supported.
 
-**H5b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
+**H4b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
 
 This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
 
@@ -821,9 +783,9 @@ linearity_rc_cmotscomp <- interact_plot(
     scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3, 0.4))
 ```
 
-Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation more often when they found the text difficult to read than when they reported that the story was easy to comprehend (in line with H5b). In contrast, participants with a low contextual motivation score used on average less nonlinear navigation when the text was difficult to read, and more when the text was seen as easy. However, the effect is not significant and thus it should not be interpreted further.
+Although the hypothesis was not supported, the trend of the results is in the same direction as we predicted: participants with a high contextual motivation score initiated nonlinear navigation more often when they found the text difficult to read than when they reported that the story was easy to comprehend (in line with H4b). In contrast, participants with a low contextual motivation score used on average less nonlinear navigation when the text was difficult to read, and more when the text was seen as easy. However, the effect is not significant and thus it should not be interpreted further.
 
-**H5c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
+**H4c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.**
 
 This hypothesis was not supported as an interaction between the two electronic experience measures and situational competence was not a significant predictor of linearity of reading.
 
@@ -885,34 +847,39 @@ $Y_{i} =
     ReadingSessionNumber +
     TimeInReadingSession +
     LocationInText +
-    u_{Subject} +
-    u_{Story} +
+    u_{Story / Subject} +
     \varepsilon_{i}$ 
 
-where <!-- fix below-->
+where
 **$Y_{i}$** is the reading behaviour measure, in this case StartsNonlinearity for reading linearity.
 **$\beta_{0}$** is the intercept
 **WindowWidth** indicates of screen size, measured by window width in pixels (which is affected by device and has an effect on how much text is visible)
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
 **Event~k-1~** reflects the previous StartsNonlinearity event at k-1 if the current event is k
 **Event~k-2~** reflects the event preceeding the previous StartsNonlinearity event at k-2 if the current event is k.
-**ReadingSessionNumber**
-**TimeInReadingSession**
-**LocationInText**
-**$u_{Subject}$** indicates a random intercept of subject indicator
-**$u_{Story}$** indicates a random intercept of story indicator
+**ReadingSessionNumber** reflects the reading session number at event~k~ (outcome variable)
+**TimeInReadingSession** indicates time passed since the beginning of the reading session at event~k~
+**LocationInText** indicates location in text (in percentages) at event~k~
+**$u_{Story / Subject}$** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
 First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions could be added between predictors measuring previous navigation events (Event~k-1~ and Event~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous navigation events and the other predictors in the model (e.g. Event~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
 
-### Create predictor variables
+This model selection is used to explore possible interactions that are meaningful to add without overfitting the model.
 
+### Create missing predictor variables
 
-```{r}
+```{r 'create-preceeding-event-variables'}
 linearity_measure_data$Observation_lag1 <- lag(linearity_measure_data$StartsNonlinearity, 1)
 linearity_measure_data$Observation_lag2 <- lag(linearity_measure_data$StartsNonlinearity, 2)
 ```
 
+```{r 'create-location-in-%'}
+linearity_measure_data$PercentageLocation <- (
+    (linearity_measure_data$StartLocation
+        / linearity_measure_data$CharacterLength)
+)
+```
 
 ### Visualise outcome variable and predictors
 
@@ -920,7 +887,6 @@ The linearity_measure_data has `r nrow(linearity_measure_data)` observations.
 
 We create graphs to inspect linearity of reading and its connection to other variables.
 Graphs on the distribution of StartsNonlinearity and connection to random effects and control variables were created before the reader characteristics model, and so they are not repeated here.
-
 
 ### Connection to previous event
 
@@ -932,7 +898,7 @@ Previous page-view:
 table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$Observation_lag1)
 ggplot(
     linearity_measure_data,
-    aes(StartsNonlinearity, ..count..)
+    aes(StartsNonlinearity, after_stat(count))
 ) +
     geom_bar(aes(fill = Observation_lag1), position = "dodge") +
     theme_classic()
@@ -942,7 +908,7 @@ Two pages before the current page-view:
 
 ```{r, include=FALSE}
 table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$Observation_lag1)
-ggplot(linearity_measure_data, aes(StartsNonlinearity, ..count..)) +
+ggplot(linearity_measure_data, aes(StartsNonlinearity, after_stat(count))) +
     geom_bar(aes(fill = Observation_lag2), position = "dodge") +
     theme_classic()
 ```
@@ -978,13 +944,6 @@ Similarly, nonlinearity may be more frequent at the beginning of reading session
 
 ### Location in text
 
-```{r}
-linearity_measure_data$PercentageLocation <- (
-    (linearity_measure_data$StartLocation
-        / linearity_measure_data$CharacterLength)
-)
-```
-
 ```{r, include=FALSE}
 ggplot(linearity_measure_data, aes(
     x = StartsNonlinearity,
@@ -1003,26 +962,9 @@ Nonlinearity may also be connected to the beginning of the text.
 
 Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
 
-Load a function to create helmert contrasts for categorical variables:
-
-```{r 'load helmert contrasts functions ep'}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.weighted.R"
-    )
-)
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.unweighted.R"
-    )
-)
-```
-
 Contrasts for categorical variables:
 
-```{r 'categorical contrasts ep'}
+```{r 'categorical-contrasts-ep'}
 # previous event (lag of 1)
 linearity_measure_data$Observation_lag1 <- as.factor(linearity_measure_data$Observation_lag1)
 contrasts(linearity_measure_data$Observation_lag1) <- contr.helmert.unweighted(linearity_measure_data$Observation_lag1)
@@ -1035,7 +977,7 @@ contrasts(linearity_measure_data$Observation_lag2)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-```{r 'scale continuous variables ep'}
+```{r 'scale-continuous-variables-ep'}
 # Days until reading deadline (control variable)
 linearity_measure_data$DaysUntilDeadline.sc <-
     scale(linearity_measure_data$FirstTimeUntilDeadlineDays,
@@ -1074,15 +1016,17 @@ linearity_measure_data$PercentageLocation.sc <-
 
 First, we build the additive model structure consisting of only main effects and random intercepts. Refer to the beginning of the event properties section of this script to see information on how the model is built.
 
-The model includes 10 parameters before adding interactions, and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/10 = `r round(nrow(linearity_measure_data)/10, 2)`
+The model includes 10 parameters before adding interactions, and `r nrow(linearity_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/10 = `r round(nrow(linearity_measure_data)/10, 2)`
 
-```{r}
+```{r 'define-additive-structure'}
 AdditiveStructure_EP <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId / UserId)"
 )
 ```
 
-```{r}
+Fit the model:
+
+```{r 'fit-the-model'}
 Linearity_EP_AdditiveModel <- glmer(
     AdditiveStructure_EP,
     data = linearity_measure_data,
@@ -1100,7 +1044,7 @@ summary(Linearity_EP_AdditiveModel)
 
 Similarly to the reader characteristics model, story indicator accounts for zero variance in the event properties model of linearity. This is likely to be causing the singularity in the model. To address the issue, we attempt to fit StoryId as a fixed effect in the model:
 
-```{r}
+```{r 'define-additive-model-wo-storyid-re'}
 AdditiveStructure_EP_Adjusted <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | UserId)"
 )
@@ -1108,7 +1052,7 @@ AdditiveStructure_EP_Adjusted <- (
 
 Add contrasts to StoryId:
 
-```{r}
+```{r 'add-contrasts-to-storyid'}
 linearity_measure_data$StoryId <- as.factor(linearity_measure_data$StoryId)
 contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(linearity_measure_data$StoryId)
 contrasts(linearity_measure_data$StoryId)
@@ -1116,7 +1060,7 @@ contrasts(linearity_measure_data$StoryId)
 
 Re-fit the model with StoryId as a fixed effect:
 
-```{r}
+```{r 'fit-storyid-as-maineffect'}
 Linearity_EP_AdditiveModel_Adjusted <- glmer(
     AdditiveStructure_EP_Adjusted,
     data = linearity_measure_data,
@@ -1138,15 +1082,15 @@ Considering that the model converges, we can add two-way interactions.
 
 #### Interactions
 
-We create a new model structure with interactions between all predictors of interest (see information at the beginning of the event properties section for an explanation of model selection). Only two-way interactions are included to avoid overfitting the model. Note that StoryId is fit as a fixed rather than a random effect due to singularity in the additive model structure. The interactive model includes 21 parameters. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/21 = `r round(nrow(linearity_measure_data)/21, 2)`.
+We create a new model structure with interactions between all predictors of interest (see information at the beginning of the event properties section for an explanation of model selection). Only two-way interactions are included to avoid overfitting the model. Note that StoryId is fit as a fixed rather than a random effect due to singularity in the additive model structure. The interactive model includes 21 parameters. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/21 = `r round(nrow(linearity_measure_data)/21, 2)`.
 
-```{r}
+```{r 'define-interactive-structure'}
 InteractiveStructure_EP_Adjusted <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1 : Observation_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | UserId)"
 )
 ```
 
-```{r}
+```{r 'fit-interactive-model'}
 Linearity_EP_InteractiveModel_Adjusted <- glmer(
     InteractiveStructure_EP_Adjusted,
     data = linearity_measure_data,
@@ -1156,15 +1100,11 @@ Linearity_EP_InteractiveModel_Adjusted <- glmer(
 ```
 
 The full interactive model structure converges and is not singular.
+Inspect model values:
 
 ```{r, include=FALSE}
 summary(Linearity_EP_InteractiveModel_Adjusted)
 # plot(Linearity_EP_InteractiveModel_Adjusted)
-```
-
-Inspect model values:
-
-```{r}
 fixef(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
@@ -1222,7 +1162,9 @@ The plot indicates that the dataset may include some highly influential observat
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
 ```{r, include=FALSE}
-# testOutliers(Linearity_EP_InteractiveModel_Adjusted)
+set.seed(1234) # for reproducibility
+simulated_model_output <- DHARMa::simulateResiduals(Linearity_EP_InteractiveModel_Adjusted)
+# testOutliers(simulated_model_output)
 ```
 
 Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. To assess the impact of observation #254, we attempt to fit the model without it to see if its inclusion has an impact on model interpreations:
@@ -1233,7 +1175,7 @@ Although Cook's Distance indicates that the model has influential observations, 
 subset_without_observation254 <- linearity_measure_data[c(1:253, 255:nrow(linearity_measure_data)), ]
 ```
 
-```{r}
+```{r 'fit-model-wo-obs-254'}
 Linearity_EP_InteractiveModel_Adjusted_influential254 <- glmer(
     InteractiveStructure_EP_Adjusted,
     data = subset_without_observation254,
@@ -1276,12 +1218,7 @@ The plot indicates that the dataset still includes some influential observations
 
 #### 3. Heteroscedasticity
 
-Create a new simulated_model_output to test for heteroscedasticity:
-
-```{r, include=FALSE}
-set.seed(1234) # for reproducibility
-simulated_model_output <- simulateResiduals(fittedModel = Linearity_EP_InteractiveModel_Adjusted_influential254, plot = F)
-```
+Test for heteroscedasticity with DHARMa::testQuantiles() using simulated_model_output created earlier
 
 ```{r, include=FALSE}
 # testQuantiles(simulated_model_output)
@@ -1308,7 +1245,7 @@ The model was fit with StoryId as a fixed rather than a random effect to resolve
 
 One influential observation was found in assumption testing. The observations was removed from the model dataset and the model was re-fit.
 
-The new model is re-tested for the assumptions of multicollinearity and dispersion that were tested before the influential observation was removed:
+The new model is re-tested for the assumptions of multicollinearity which was tested before the influential observation was removed:
 
 1. Multicollinearity:
 
@@ -1318,21 +1255,6 @@ plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted_influential254))
 ```
 
 The tests indicate that the adjusted model without the influential observation does not have significant multicollinearity.
-
-2. Over- and under-dispersion
-
-```{r, include=FALSE}
-# simulated_model_output was created above for the adjusted model without the influential point
-# plotQQunif(simulated_model_output)
-```
-
-The model does not deviate from the expected distribution according to the qqplot.
-
-```{r, include=FALSE}
-# testDispersion(simulated_model_output)
-```
-
-The dispersion test is not significant, indicating that the model is not affected by under- or overdispersion.
 
 After the removal of one influential observation the model aligns will assumptions.
 
@@ -1361,13 +1283,7 @@ Note that no hypotheses were set for the event properties models and they are us
 
 WindowWidth represents the width of a browser screen, and thus it is used as an indication of the participants' device (e.g. smartphones have smaller window widths than laptops with the browser window maximised to fit the screen), and text amount (larger windows have more text). WindowWidth was used only as a control variable in the model to account for the impact of device size and text layout, however, the main effect was a significant predictor of nonlinear navigation.
 
-```{r}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_AddLine.R"
-    )
-)
+```{r, warning='hide'}
 linearity_ep_windowwidth <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "WindowWidth.sc",
@@ -1387,7 +1303,7 @@ Window width and nonlinearity are positively connecting, indicating that the odd
 
 The results of the model indicated that previous event (lag 1) was a significant predictor of nonlinear navigation.
 
-```{r}
+```{r, warning='hide'}
 linearity_ep_previousevent <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "Observation_lag1",
@@ -1407,7 +1323,7 @@ The result indicates that participants were more likely to initiate nonlinear na
 
 In addition to the event at event~k-1~, the event~k-2~ was a significant predictor of nonlinearity:
 
-```{r}
+```{r, warning='hide'}
 linearity_ep_lag2 <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "Observation_lag2",
@@ -1428,7 +1344,7 @@ The odds of a participant initiating nonlinearity at navigation event~k~ were hi
 
 Linearity of reading was significant predicted by the time since the beginning of a reading session.
 
-```{r}
+```{r, warning='hide'}
 linearity_ep_time <- effect_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "TimeInReadingSession.sc",
@@ -1445,7 +1361,7 @@ The main effect indicates that the odds of initiating nonlinear navigation were 
 
 The main effect was qualified by a significant interaction between time in a reading session and location in text.
 
-```{r}
+```{r, warning='hide'}
 linearity_ep_timelocation <- interact_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "TimeInReadingSession.sc",
@@ -1464,7 +1380,7 @@ The interaction effect indicates that the odds of nonlinear navigation are the h
 
 Finally, linearity of reading was predicted by an interaction effect between reading session number and location in text.
 
-```{r}
+```{r, warning='hide'}
 linearity_ep_locationRSNumb <- interact_plot(
     Linearity_EP_InteractiveModel_Adjusted_influential254,
     pred = "PercentageLocation.sc",
