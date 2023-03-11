@@ -760,7 +760,7 @@ Devices <- ggplot(eexp_data) +
 
 The bar graph shows that most of the participants have 2 different digital devices, followed by 3 and then 1 device(s). Most frequently, participants own laptops (`r round((sum(eexp_data$HasLaptop)/nrow(eexp_data))*100, 2)`%) and smartphones (`r round((sum(eexp_data$HasSmartphone)/nrow(eexp_data))*100, 2)`%). `r round((sum(eexp_data$HasTabletComputer)/nrow(eexp_data))*100, 2)`% of the participants have tablet computers, and `r round((sum(eexp_data$HasDesktopComputer)/nrow(eexp_data))*100, 2)`% of the participants own a desktop computer.
 
-`r round((sum(eexp_data$HasEInkEReader)/nrow(eexp_data))*100, 2)`% of the participants own a dedicated e-ink e-reader (`r (sum(eexp_data$HasEInkEReader)` participants). 
+`r round((sum(eexp_data$HasEInkEReader)/nrow(eexp_data))*100, 2)`% of the participants own a dedicated e-ink e-reader (`r (sum(eexp_data$HasEInkEReader))` participants). 
 
 Next, we compute the two electronic reading experience measures
 
