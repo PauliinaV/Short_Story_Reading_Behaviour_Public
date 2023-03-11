@@ -1,9 +1,10 @@
 ---
 title: "Analysis_ReadingSpeed"
 author: "Pauliina Vuorinen"
-date: "14/10/2022-"
+date: "14/10/2022-07/03/2023"
 output: html_document
-library: "~/Extra/RPackages.bib"
+library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
+csl : ~/Extra/apa-7th-ed.csl
 ---
 
 ## Introduction
@@ -18,13 +19,13 @@ In this analysis script, ReadingRate is used as an outcome variable in **two dif
 
 **Information on the hypotheses**
 
-* H5a: Situational autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to situational controlled motivation.
-* H5b: Contextual autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to contextual controlled motivation.
-* H5c: High levels of task-relevant electronic experience is connected to slower reading speeds when task competence is low.
+* H3a: Situational autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to situational controlled motivation.
+* H3b: Contextual autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to contextual controlled motivation.
+* H3c: High levels of task-relevant electronic experience is connected to slower reading speeds when task competence is low.
 
 ## Setup
 
-```{r, setup}
+```{r 'setup'}
 library(tidyverse)
 library(dplyr)
 library(psych)
@@ -39,68 +40,16 @@ library(car)
 library(effects)
 library(interactions)
 library(jtools)
+```
+
+Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files.
+
+The working directory is not changed with setwd() because this script is knit remotely in other scripts. If using remotely, define 'AnalysisFilePath'. AnalysisFilePath refers to this exact file location, and so path to the main folder "Short_Story_Reading_Behaviour_Public" is two folders lower.
+
+```{r 'setwd'}
 getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
-```
-
-```{r 'figure theme for consistency', echo=FALSE}
-figure_theme_with_top_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    )
-figure_theme_without_legend_position <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.key = element_blank(),
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    )
-figure_theme_without_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.key = element_blank(),
-        legend.position = "none",
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10)
-    )
-```
-
-Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files. In our purposes, the foulder could be found from /Documents/GITHUB/Short_Story_Reading_Behaviour_Public.
-
-The working directory is not changed with setwd() because this script is knit remotely in other scripts.
-
-```{r}
+# If AnalysisFilePath is not defined, use setwd() to refer to the main folder
+# setwd()
 if (exists("AnalysisFilePath")) {
     mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
 } else {
@@ -108,9 +57,51 @@ if (exists("AnalysisFilePath")) {
 }
 ```
 
+```{r 'load-figure-theme-for-consistency', echo=FALSE, warning="hide"}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Fig/Fig_FigureTheme.R"
+    )
+)
+```
+
+```{r 'load-helmert-contrasts-functions'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.weighted.R"
+    )
+)
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_contr.helmert.unweighted.R"
+    )
+)
+```
+
+```{r 'source-functions-for-line-adding'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_AddLine.R"
+    )
+)
+```
+
+```{r 'source-function-for-variabletype-conversion'}
+source(
+    paste0(
+        mypath_SSRBP,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
+```
+
 ## Load data and check variable types
 
-```{r, load data}
+```{r 'load-data'}
 # load data
 reading_speed_measure_data <-
     read.csv(
@@ -127,7 +118,7 @@ reading_speed_measure_data <- dplyr::select(reading_speed_measure_data, -X) # re
 
 We then load in data from questionnaires:
 
-```{r 'load predictors: questionnaires'}
+```{r 'load-predictors:-questionnaires'}
 # IMI
 IMI_scores <-
     read.csv(
@@ -180,7 +171,7 @@ demographics_data <- dplyr::select(demographics_data, -X) # remove row numbers
 
 Load in information about the stories that participants read:
 
-```{r}
+```{r 'load-information-about-stories'}
 story_information_data <-
     read.csv(
         paste0(
@@ -196,7 +187,7 @@ story_information_data <- dplyr::select(story_information_data, -X) # remove row
 
 We then merge these dataframes together:
 
-```{r 'merge dfs'}
+```{r 'merge-dfs'}
 # measure and IMI
 reading_speed_measure_data <- merge(
     reading_speed_measure_data,
@@ -236,14 +227,8 @@ reading_speed_measure_data <- merge(
 
 ## Change variable types
 
-```{r 'change variable types'}
+```{r 'change-variable-types'}
 str(reading_speed_measure_data)
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_VariableTypeConversion.R"
-    )
-)
 
 ## turn columns into factors that should be factors
 reading_speed_measure_data[, c(
@@ -262,11 +247,11 @@ reading_speed_measure_data[, c(
 
 The reader characteristics model of reading speed aims to address the following hypotheses:
 
-* H5a: Situational autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to situational controlled motivation.
-* H5b: Contextual autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to contextual controlled motivation.
-* H5c: High levels of task-relevant electronic experience is connected to slower reading speeds when task competence is low.
+* H3a: Situational autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to situational controlled motivation.
+* H3b: Contextual autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to contextual controlled motivation.
+* H3c: High levels of task-relevant electronic experience is connected to slower reading speeds when task competence is low.
 
-The reader characteristics model for linearity of reading takes the following structure:
+The reader characteristics model takes the following structure:
 
 $Y_{i} = 
     \beta_{0} +
@@ -277,14 +262,13 @@ $Y_{i} =
     SComp +
     CMot +
     CComp +
-    EExp1 +
-    EExp2 +
+    TR-EExp1 +
+    TR-EExp2 +
     Cond x SComp +
     CMot x SComp +
-    EExp1 x EExp2 +
-    EExp1 x EExp2 x SComp +
-    u_{Subject} +
-    u_{Story} +
+    TR-EExp1 x TR-EExp2 +
+    TR-EExp1 x TR-EExp2 x SComp +
+    u_{Story / Subject} +
     \varepsilon_{i}$ 
 
 where
@@ -297,13 +281,12 @@ where
 **SComp** is participants' situational competence (perception of competence to read the story), measured by the subcomponent of 'competence' from the IMI questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
 **CMot** is participants' contextual reading motivation, measured by the subcomponent of contextual interest from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
 **CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
-**EExp1** is frequency of using any electronic devices for long-form text reading purposes
-**EExp2** is frequency of using task-relevant devices for any reading purpose
-**$u_{Subject}$** indicates a random intercept of subject indicator
-**$u_{Story}$** indicates a random intercept of story indicator
+**TR-EExp1** is frequency of using any electronic devices for long-form text reading purposes
+**TR-EExp2** is frequency of using task-relevant devices for any reading purpose
+**$u_{Story / Subject}$** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
-Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, the remaining models (task switching and reading persistence) are modelled without 'Cond x SComp', 'CMot x SComp', and 'EExp1 x EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching and reading persistence are expected to be connected to motivation and electronic experience directly (main effects).
+Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, task-switching is modelled without 'Cond x SComp', 'CMot x SComp', and 'TR-EExp1 x TR-EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching is expected to be connected to motivation and electronic experience directly (main effects).
 
 ### Visualise outcome variable and predictors
 
@@ -453,26 +436,9 @@ ggplot(reading_speed_measure_data, aes(x = Eexp2DeviceRecFreq, y = ReadingRate))
 
 Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
 
-Load a function to create helmert contrasts for categorical variables:
-
-```{r 'load helmert contrasts functions 1'}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.weighted.R"
-    )
-)
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.unweighted.R"
-    )
-)
-```
-
 Contrasts for categorical variables:
 
-```{r 'categorical contrasts'}
+```{r 'categorical-contrasts'}
 # whether native language is English or not
 reading_speed_measure_data$NativeEnglish <- as.factor(reading_speed_measure_data$NativeEnglish)
 contrasts(reading_speed_measure_data$NativeEnglish) <- contr.helmert.unweighted(reading_speed_measure_data$NativeEnglish)
@@ -492,7 +458,7 @@ contrasts(reading_speed_measure_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".sc" as a reminder that the variable is scaled and centered.
 
-```{r 'scale continuous variables 1'}
+```{r 'scale-continuous-variables-1'}
 # Situational competence
 reading_speed_measure_data$SCompetence.sc <-
     scale(reading_speed_measure_data$SCompetence,
@@ -537,17 +503,17 @@ reading_speed_measure_data$WindowWidth.sc <-
 
 ### Modelling by Reader Characteristics
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 17 parameters (including two random effects and categorical variable levels), and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/17 = `r round(nrow(reading_speed_measure_data)/17, 2)`
+First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 16 parameters (including two random effects and categorical variable levels), and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/16 = `r round(nrow(reading_speed_measure_data)/16, 2)`
 
-```{r}
-FullStructure_RC <- (
-    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1 | UserId)"
+```{r 'define-fullmodel-structure'}
+FullStructure_RC_nested <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId / UserId)"
 )
 ```
 
-```{r}
-Speed_RC_FullModel <- lmer(
-    FullStructure_RC,
+```{r 'run-fullstructure-model'}
+Speed_RC_FullModel_nested <- lmer(
+    FullStructure_RC_nested,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
@@ -555,14 +521,13 @@ Speed_RC_FullModel <- lmer(
 ```
 
 The full model converges.
-
 Inspect model values:
 
 ```{r, include=FALSE}
-summary(Speed_RC_FullModel)
-fixef(Speed_RC_FullModel)
-# plot(Speed_RC_FullModel)
-# plot(reading_speed_measure_data$ReadingRate, fitted(Speed_RC_FullModel))
+summary(Speed_RC_FullModel_nested)
+fixef(Speed_RC_FullModel_nested)
+# plot(Speed_RC_FullModel_nested)
+# plot(reading_speed_measure_data$ReadingRate, fitted(Speed_RC_FullModel_nested))
 ```
 
 ### Model Assumptions
@@ -582,8 +547,8 @@ Some of the variables show high correlations. For example, contextual reading co
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
 ```{r, include=FALSE}
-check_collinearity(Speed_RC_FullModel)
-plot(check_collinearity(Speed_RC_FullModel))
+check_collinearity(Speed_RC_FullModel_nested)
+plot(check_collinearity(Speed_RC_FullModel_nested))
 ```
 
 Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
@@ -594,7 +559,7 @@ We test influential observations with Cook's Distance:
 
 ```{r, include=FALSE}
 # cooksd <-
-#     cooks.distance(Speed_RC_FullModel)
+#     cooks.distance(Speed_RC_FullModel_nested)
 # plot(cooksd,
 #     pch = "*",
 #     cex = 2,
@@ -614,8 +579,8 @@ The plot indicates that the dataset may include some influential observations. H
 To further test influential observations we use performance::check_outliers:
 
 ```{r, include=FALSE}
-check_outliers(Speed_RC_FullModel)
-plot(check_outliers(Speed_RC_FullModel))
+check_outliers(Speed_RC_FullModel_nested)
+plot(check_outliers(Speed_RC_FullModel_nested))
 ```
 
 Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. Considering the conservative Cook's Distances, we assume that the model does not have influential outliers.
@@ -625,8 +590,8 @@ Although Cook's Distance indicates that the model has influential observations, 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
 ```{r, include=FALSE}
-check_heteroscedasticity(Speed_RC_FullModel)
-plot(check_heteroscedasticity(Speed_RC_FullModel))
+check_heteroscedasticity(Speed_RC_FullModel_nested)
+plot(check_heteroscedasticity(Speed_RC_FullModel_nested))
 ```
 
 The test is not significant, indicating that the variances are homoscedastic in the model.
@@ -634,11 +599,11 @@ The test is not significant, indicating that the variances are homoscedastic in 
 We check categorical predictors separately with a Levene's test:
 
 ```{r}
-leveneTest(residuals(Speed_RC_FullModel) ~ reading_speed_measure_data$Condition)
+leveneTest(residuals(Speed_RC_FullModel_nested) ~ reading_speed_measure_data$Condition)
 ```
 
 ```{r}
-leveneTest(residuals(Speed_RC_FullModel) ~ reading_speed_measure_data$NativeEnglish)
+leveneTest(residuals(Speed_RC_FullModel_nested) ~ reading_speed_measure_data$NativeEnglish)
 ```
 
 The Levene's tests indicate that the assumption of equal variances is also met for condition and NativeEnglish.
@@ -650,7 +615,7 @@ The model aligns with the assumption of homoscedasticity.
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
 ```{r, include=FALSE}
-random_intercept_UserId <- ranef(Speed_RC_FullModel)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Speed_RC_FullModel_nested)$UserId$`(Intercept)`
 # qqnorm(random_intercept_UserId)
 # qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -659,7 +624,7 @@ shapiro.test(random_intercept_UserId)
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
 ```{r, include=FALSE}
-random_intercept_StoryId <- ranef(Speed_RC_FullModel)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Speed_RC_FullModel_nested)$StoryId$`(Intercept)`
 # qqnorm(random_intercept_StoryId)
 # qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
@@ -672,7 +637,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r, include=FALSE}
-# plot(resid(Speed_RC_FullModel), fitted(Speed_RC_FullModel))
+# plot(resid(Speed_RC_FullModel_nested), fitted(Speed_RC_FullModel_nested))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -680,22 +645,22 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r, include=FALSE}
-# qqnorm(residuals(Speed_RC_FullModel))
+# qqnorm(residuals(Speed_RC_FullModel_nested))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
 ```{r, include=FALSE}
-# hist(resid(Speed_RC_FullModel), breaks = 100)
+# hist(resid(Speed_RC_FullModel_nested), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
 ```{r, include=FALSE}
 # 0 - normal, neg - left skew, pos - right skew
-skewness(resid(Speed_RC_FullModel))
+skewness(resid(Speed_RC_FullModel_nested))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
-kurtosis(resid(Speed_RC_FullModel))
+kurtosis(resid(Speed_RC_FullModel_nested))
 ```
 
 The residuals are slightly skewed to the right, and the distribution is slightly leptokurtic.
@@ -703,12 +668,12 @@ Finally, we test normality with a Shapiro Wilkins test:
 
 ```{r, include=FALSE}
 # Shapiro Wilk Test
-check_normality(Speed_RC_FullModel)
+check_normality(Speed_RC_FullModel_nested)
 ```
 
 Shapiro Wilk test is significant, indicating of variance from the normal distribution.
 
-However, the visualisations do not raise any significant concerns with normality. Shapiro Wilk test is affected by large sample sizes, and thus the resulting significant p-value may be an indication of a statistically but not practically significant variation from normality due to the large n (*n* = `r nrow(reading_speed_measure_data)`).Furthermore, consultation of resources on mixed modelling indicated that violating the normality of residuals assumption in this case may not be undermine the model quality. For example, @Gelman2007 mention that "the assumption of normality is barely important at all. Thus, [..] we do *not* recommed diagnostics of the normality of regression residuals".
+However, the visualisations do not raise any significant concerns with normality. Shapiro Wilk test is affected by large sample sizes, and thus the resulting significant p-value may be an indication of a statistically but not practically significant variation from normality due to the large n (*n* = `r nrow(reading_speed_measure_data)`).Furthermore, consultation of resources on mixed modelling indicated that violating the normality of residuals assumption in this case may not be undermine the model quality. For example, @gelman_data_2007 mention that "the assumption of normality is barely important at all. Thus, [..] we do *not* recommed diagnostics of the normality of regression residuals".
 
 As a result, we assume that the residuals are distributed normally enough for our purposes. 
 
@@ -718,43 +683,41 @@ The model aligns with all assumptions.
 
 ### Interpret model
 
-We then interpret model effects to interpret the results.
+We then interpret model effects to study the results.
 
 ```{r}
-summary(Speed_RC_FullModel)
+summary(Speed_RC_FullModel_nested)
 ```
 
-CCompetence (contextual competence), SCompetence:CInterest (an interaction between situational competence and contextual motivation), and SCompetence:Eexp1LongFormEFreq:Eexp2DeviceRecFreq (an interaction between situational competence and the two electronic experience measures) are significant predictors of reading rate.
+Significant predictors of reading rate:
+
+* CCompetence (contextual competence),
+* SCompetence:CInterest (an interaction between situational competence and contextual motivation), and
+* SCompetence:Eexp1LongFormEFreq:Eexp2DeviceRecFreq (an interaction between situational competence and the two electronic experience measures)
 
 #### Hypotheses
 
-**H5a: Situational autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to situational controlled motivation.**
+**H3a: Situational autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to situational controlled motivation.**
 
 This hypothesis was not supported as an interaction effect between Condition and situational competence was not a significant predictor of reading speed in the model.
 
 ```{r, include=FALSE}
 speed_effect_conditionscomp <- effect(
     "Condition:SCompetence.sc",
-    Speed_RC_FullModel
+    Speed_RC_FullModel_nested
 )
 plot(speed_effect_conditionscomp,
     multiline = TRUE
 )
 ```
 
-Therefore, our hypothesis H5a was not supported.
+Therefore, our hypothesis H3a was not supported.
 
 Condition was also not a significant predictor in the model, however, it was nearing significance at *p* =  .0577. This trend indicates that participants in the low-autonomy condition were likely to use slightly slower reading speeds compared to participants in the high-autonomy condition, regardless of situational competence:
 
 ```{r}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_AddLine.R"
-    )
-)
 speed_effectplot_condition <- cat_plot(
-    Speed_RC_FullModel,
+    Speed_RC_FullModel_nested,
     pred = "Condition",
     pred.labels = c("High-Autonomy Condition", "Low-Autonomy Condition"),
     data =  reading_speed_measure_data,
@@ -774,13 +737,13 @@ speed_effectplot_condition <- cat_plot(
 
 Therefore, unlike we expected participants' condition assignment and situational competence did not predict reading speed. Instead, a trend in the main effect of condition indicates that participants in the high autonomy condition were slightly more likely to use higher reading speeds than participants in the low-autonomy condition.
 
-**H5b: Contextual autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to contextual controlled motivation.**
+**H3b: Contextual autonomous motivation is connected to slower reading speeds when task competence is low, in contrast to contextual controlled motivation.**
 
 An interaction between Contextual motivation (measured by CInterest) and situational competence (SCompetence) was expected to be a significant predictor of reading speed. Indeed, the interaction was significant:
 
 ```{r}
 speed_effectplot_cmotscomp <- interact_plot(
-    Speed_RC_FullModel,
+    Speed_RC_FullModel_nested,
     pred = "SCompetence.sc",
     modx = "CInterest.sc",
     data =  reading_speed_measure_data,
@@ -803,20 +766,20 @@ We would usually assume that readers slow down when the text is difficult to com
 
 Therefore, our hypothesis was supported.
 
-**H5c: High levels of task-relevant electronic experience is connected to slower reading speeds when task competence is low.**
+**H3c: High levels of task-relevant electronic experience is connected to slower reading speeds when task competence is low.**
 
 We expected a three-way interaction between situational competence and the two electronic reading experience measures to be a significant predictor of reading speed. Indeed, the interaction effect was significant:
 
 ```{r}
 speed_effectplot_electronicexperiencescomp <-
-    interact_plot(Speed_RC_FullModel,
+    interact_plot(Speed_RC_FullModel_nested,
         pred = SCompetence.sc,
         modx = Eexp2DeviceRecFreq.sc,
         mod2 = Eexp1LongformEFreq.sc,
         data = reading_speed_measure_data,
         plot.points = FALSE,
         interval = TRUE,
-        legend.main = addline_format("Electronic,experience 2"),
+        legend.main = "Electronic experience 2",
         mod2.labels = c("-1SD Electronic Experience 1", "Mean Electronic Experience 1", "+1SD Electronic Experience 1"),
         colors = c("orange", "darkred", "navy"),
         point.shape = TRUE
@@ -838,9 +801,9 @@ In addition, reading speed was significantly predicted by contextual competence 
 
 **Contextual Competence**
 
-```{r}
+```{r, warning='hide'}
 speed_effectplot_contextualcompetence <- effect_plot(
-    Speed_RC_FullModel,
+    Speed_RC_FullModel_nested,
     pred = "CCompetence.sc",
     data =  reading_speed_measure_data,
     plot.points = TRUE,
@@ -874,8 +837,7 @@ $Y_{i} =
     ReadingSessionNumber +
     TimeInReadingSession +
     LocationInText +
-    u_{Subject} +
-    u_{Story} +
+    u_{Story / Subject} +
     \varepsilon_{i}$ 
 
 where
@@ -885,31 +847,35 @@ where
 **DUD** is an acronym for 'DaysUntilDeadline' which tells us how much the participant has time left to read the short story. Days until deadline is used to control for variance in reading behaviour as a result of pressure to read the short story in time. For example, participants may read the text differently closer to the deadline compared to the beginning of the study.
 **Event~k-1~** reflects the previous ReadingRate event. If the current event is k, then Event k-1 indicates reading rate at k-1
 **Event~k-2~** reflects the ReadingRate event preceeding the previous. If the current event is k, then Event k-2 indicates reading rate at k-2
-**ReadingSessionNumber**
-**TimeInReadingSession**
-**LocationInText**
-**$u_{Subject}$** indicates a random intercept of subject indicator
-**$u_{Story}$** indicates a random intercept of story indicator
+**ReadingSessionNumber** reflects the reading session number at event~k~ (outcome variable)
+**TimeInReadingSession** indicates time passed since the beginning of the reading session at event~k~
+**LocationInText** indicates location in text (in percentages) at event~k~
+**$u_{Story / Subject}$** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
 First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions can be added between predictors measuring previous events (Event~k-1~ and Event~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous events and the other predictors in the model (e.g. Event~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
 
 This model selection is used to explore possible interactions that are meaningful to add without overfitting the model.
 
-### Create predictor variables
+### Create missing predictor variables
 
-
-```{r}
+```{r 'create-preceding-event-variables'}
 reading_speed_measure_data$Observation_lag1 <- lag(reading_speed_measure_data$ReadingRate, 1)
 reading_speed_measure_data$Observation_lag2 <- lag(reading_speed_measure_data$ReadingRate, 2)
 ```
 
+```{r 'create-location-in-%'}
+reading_speed_measure_data$PercentageLocation <- (
+    (reading_speed_measure_data$StartLocation
+        / reading_speed_measure_data$CharacterLength)
+)
+```
 
 ### Visualise outcome variable and predictors
 
 The reading_speed_measure_data has `r nrow(reading_speed_measure_data)` observations.
 
-We create graphs to inspect linearity of reading and its connection to other variables.
+We create graphs to inspect speed of reading and its connection to other variables.
 Graphs on the distribution of ReadingRate and connection to UserId, StoryId, DaysUntilDeadline, and WindowWidth were created before the reader characteristics model, and so they are not repeated here.
 
 ### Connection to previous event
@@ -963,16 +929,7 @@ ggplot(
     labs(x = "Time in a reading session (min)")
 ```
 
-Similarly, nonlinearity may be more frequent at the beginning of reading sessions.
-
 ### Location in text
-
-```{r}
-reading_speed_measure_data$PercentageLocation <- (
-    (reading_speed_measure_data$StartLocation
-        / reading_speed_measure_data$CharacterLength)
-)
-```
 
 ```{r, include=FALSE}
 ggplot(
@@ -990,26 +947,9 @@ Reading speed may increase towards the end of the text.
 
 Predictors in the model are given contrasts. Continuous variables are scaled and centered, whereas categorical variables are given helmert contrasts. Helmert contrasts are used to control for uneven levels in categorical variables.
 
-Load a function to create helmert contrasts for categorical variables:
-
-```{r 'load helmert contrasts functions 2'}
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.weighted.R"
-    )
-)
-source(
-    paste0(
-        mypath_SSRBP,
-        "/Functions/Functions_contr.helmert.unweighted.R"
-    )
-)
-```
-
 We scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-```{r 'scale continuous variables 2'}
+```{r 'scale-continuous-variables-2'}
 # Event k-1
 reading_speed_measure_data$Observation_lag1.sc <-
     scale(reading_speed_measure_data$Observation_lag1,
@@ -1056,21 +996,23 @@ reading_speed_measure_data$PercentageLocation.sc <-
 
 ### Modelling by Event Properties
 
-#### Main effects
+#### Additive model
 
-First, we build the model structure consisting of only main effects and random intercepts. Refer to the beginning of the event properties section of this script to see information on how the model is built.
+First, we build the additive model structure. Refer to the beginning of the event properties section of this script to see information on how the model is built.
 
-The model includes 11 parameters before adding interactions, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/11 = `r round(nrow(reading_speed_measure_data)/11, 2)`
+The model includes 10 parameters before adding interactions, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/10 = `r round(nrow(reading_speed_measure_data)/10, 2)`
 
-```{r}
-AdditiveStructure_EP <- (
-    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId) + (1 | UserId)"
+```{r 'define-additive-model-structure'}
+AdditiveStructure_EP_nested <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId / UserId)"
 )
 ```
 
-```{r}
-Speed_EP_AdditiveModel <- lmer(
-    AdditiveStructure_EP,
+Fit the additive model:
+
+```{r 'fit-additive-model'}
+Speed_EP_AdditiveModel_nested <- lmer(
+    AdditiveStructure_EP_nested,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
@@ -1078,36 +1020,32 @@ Speed_EP_AdditiveModel <- lmer(
 ```
 
 The full additive model converges.
-
-```{r, include=FALSE}
-summary(Speed_EP_AdditiveModel)
-# plot(Speed_EP_AdditiveModel)
-```
-
 Inspect model values:
 
 ```{r}
-fixef(Speed_EP_AdditiveModel)
+summary(Speed_EP_AdditiveModel_nested)
+# plot(Speed_EP_AdditiveModel_nested)
+fixef(Speed_EP_AdditiveModel_nested)
 ```
 
 The model with all main effects converges, and so we can add two-way interactions.
 
-#### Interactions
+#### Interactive model
 
 We create a new model structure with interactions between predictors of interest (all main effects apart from DaysUntilDeadline and WindowWidth which are used as control variables only).
 Only two-way interactions are included to avoid overfitting the model. No interactions are included between previous events (Observation_lag1 and Observation_lag2) and other predictors in the model (e.g. ReadingSessionNumber) to avoid multicollinearity.
 
-The interactive model includes 15 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 20 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/15 = `r round(nrow(reading_speed_measure_data)/15, 2)`.
+The interactive model includes 14 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/14 = `r round(nrow(reading_speed_measure_data)/14, 2)`.
 
-```{r}
-InteractiveStructure_EP <- (
-    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1.sc : Observation_lag2.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId) + (1 | UserId)"
+```{r 'define-interactive-structure'}
+InteractiveStructure_EP_nested <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1.sc : Observation_lag2.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId / UserId)"
 )
 ```
 
-```{r}
-Speed_EP_InteractiveModel <- lmer(
-    InteractiveStructure_EP,
+```{r 'fit-interactive-model'}
+Speed_EP_InteractiveModel_nested <- lmer(
+    InteractiveStructure_EP_nested,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
@@ -1115,16 +1053,12 @@ Speed_EP_InteractiveModel <- lmer(
 ```
 
 The full interactive model structure converges.
-
-```{r, include=FALSE}
-summary(Speed_EP_InteractiveModel)
-# plot(Speed_EP_InteractiveModel)
-```
-
 Inspect model values:
 
-```{r}
-fixef(Speed_EP_InteractiveModel)
+```{r, include=FALSE}
+summary(Speed_EP_InteractiveModel_nested)
+# plot(Speed_EP_InteractiveModel_nested)
+fixef(Speed_EP_InteractiveModel_nested)
 ```
 
 ### Model Assumptions
@@ -1144,8 +1078,8 @@ None of the predictors show high correlations.
 We then calculate Variance Inflation Factors (VIF):
 
 ```{r, include=FALSE}
-check_collinearity(Speed_EP_InteractiveModel)
-plot(check_collinearity(Speed_EP_InteractiveModel))
+check_collinearity(Speed_EP_InteractiveModel_nested)
+plot(check_collinearity(Speed_EP_InteractiveModel_nested))
 ```
 
 The model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
@@ -1156,7 +1090,7 @@ We test influential observations with Cook's Distance:
 
 ```{r, include=FALSE}
 # cooksd <-
-#     cooks.distance(Speed_EP_InteractiveModel)
+#     cooks.distance(Speed_EP_InteractiveModel_nested)
 # plot(cooksd,
 #     pch = "*",
 #     cex = 2,
@@ -1176,8 +1110,8 @@ The plot indicates that the dataset may include some influential observations. H
 To further test influential observations we use performance::check_outliers:
 
 ```{r, include=FALSE}
-check_outliers(Speed_EP_InteractiveModel)
-plot(check_outliers(Speed_EP_InteractiveModel))
+check_outliers(Speed_EP_InteractiveModel_nested)
+plot(check_outliers(Speed_EP_InteractiveModel_nested))
 ```
 
 Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. Considering the conservative Cook's Distance limit, we assume that the model does not have influential outliers.
@@ -1187,8 +1121,8 @@ Although Cook's Distance indicates that the model has influential observations, 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
 ```{r, include=FALSE}
-check_heteroscedasticity(Speed_EP_InteractiveModel)
-plot(check_heteroscedasticity(Speed_EP_InteractiveModel))
+check_heteroscedasticity(Speed_EP_InteractiveModel_nested)
+plot(check_heteroscedasticity(Speed_EP_InteractiveModel_nested))
 ```
 
 The test is not significant, indicating that the variances are homoscedastic in the model.
@@ -1199,7 +1133,7 @@ The model aligns with the assumption of homoscedasticity.
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
 ```{r, include=FALSE}
-random_intercept_UserId <- ranef(Speed_EP_InteractiveModel)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Speed_EP_InteractiveModel_nested)$UserId$`(Intercept)`
 # qqnorm(random_intercept_UserId)
 # qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -1208,7 +1142,7 @@ shapiro.test(random_intercept_UserId)
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
 ```{r, include=FALSE}
-random_intercept_StoryId <- ranef(Speed_EP_InteractiveModel)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Speed_EP_InteractiveModel_nested)$StoryId$`(Intercept)`
 # qqnorm(random_intercept_StoryId)
 # qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
@@ -1221,7 +1155,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r, include=FALSE}
-# plot(resid(Speed_EP_InteractiveModel), fitted(Speed_EP_InteractiveModel))
+# plot(resid(Speed_EP_InteractiveModel_nested), fitted(Speed_EP_InteractiveModel_nested))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -1229,22 +1163,22 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r, include=FALSE}
-# qqnorm(residuals(Speed_EP_InteractiveModel))
+# qqnorm(residuals(Speed_EP_InteractiveModel_nested))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
 ```{r, include=FALSE}
-# hist(resid(Speed_EP_InteractiveModel), breaks = 100)
+# hist(resid(Speed_EP_InteractiveModel_nested), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
 ```{r}
 # 0 - normal, neg - left skew, pos - right skew
-skewness(resid(Speed_EP_InteractiveModel))
+skewness(resid(Speed_EP_InteractiveModel_nested))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
-kurtosis(resid(Speed_EP_InteractiveModel))
+kurtosis(resid(Speed_EP_InteractiveModel_nested))
 ```
 
 The residuals are slightly skewed to the right, and the distribution is leptokurtic.
@@ -1252,12 +1186,12 @@ Finally, we test normality with a Shapiro Wilkins test:
 
 ```{r, include=FALSE}
 # Shapiro Wilk Test
-check_normality(Speed_EP_InteractiveModel)
+check_normality(Speed_EP_InteractiveModel_nested)
 ```
 
 Shapiro Wilk test is significant, indicating of variance from the normal distribution.
 
-However, the visualisations do not raise any significant concerns with normality. Shapiro Wilk test is affected by large sample sizes, and thus the resulting significant p-value may be an indication of a statistically but not practically significant variation from normality due to the large n (*n* = `r nrow(reading_speed_measure_data)`).Furthermore, consultation of resources on mixed modelling indicated that violating the normality of residuals assumption in this case may not be undermine the model quality. For example, @Gelman2007 mention that "the assumption of normality is barely important at all. Thus, [..] we do *not* recommed diagnostics of the normality of regression residuals".
+However, the visualisations do not raise any significant concerns with normality. Shapiro Wilk test is affected by large sample sizes, and thus the resulting significant p-value may be an indication of a statistically but not practically significant variation from normality due to the large n (*n* = `r nrow(reading_speed_measure_data)`).Furthermore, consultation of resources on mixed modelling indicated that violating the normality of residuals assumption in this case may not be undermine the model quality. For example, @gelman_data_2007 mention that "the assumption of normality is barely important at all. Thus, [..] we do *not* recommed diagnostics of the normality of regression residuals".
 
 As a result, we assume that the residuals are distributed normally enough for our purposes. 
 
@@ -1270,7 +1204,7 @@ The model aligns with all assumptions.
 We then inspect model effects to interpret the results.
 
 ```{r}
-summary(Speed_EP_InteractiveModel)
+summary(Speed_EP_InteractiveModel_nested)
 ```
 
 In the event properties model, the following variables are significant predictors of reading rate:
@@ -1287,7 +1221,7 @@ Observation_lag1 was a significant predictor of reading rate.
 
 ```{r}
 speed_ep_previouslag1 <- effect_plot(
-    Speed_EP_InteractiveModel,
+    Speed_EP_InteractiveModel_nested,
     pred = Observation_lag1.sc,
     plot.points = TRUE,
     point.alpha = .2,
@@ -1306,7 +1240,7 @@ Interestingly, reading speed on the page before the previous (event k-2) was not
 
 ```{r}
 speed_ep_previouslag2 <- effect_plot(
-    Speed_EP_InteractiveModel,
+    Speed_EP_InteractiveModel_nested,
     pred = Observation_lag2.sc,
     plot.points = TRUE,
     point.alpha = .2,
@@ -1327,7 +1261,7 @@ In addition to Observation_lag1, reading speed was significantly predicted by Pe
 
 ```{r}
 speed_ep_location <- effect_plot(
-    Speed_EP_InteractiveModel,
+    Speed_EP_InteractiveModel_nested,
     pred = PercentageLocation.sc,
     plot.points = TRUE,
     point.alpha = .2,
@@ -1346,9 +1280,9 @@ This main effect was qualified by two significant interactions between Percentag
 
 First, we inspect the interaction between PercentageLocation and ReadingSessionNumber:
 
-```{r}
+```{r, warning='hide'}
 speed_ep_locationrsnumb <- interact_plot(
-    Speed_EP_InteractiveModel,
+    Speed_EP_InteractiveModel_nested,
     pred = PercentageLocation.sc,
     modx = ReadingSessionNumber.sc,
     legend.main = addline_format("Reading Session,Number"),
@@ -1370,7 +1304,7 @@ We then inspect the interaction effect between PercentageLocation and TimeInRead
 
 ```{r}
 speed_ep_locationtimeinrs <- interact_plot(
-    Speed_EP_InteractiveModel,
+    Speed_EP_InteractiveModel_nested,
     pred = PercentageLocation.sc,
     modx = TimeInReadingSession.sc,
     legend.main = addline_format("Time in Reading,Session"),
