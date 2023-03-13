@@ -459,7 +459,7 @@ AllStories <- merge(AllStories, publication_year_data, by = "StoryId")
 The dataframe is saved for usage in other scripts.
 The data has already been saved, and so the below r code chunk is not run.
 
-```{r, eval=FALSE, echo=TRUE, save wrangled data}
+```{r, eval=FALSE, echo=TRUE}
 # write.csv2(
 #     AllStories,
 #     "story_information_data.csv"
