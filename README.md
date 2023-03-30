@@ -1,6 +1,6 @@
 # Short_Story_Reading_Behaviour_Public
 
-Data and analysis files from Vuorinen, Keller, & Tatler.
+Data and analysis files from Vuorinen, Tatler, & Keller.
 
 All of the files have been written and planned by P.T.E. Vuorinen.
 
