@@ -52,8 +52,13 @@ getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 # setwd()
 if (exists("AnalysisFilePath")) {
     mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
-} else {
+} else if (grepl("Short_Story_Reading_Behaviour_Public/Analysis", getwd())) {
+    mypath_SSRBP <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
     mypath_SSRBP <- getwd()
+} else {
+    print("mypath_SSRBP should be defined manually")
+    # mypath_SSRBP <- XX
 }
 ```
 
@@ -503,32 +508,72 @@ reading_speed_measure_data$WindowWidth.sc <-
 
 ### Modelling by Reader Characteristics
 
-First, we build the full structure. Refer to the beginning of this script to see information on the full structure. The full model includes 16 parameters (including two random effects and categorical variable levels), and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/16 = `r round(nrow(reading_speed_measure_data)/16, 2)`
+First, we build the maximal interactive model structure. The maximal model includes XX parameters, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/16 = `r round(nrow(reading_speed_measure_data)/16, 2)`
 
-```{r 'define-fullmodel-structure'}
-FullStructure_RC_nested <- (
-    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId / UserId)"
+```{r 'define-maximal-model-structure'}
+Structure_RC_nested_maximal <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 + Condition : SCompetence.sc + CInterest.sc : SCompetence.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc | StoryId) + (1  | UserId)"
 )
 ```
 
-```{r 'run-fullstructure-model'}
-Speed_RC_FullModel_nested <- lmer(
-    FullStructure_RC_nested,
+```{r 'run-maximal-model'}
+Speed_RC_nested_maximal <- lmer(
+    Structure_RC_nested_maximal,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
 )
 ```
 
-The full model converges.
-Inspect model values:
+The maximal model is singular. We attempt to resolve this by backward stepwise selection of the random slopes.
+
+```{r 'backward-stepwise-select-slopes'}
+# Identify slope that accounts for the least variance
+summary(Speed_RC_nested_maximal) # SCompetence : CInterest
+# Remove SCompetence : CInterest random slope and refit the model
+Structure_RC_nested_selected1 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 + Condition : SCompetence.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc | StoryId) + (1  | UserId)"
+)
+Speed_RC_nested_selected1 <- lmer( # remains singular
+    Structure_RC_nested_selected1,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+# Identify slope that accounts for the least variance
+summary(Speed_RC_nested_selected1) # SCompetence : TR-EEXP1 : TR-EEXP2
+# Remove SCompetence : TR-EEXP1 : TR-EEXP2 random slope and refit the model
+Structure_RC_nested_selected2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 + Condition : SCompetence.sc | StoryId) + (1  | UserId)"
+)
+Speed_RC_nested_selected2 <- lmer( # remains singular, nc
+    Structure_RC_nested_selected2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+# Remove final random slope
+Structure_RC_nested_selected3 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1  | UserId)"
+)
+Speed_RC_nested_selected3 <- lmer(
+    Structure_RC_nested_selected3,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = TRUE
+)
+```
+
+The model converges and is no longer singular after removal of all random slopes.
+Inspect the model:
 
 ```{r, include=FALSE}
-summary(Speed_RC_FullModel_nested)
-fixef(Speed_RC_FullModel_nested)
-# plot(Speed_RC_FullModel_nested)
-# plot(reading_speed_measure_data$ReadingRate, fitted(Speed_RC_FullModel_nested))
+summary(Speed_RC_nested_selected3)
+fixef(Speed_RC_nested_selected3)
+plot(Speed_RC_nested_selected3)
 ```
+
+We then proceed to testing assumptions:
 
 ### Model Assumptions
 
@@ -547,8 +592,8 @@ Some of the variables show high correlations. For example, contextual reading co
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
 ```{r, include=FALSE}
-check_collinearity(Speed_RC_FullModel_nested)
-plot(check_collinearity(Speed_RC_FullModel_nested))
+check_collinearity(Speed_RC_nested_selected3)
+plot(check_collinearity(Speed_RC_nested_selected3))
 ```
 
 Despite of the correlations, the model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
@@ -559,7 +604,7 @@ We test influential observations with Cook's Distance:
 
 ```{r, include=FALSE}
 # cooksd <-
-#     cooks.distance(Speed_RC_FullModel_nested)
+#     cooks.distance(Speed_RC_nested_selected3)
 # plot(cooksd,
 #     pch = "*",
 #     cex = 2,
@@ -579,8 +624,8 @@ The plot indicates that the dataset may include some influential observations. H
 To further test influential observations we use performance::check_outliers:
 
 ```{r, include=FALSE}
-check_outliers(Speed_RC_FullModel_nested)
-plot(check_outliers(Speed_RC_FullModel_nested))
+check_outliers(Speed_RC_nested_selected3)
+plot(check_outliers(Speed_RC_nested_selected3))
 ```
 
 Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. Considering the conservative Cook's Distances, we assume that the model does not have influential outliers.
@@ -590,8 +635,8 @@ Although Cook's Distance indicates that the model has influential observations, 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
 ```{r, include=FALSE}
-check_heteroscedasticity(Speed_RC_FullModel_nested)
-plot(check_heteroscedasticity(Speed_RC_FullModel_nested))
+check_heteroscedasticity(Speed_RC_nested_selected3)
+plot(check_heteroscedasticity(Speed_RC_nested_selected3))
 ```
 
 The test is not significant, indicating that the variances are homoscedastic in the model.
@@ -599,11 +644,11 @@ The test is not significant, indicating that the variances are homoscedastic in 
 We check categorical predictors separately with a Levene's test:
 
 ```{r}
-leveneTest(residuals(Speed_RC_FullModel_nested) ~ reading_speed_measure_data$Condition)
+leveneTest(residuals(Speed_RC_nested_selected3) ~ reading_speed_measure_data$Condition)
 ```
 
 ```{r}
-leveneTest(residuals(Speed_RC_FullModel_nested) ~ reading_speed_measure_data$NativeEnglish)
+leveneTest(residuals(Speed_RC_nested_selected3) ~ reading_speed_measure_data$NativeEnglish)
 ```
 
 The Levene's tests indicate that the assumption of equal variances is also met for condition and NativeEnglish.
@@ -615,7 +660,7 @@ The model aligns with the assumption of homoscedasticity.
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
 ```{r, include=FALSE}
-random_intercept_UserId <- ranef(Speed_RC_FullModel_nested)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Speed_RC_nested_selected3)$UserId$`(Intercept)`
 # qqnorm(random_intercept_UserId)
 # qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -624,7 +669,7 @@ shapiro.test(random_intercept_UserId)
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
 ```{r, include=FALSE}
-random_intercept_StoryId <- ranef(Speed_RC_FullModel_nested)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Speed_RC_nested_selected3)$StoryId$`(Intercept)`
 # qqnorm(random_intercept_StoryId)
 # qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
@@ -637,7 +682,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r, include=FALSE}
-# plot(resid(Speed_RC_FullModel_nested), fitted(Speed_RC_FullModel_nested))
+# plot(resid(Speed_RC_nested_selected3), fitted(Speed_RC_nested_selected3))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -645,22 +690,22 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r, include=FALSE}
-# qqnorm(residuals(Speed_RC_FullModel_nested))
+# qqnorm(residuals(Speed_RC_nested_selected3))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
 ```{r, include=FALSE}
-# hist(resid(Speed_RC_FullModel_nested), breaks = 100)
+# hist(resid(Speed_RC_nested_selected3), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
 ```{r, include=FALSE}
 # 0 - normal, neg - left skew, pos - right skew
-skewness(resid(Speed_RC_FullModel_nested))
+skewness(resid(Speed_RC_nested_selected3))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
-kurtosis(resid(Speed_RC_FullModel_nested))
+kurtosis(resid(Speed_RC_nested_selected3))
 ```
 
 The residuals are slightly skewed to the right, and the distribution is slightly leptokurtic.
@@ -668,7 +713,7 @@ Finally, we test normality with a Shapiro Wilkins test:
 
 ```{r, include=FALSE}
 # Shapiro Wilk Test
-check_normality(Speed_RC_FullModel_nested)
+check_normality(Speed_RC_nested_selected3)
 ```
 
 Shapiro Wilk test is significant, indicating of variance from the normal distribution.
@@ -686,7 +731,7 @@ The model aligns with all assumptions.
 We then interpret model effects to study the results.
 
 ```{r}
-summary(Speed_RC_FullModel_nested)
+summary(Speed_RC_nested_selected3)
 ```
 
 Significant predictors of reading rate:
@@ -704,7 +749,7 @@ This hypothesis was not supported as an interaction effect between Condition and
 ```{r, include=FALSE}
 speed_effect_conditionscomp <- effect(
     "Condition:SCompetence.sc",
-    Speed_RC_FullModel_nested
+    Speed_RC_nested_selected3
 )
 plot(speed_effect_conditionscomp,
     multiline = TRUE
@@ -717,7 +762,7 @@ Condition was also not a significant predictor in the model, however, it was nea
 
 ```{r}
 speed_effectplot_condition <- cat_plot(
-    Speed_RC_FullModel_nested,
+    Speed_RC_nested_selected3,
     pred = "Condition",
     pred.labels = c("High-Autonomy Condition", "Low-Autonomy Condition"),
     data =  reading_speed_measure_data,
@@ -743,7 +788,7 @@ An interaction between Contextual motivation (measured by CInterest) and situati
 
 ```{r}
 speed_effectplot_cmotscomp <- interact_plot(
-    Speed_RC_FullModel_nested,
+    Speed_RC_nested_selected3,
     pred = "SCompetence.sc",
     modx = "CInterest.sc",
     data =  reading_speed_measure_data,
@@ -772,7 +817,7 @@ We expected a three-way interaction between situational competence and the two e
 
 ```{r}
 speed_effectplot_electronicexperiencescomp <-
-    interact_plot(Speed_RC_FullModel_nested,
+    interact_plot(Speed_RC_nested_selected3,
         pred = SCompetence.sc,
         modx = Eexp2DeviceRecFreq.sc,
         mod2 = Eexp1LongformEFreq.sc,
@@ -803,7 +848,7 @@ In addition, reading speed was significantly predicted by contextual competence 
 
 ```{r, warning='hide'}
 speed_effectplot_contextualcompetence <- effect_plot(
-    Speed_RC_FullModel_nested,
+    Speed_RC_nested_selected3,
     pred = "CCompetence.sc",
     data =  reading_speed_measure_data,
     plot.points = TRUE,
@@ -998,54 +1043,417 @@ reading_speed_measure_data$PercentageLocation.sc <-
 
 #### Additive model
 
-First, we build the additive model structure. Refer to the beginning of the event properties section of this script to see information on how the model is built.
+First, we build the additive intercepts-only model structure.
 
-The model includes 10 parameters before adding interactions, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/10 = `r round(nrow(reading_speed_measure_data)/10, 2)`
+The model includes XX parameters before adding interactions, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/10 = `r round(nrow(reading_speed_measure_data)/10, 2)`
 
 ```{r 'define-additive-model-structure'}
-AdditiveStructure_EP_nested <- (
+AdditiveStructure_EP_nested_interceptsonly <- (
     "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId / UserId)"
 )
 ```
 
-Fit the additive model:
+Fit the additive, random-intercepts only model:
 
 ```{r 'fit-additive-model'}
-Speed_EP_AdditiveModel_nested <- lmer(
-    AdditiveStructure_EP_nested,
+Speed_EP_AdditiveModel_nested_interceptsonly <- lmer(
+    AdditiveStructure_EP_nested_interceptsonly,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa")
+)
+```
+
+We then add random slopes in the additive model by the 'best-path' algorithm described by @barrRandomEffectsStructure2013a.
+With this method, we test addition of each fixed effect variable as a random slope using a liberal alpha-level (a = .20) against the intercepts-only model. If multiple variables contribute to the model with p < .20, we accept the variable with lowest p-value as slope, and resume testing by adding each fixed effect variable at a time as a random slope and compare to model with the previously accepted slope. This method allows us to explore meaningful random slopes with a data-driven approach.
+
+```{r 'test-slopes1'}
+# slope test 1
+    ## 1.1 WW
+    ## 1.2 DUD
+    ## 1.3 Event k-1
+    ## 1.4 Event k-2
+    ## 1.5 RSN
+    ## 1.6 TRS
+    ## 1.7 Loc
+###################
+# 1
+AdditiveStructure_EP_nested_slope1_1 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + WindowWidth.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_1 <- lmer( #nc, sing
+    AdditiveStructure_EP_nested_slope1_1,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested_interceptsonly, Speed_EP_AdditiveModel_nested1_1) # WW does not contribute, p > .2
+# 2
+AdditiveStructure_EP_nested_slope1_2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + DaysUntilDeadline.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_2 <- lmer(
+    AdditiveStructure_EP_nested_slope1_2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested1_2, Speed_EP_AdditiveModel_nested_interceptsonly) # DUD sig contributes, p = .0011
+# 3
+AdditiveStructure_EP_nested_slope1_3 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + Observation_lag1.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_3 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope1_3,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested1_3, Speed_EP_AdditiveModel_nested_interceptsonly) # sig contributes, p = .0321
+# 4
+AdditiveStructure_EP_nested_slope1_4 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + Observation_lag2.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_4 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope1_4,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested1_4, Speed_EP_AdditiveModel_nested_interceptsonly) # does not contribute, p > .2
+# 5
+AdditiveStructure_EP_nested_slope1_5 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + ReadingSessionNumber.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_5 <- lmer(
+    AdditiveStructure_EP_nested_slope1_5,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested1_5, Speed_EP_AdditiveModel_nested_interceptsonly) # sig contributes, p = .0033
+# 6
+AdditiveStructure_EP_nested_slope1_6 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_6 <- lmer(
+    AdditiveStructure_EP_nested_slope1_6,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested1_6, Speed_EP_AdditiveModel_nested_interceptsonly) # sig contributes, p < .0001
+# 7
+AdditiveStructure_EP_nested_slope1_7 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested1_7 <- lmer(
+    AdditiveStructure_EP_nested_slope1_7,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested1_7, Speed_EP_AdditiveModel_nested_interceptsonly) # sig contributes, p < .0001
+```
+
+```{r 'test-slopes2'}
+# slope test 2
+## Start adding all slopes again to the most sig slope: Loc
+    ## 2.1: WW
+    ## 2.2: DUD
+    ## 2.3: Event k-1
+    ## 2.4: Event k-2
+    ## 2.5: RSN
+    ## 2.6: TRS
+###################
+AdditiveStructure_EP_nested_slope2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2 <- lmer(
+    AdditiveStructure_EP_nested_slope2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+## 2_1
+AdditiveStructure_EP_nested_slope2_1 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + WindowWidth.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2_1 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope2_1,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_1) # does not contribute, p > .2
+## 2_2
+AdditiveStructure_EP_nested_slope2_2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + DaysUntilDeadline.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2_2 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope2_2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_2) # sig contributes, p = .010
+## 2_3
+AdditiveStructure_EP_nested_slope2_3 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + Observation_lag1.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2_3 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope2_3,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_3) # does not contribute, p > .2
+## 2_4
+AdditiveStructure_EP_nested_slope2_4 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + Observation_lag2.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2_4 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope2_4,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_4) # does not contribute, p > .2
+## 2_5
+AdditiveStructure_EP_nested_slope2_5 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + ReadingSessionNumber.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2_5 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope2_5,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_5) # contributes, p = .15
+## 2_6
+AdditiveStructure_EP_nested_slope2_6 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested2_6 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope2_6,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_6) # sig contributes, p = .00142
+```
+
+```{r 'test-slopes3'}
+# slope test 3
+## Start adding all slopes again to the most sig slopes: LOC + TRS
+    ## 3_1: WW
+    ## 3_2: DUD
+    ## 3_3: Event k-1
+    ## 3_4: Event k-2
+    ## 3_5: RSN
+###################
+AdditiveStructure_EP_nested_slope3 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested3 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope3,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+## 3_1
+AdditiveStructure_EP_nested_slope3_1 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + WindowWidth.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested3_1 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope3_1,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested3, Speed_EP_AdditiveModel_nested3_1) # contributes, p = .092
+## 3_2
+AdditiveStructure_EP_nested_slope3_2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + DaysUntilDeadline.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested3_2 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope3_2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested3, Speed_EP_AdditiveModel_nested3_2) # does not contribute, p > .2
+## 3_3
+AdditiveStructure_EP_nested_slope3_3 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + Observation_lag1.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested3_3 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope3_3,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested3, Speed_EP_AdditiveModel_nested3_3) # does not contribute, p > .2
+## 3_4
+AdditiveStructure_EP_nested_slope3_4 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + Observation_lag2.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested3_4 <- lmer( # sing
+    AdditiveStructure_EP_nested_slope3_4,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested3, Speed_EP_AdditiveModel_nested3_4) # does not contribute, p > .2
+## 3_5
+AdditiveStructure_EP_nested_slope3_5 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + ReadingSessionNumber.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested3_5 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope3_5,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested3, Speed_EP_AdditiveModel_nested3_5) # sig contributes, p = .0129
+```
+
+```{r}
+# slope test 4
+## Start adding all slopes again to the most sig slopes: LOC + TRS + RSN
+    ## 4_1: WW - same as 1
+    ## 4_2: DUD
+    ## 4_3: Event k-1
+    ## 4_4: Event k-2
+###################
+AdditiveStructure_EP_nested_slope4 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + ReadingSessionNumber.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested4 <- lmer( #sing, nc
+    AdditiveStructure_EP_nested_slope4,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+# 4_1 
+AdditiveStructure_EP_nested_slope4_1 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + ReadingSessionNumber.sc + WindowWidth.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested4_1 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope4_1,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested4, Speed_EP_AdditiveModel_nested4_1) # does not contribute, p > .2
+# 4_2
+AdditiveStructure_EP_nested_slope4_2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + ReadingSessionNumber.sc + DaysUntilDeadline.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested4_2 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope4_2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested4, Speed_EP_AdditiveModel_nested4_2) # does not contribute, p > .2
+## 4_3
+AdditiveStructure_EP_nested_slope4_3 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + ReadingSessionNumber.sc + Observation_lag1.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested4_3 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope4_3,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested4, Speed_EP_AdditiveModel_nested4_3) # does not contribute, p > .2
+## 4_4
+AdditiveStructure_EP_nested_slope4_4 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc + TimeInReadingSession.sc + ReadingSessionNumber.sc + Observation_lag2.sc | StoryId / UserId)"
+)
+Speed_EP_AdditiveModel_nested4_4 <- lmer( # sing, nc
+    AdditiveStructure_EP_nested_slope4_4,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa"),
+    REML = FALSE
+)
+anova(Speed_EP_AdditiveModel_nested4, Speed_EP_AdditiveModel_nested4_4) # does not contribute, p > .2
+```
+
+None of the new slopes significantly add to the model, and so our final additive model includes random slopes for location in text, reading session number, and time in a reading session.
+Refit the additive model with REML:
+
+```{r 'refit-additive-model-with-REML'}
+Speed_EP_AdditiveModel_nested_slopes <- lmer(
+    AdditiveStructure_EP_nested_slope4,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
 )
 ```
 
-The full additive model converges.
+The additive model with random slopes is nonconvergent and singular. To address this, we simplify the model backward stepwise until convergence.
+Selection is done according to the following priority:
+    1. Remove slopes that account for the lowest amount of variance
+    2. Remove fixed effects that contribute the least to the model, according to p-values
+
+Selection is done manually, removing a single variable at a time. Selection is only done until the additive model converges and is no longer singular.
+
+```{r 'ep-backward-stepwise-selection-slopes'}
+# backward-selection of slopes
+## 1: remove the slope that accounts for the least variance, until convergence
+##########
+# see which slope accounts for the lowest amount of variance
+summary(Speed_EP_AdditiveModel_nested_slopes) # Location accounts for the least variance
+# Remove Location slope
+AdditiveStructure_EP_nested_slope5_1 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc | StoryId / UserId)"
+)
+AdditiveStructure_EP_nested_slope5_1 <- lmer( #remains nc and sing
+    AdditiveStructure_EP_nested_slope5_1,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa")
+)
+summary(AdditiveStructure_EP_nested_slope5_1) # Time in reading session accounts for the least variance
+# Remove TRS
+AdditiveStructure_EP_nested_slope5_2 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + ReadingSessionNumber.sc | StoryId / UserId)"
+)
+AdditiveStructure_EP_nested_slope5_2 <- lmer( #converges and is no longer singular
+    AdditiveStructure_EP_nested_slope5_2,
+    data = reading_speed_measure_data,
+    control = lmerControl(optimizer = "bobyqa")
+)
+```
+
+The additive model converges after removal of the random slopes Location and Time in a reading session.
+The final additive model includes a random slope of reading session number only.
 Inspect model values:
 
 ```{r}
-summary(Speed_EP_AdditiveModel_nested)
-# plot(Speed_EP_AdditiveModel_nested)
-fixef(Speed_EP_AdditiveModel_nested)
+summary(AdditiveStructure_EP_nested_slope5_2)
+plot(AdditiveStructure_EP_nested_slope5_2)
+fixef(AdditiveStructure_EP_nested_slope5_2)
 ```
 
-The model with all main effects converges, and so we can add two-way interactions.
+We then add interactions to the additive model.
 
 #### Interactive model
 
 We create a new model structure with interactions between predictors of interest (all main effects apart from DaysUntilDeadline and WindowWidth which are used as control variables only).
 Only two-way interactions are included to avoid overfitting the model. No interactions are included between previous events (Observation_lag1 and Observation_lag2) and other predictors in the model (e.g. ReadingSessionNumber) to avoid multicollinearity.
 
-The interactive model includes 14 parameters (including the intercept, main effects, interactions and random effects). Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/14 = `r round(nrow(reading_speed_measure_data)/14, 2)`.
+To start, the interactive model includes XX parameters (including the intercept, random effects, main effects, interactions). Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/14 = `r round(nrow(reading_speed_measure_data)/14, 2)`.
 
 ```{r 'define-interactive-structure'}
-InteractiveStructure_EP_nested <- (
-    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1.sc : Observation_lag2.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 | StoryId / UserId)"
+InteractiveStructure_EP_nested_slopes <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1.sc : Observation_lag2.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 + ReadingSessionNumber.sc | StoryId / UserId)"
 )
 ```
 
 ```{r 'fit-interactive-model'}
-Speed_EP_InteractiveModel_nested <- lmer(
-    InteractiveStructure_EP_nested,
+Speed_EP_InteractiveModel_nested_slopes <- lmer(
+    InteractiveStructure_EP_nested_slopes,
     data = reading_speed_measure_data,
     control = lmerControl(optimizer = "bobyqa"),
     REML = TRUE
@@ -1056,9 +1464,9 @@ The full interactive model structure converges.
 Inspect model values:
 
 ```{r, include=FALSE}
-summary(Speed_EP_InteractiveModel_nested)
-# plot(Speed_EP_InteractiveModel_nested)
-fixef(Speed_EP_InteractiveModel_nested)
+summary(Speed_EP_InteractiveModel_nested_slopes)
+plot(Speed_EP_InteractiveModel_nested_slopes)
+fixef(Speed_EP_InteractiveModel_nested_slopes)
 ```
 
 ### Model Assumptions
@@ -1070,7 +1478,7 @@ All linear mixed models were tested for (1) multicollinearity, (2) influential o
 We check for multicollinearity first with a correlation matrix:
 
 ```{r, include=FALSE}
-# corrplot(cor(remove_missing(reading_speed_measure_data[, c(36:37, 41:45)])), method = "number")
+#corrplot(cor(remove_missing(reading_speed_measure_data[, c(36:37, 41:45)])), method = "number")
 ```
 
 None of the predictors show high correlations.
@@ -1078,8 +1486,8 @@ None of the predictors show high correlations.
 We then calculate Variance Inflation Factors (VIF):
 
 ```{r, include=FALSE}
-check_collinearity(Speed_EP_InteractiveModel_nested)
-plot(check_collinearity(Speed_EP_InteractiveModel_nested))
+check_collinearity(Speed_EP_InteractiveModel_nested_slopes)
+plot(check_collinearity(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 The model predictors do not seem to be multicollinear. All VIF < 2, and usually VIF > 5 is used as an indicator of potential multicollinearity.
@@ -1089,20 +1497,20 @@ The model predictors do not seem to be multicollinear. All VIF < 2, and usually 
 We test influential observations with Cook's Distance:
 
 ```{r, include=FALSE}
-# cooksd <-
-#     cooks.distance(Speed_EP_InteractiveModel_nested)
-# plot(cooksd,
-#     pch = "*",
-#     cex = 2,
-#     main = "Influential Obs by Cooks Distance"
-# )
-# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-# text(
-#     x = 1:length(cooksd) + 1,
-#     y = cooksd,
-#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-#     col = "red"
-# )
+cooksd <-
+     cooks.distance(Speed_EP_InteractiveModel_nested_slopes)
+plot(cooksd,
+     pch = "*",
+     cex = 2,
+     main = "Influential Obs by Cooks Distance"
+)
+abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+text(
+     x = 1:length(cooksd) + 1,
+    y = cooksd,
+    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+    col = "red"
+)
 ```
 
 The plot indicates that the dataset may include some influential observations. However, the cook's distances are very conservative as the threshold is set at `r 4 * mean(cooksd, na.rm = TRUE)`. Therefore, it is unlikely that these observations influence the model.
@@ -1110,8 +1518,8 @@ The plot indicates that the dataset may include some influential observations. H
 To further test influential observations we use performance::check_outliers:
 
 ```{r, include=FALSE}
-check_outliers(Speed_EP_InteractiveModel_nested)
-plot(check_outliers(Speed_EP_InteractiveModel_nested))
+check_outliers(Speed_EP_InteractiveModel_nested_slopes)
+plot(check_outliers(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. Considering the conservative Cook's Distance limit, we assume that the model does not have influential outliers.
@@ -1121,8 +1529,8 @@ Although Cook's Distance indicates that the model has influential observations, 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
 ```{r, include=FALSE}
-check_heteroscedasticity(Speed_EP_InteractiveModel_nested)
-plot(check_heteroscedasticity(Speed_EP_InteractiveModel_nested))
+check_heteroscedasticity(Speed_EP_InteractiveModel_nested_slopes)
+plot(check_heteroscedasticity(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 The test is not significant, indicating that the variances are homoscedastic in the model.
@@ -1133,7 +1541,7 @@ The model aligns with the assumption of homoscedasticity.
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
 ```{r, include=FALSE}
-random_intercept_UserId <- ranef(Speed_EP_InteractiveModel_nested)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Speed_EP_InteractiveModel_nested_slopes)$UserId$`(Intercept)`
 # qqnorm(random_intercept_UserId)
 # qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
@@ -1142,7 +1550,7 @@ shapiro.test(random_intercept_UserId)
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
 ```{r, include=FALSE}
-random_intercept_StoryId <- ranef(Speed_EP_InteractiveModel_nested)$StoryId$`(Intercept)`
+random_intercept_StoryId <- ranef(Speed_EP_InteractiveModel_nested_slopes)$StoryId$`(Intercept)`
 # qqnorm(random_intercept_StoryId)
 # qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
@@ -1155,7 +1563,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r, include=FALSE}
-# plot(resid(Speed_EP_InteractiveModel_nested), fitted(Speed_EP_InteractiveModel_nested))
+plot(resid(Speed_EP_InteractiveModel_nested_slopes), fitted(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -1163,22 +1571,22 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r, include=FALSE}
-# qqnorm(residuals(Speed_EP_InteractiveModel_nested))
+qqnorm(residuals(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
 ```{r, include=FALSE}
-# hist(resid(Speed_EP_InteractiveModel_nested), breaks = 100)
+hist(resid(Speed_EP_InteractiveModel_nested_slopes), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
 ```{r}
 # 0 - normal, neg - left skew, pos - right skew
-skewness(resid(Speed_EP_InteractiveModel_nested))
+skewness(resid(Speed_EP_InteractiveModel_nested_slopes))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
-kurtosis(resid(Speed_EP_InteractiveModel_nested))
+kurtosis(resid(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 The residuals are slightly skewed to the right, and the distribution is leptokurtic.
@@ -1186,7 +1594,7 @@ Finally, we test normality with a Shapiro Wilkins test:
 
 ```{r, include=FALSE}
 # Shapiro Wilk Test
-check_normality(Speed_EP_InteractiveModel_nested)
+check_normality(Speed_EP_InteractiveModel_nested_slopes)
 ```
 
 Shapiro Wilk test is significant, indicating of variance from the normal distribution.
@@ -1204,16 +1612,16 @@ The model aligns with all assumptions.
 We then inspect model effects to interpret the results.
 
 ```{r}
-summary(Speed_EP_InteractiveModel_nested)
+summary(Speed_EP_InteractiveModel_nested_slopes)
 ```
 
 In the event properties model, the following variables are significant predictors of reading rate:
 (1) Main effect of Observation_lag1 (Event~k-1~)
 (2) Main effect of PercentageLocation
-(3) Significant interaction effect between ReadingSessionNumber and PercentageLocation
-(4) Significant interaction effect between TimeInReadingSession and PercentageLocation
+(3) Significant interaction effect between Event~k-1~ and Event~k-2~
+(4) Significant interaction effect between ReadingSessionNumber and PercentageLocation
 
-We first inspect the main effect of Observation_lag1 (1), and then the remaining significant effects (2,3,4).
+We first inspect the main effect of Observation_lag1 (1) and interaction between Observation_lag1 and Observation_lag2 (3), and then the remaining significant effects (2, and 4).
 
 #### Inspect impact of previous event
 
@@ -1221,7 +1629,7 @@ Observation_lag1 was a significant predictor of reading rate.
 
 ```{r}
 speed_ep_previouslag1 <- effect_plot(
-    Speed_EP_InteractiveModel_nested,
+    Speed_EP_InteractiveModel_nested_slopes,
     pred = Observation_lag1.sc,
     plot.points = TRUE,
     point.alpha = .2,
@@ -1232,6 +1640,7 @@ speed_ep_previouslag1 <- effect_plot(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Event~k-1~:,Reading speed on previous page,(centered and scaled)")
     )
+(summary(Speed_EP_InteractiveModel_nested_slopes)$varcor[1])
 ```
 
 There is a slight positive trend which indicates that a high reading speed on previous page-view (event k-1) predicts a high reading speed on the following page (event k).
@@ -1240,7 +1649,7 @@ Interestingly, reading speed on the page before the previous (event k-2) was not
 
 ```{r}
 speed_ep_previouslag2 <- effect_plot(
-    Speed_EP_InteractiveModel_nested,
+    Speed_EP_InteractiveModel_nested_slopes,
     pred = Observation_lag2.sc,
     plot.points = TRUE,
     point.alpha = .2,
@@ -1255,13 +1664,33 @@ speed_ep_previouslag2 <- effect_plot(
 
 This indicates that variation of reading speed was common - although consecutive pages were likely to be navigated at the same speed, reading speed in event k-2 was not predictive of reading speed in event k.
 
-#### Impact of reading session timing and location in text
+```{r}
+speed_ep_previouslag12 <- interact_plot(
+    Speed_EP_InteractiveModel_nested_slopes,
+    pred = Observation_lag1.sc,
+    modx = Observation_lag2.sc,
+    plot.points = TRUE,
+    legend.main = addline_format("Event~k-2~"),
+    point.alpha = .2,
+    interval = TRUE
+) +
+    figure_theme_with_top_legend +
+    labs(
+        y = "Reading Speed as Proportion of Baseline Speed",
+        x = addline_format("Event~k-1~:,Reading speed on previous page,(centered and scaled)")
+    )
+```
 
-In addition to Observation_lag1, reading speed was significantly predicted by PercentageLocation.
+The significant interaction effect shows that the positive relationship between the outcome variable and Event~k-1~ is stronger if Event~k-2~ included a slow reading rate. In contrast, there is only a weak relationship between Event~k-1~ and the outcome variable if Event~k-2~ included a fast reading rate.
+This indicates that it is more difficult to predict changes in reading rate following a fast rather a slower speed. It could be because faster reading speeds are used for a variety of different purposes - but this is just one possibility.
+
+#### Impact of reading session number and location in text
+
+In addition to Observation_lag1 and Observation_lag2, reading speed was significantly predicted by PercentageLocation.
 
 ```{r}
 speed_ep_location <- effect_plot(
-    Speed_EP_InteractiveModel_nested,
+    Speed_EP_InteractiveModel_nested_slopes,
     pred = PercentageLocation.sc,
     plot.points = TRUE,
     point.alpha = .2,
@@ -1276,13 +1705,11 @@ speed_ep_location <- effect_plot(
 
 Location and reading speed were positively correlated, indicating that participants had a tendency to increase their reading speed towards the end of the document.
 
-This main effect was qualified by two significant interactions between PercentageLocation and ReadingSessionNumber, and PercentageLocation and TimeInReadingSession.
-
-First, we inspect the interaction between PercentageLocation and ReadingSessionNumber:
+This main effect was qualified by a significant interaction between PercentageLocation and ReadingSessionNumber.
 
 ```{r, warning='hide'}
 speed_ep_locationrsnumb <- interact_plot(
-    Speed_EP_InteractiveModel_nested,
+    Speed_EP_InteractiveModel_nested_slopes,
     pred = PercentageLocation.sc,
     modx = ReadingSessionNumber.sc,
     legend.main = addline_format("Reading Session,Number"),
@@ -1296,28 +1723,4 @@ speed_ep_locationrsnumb <- interact_plot(
     )
 ```
 
-The visualisation indicates that the interaction effect is not particularly strong, as the confidence intervals largely overlap. However, a statistically significant difference is seen between different reading sessions: Early reading sessions have a stronger positive correlation between reading speed and location in text compared to latter reading sessions. Therefore, participants who read most of the text in early reading sessions had a tendency to increase their reading speed towards the end of the text. In contrast, participants who divided their reading in multiple reading sessions, varied their speed less across the text.
-
-However, it is unclear whether the effect is practically significant or simply an artefact of statistical significance due to the high observation count.
-
-We then inspect the interaction effect between PercentageLocation and TimeInReadingSession:
-
-```{r}
-speed_ep_locationtimeinrs <- interact_plot(
-    Speed_EP_InteractiveModel_nested,
-    pred = PercentageLocation.sc,
-    modx = TimeInReadingSession.sc,
-    legend.main = addline_format("Time in Reading,Session"),
-    plot.points = FALSE,
-    interval = TRUE
-) +
-    figure_theme_with_top_legend +
-    labs(
-        y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
-        x = "Location in Text (%, centered and scaled)"
-    )
-```
-
-Similarly to the interaction between PercentageLocation and ReadingSessionNumber, the effect of PercentageLocation and TimeInReadingSession is minimal. The effect shows that participants who visited the end of the text at the beginning of a reading session were more likely to use faster reading speeds, compared to participants who were at the end of the text at the end of a reading session.
-
-However, it is unclear to what extent the finding is practically significant.
+A statistically significant difference is seen between different reading sessions: Early reading sessions are connected to a stronger positive association between reading speed and location in text, compared to latter reading sessions. Therefore, participants who read most of the text in early reading sessions may have increased their reading speed towards the end of the text. In contrast, participants who divided their reading in multiple reading sessions, varied their speed less across the text.
