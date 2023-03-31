@@ -79,7 +79,7 @@ raw_questionnaire_data <- read.csv(
 )
 ```
 
-```{r 'change-variable types'}
+```{r 'change-variable types', echo=FALSE}
 str(raw_questionnaire_data)
 source(
     paste0(
@@ -285,7 +285,7 @@ round(IMIR_item_polychor_correlations, 2)
 
 Visualise correlations:
 
-```{r 'correlation-plot-IMI-R'}
+```{r 'correlation-plot-IMI-R', eval=FALSE}
 (correlationsIMIR <- corrplot(round(IMIR_item_polychor_correlations, 2), method = "circle", type = "lower"))
 ```
 
@@ -395,7 +395,7 @@ The average contextual competence score is `r round(mean(IMIR_scores$CCompetence
 
 We then check correlations between scores:
 
-```{r 'IMI-R-score-correlations'}
+```{r 'IMI-R-score-correlations', eval=FALSE}
 IMIR_scores_correlations <- cor(
     IMIR_scores[, 2:length(IMIR_scores)]
 )
@@ -500,7 +500,7 @@ round(IMI_item_polychor_correlations, 2)
 
 Visualise correlations:
 
-```{r}
+```{r, eval=FALSE}
 (corrplotIMI <- corrplot(round(IMI_item_polychor_correlations, 2), method = "circle", type = "lower"))
 ```
 
@@ -592,7 +592,7 @@ IMI_scores <- IMI_data %>%
 
 Inspect participants' IMI scores:
 
-```{r 'Interest-IMI-scores'}
+```{r 'Interest-IMI-scores', eval=FALSE}
 # interest subscale
 ## max score on the scale: 7*7 = 49, min score 7*1 = 7
 mean(IMI_scores$SInterest)
@@ -608,7 +608,7 @@ The average situational interest score is `r round(mean(IMI_scores$SInterest), 2
 
 The mean score divided by the number of questions, `r round((mean(IMI_scores$SInterest)/7), 2)` corresponds with the third highest option on the Likert-scale from 1 (*not at all true*) to 7 (*very true*).
 
-```{r 'IMI-competence-score'}
+```{r 'IMI-competence-score', eval=FALSE}
 # competence subscale
 ## max score on the scale: 6*7 = 42, min score 6*1 = 6
 mean(IMI_scores$SCompetence)
@@ -622,7 +622,7 @@ range(IMI_scores$SCompetence)
 
 The average situational competence score is `r round(mean(IMI_scores$SCompetence), 2)` (*SD* = `r round(sd(IMI_scores$SCompetence), 2)`, *range* = `r round(range(IMI_scores$SCompetence), 2)`). The plot shows that participants varied more in how difficult they found the reading task than in their enjoyment of the short story. The average situational competence score divided by the amount of questions is `r round((mean(IMI_scores$SCompetence)/6), 2)`, which corresponds with the third highest option in the Likert scale (scale: 1 (*not at all true*) to 7 (*very true*)).
 
-```{r}
+```{r, eval=FALSE}
 # autonomy subscale
 ## max score on the scale: 7*7 = 49, min score 7*1 = 7
 mean(IMI_scores$SAutonomy)
@@ -638,7 +638,7 @@ The average situational autonomy score is `r round(mean(IMI_scores$SAutonomy), 2
 
 We then check correlations between scores:
 
-```{r 'IMI-correlations-between-scores'}
+```{r 'IMI-correlations-between-scores', eval=FALSE}
 IMI_scores_correlations <- cor(
     IMI_scores[, 2:length(IMI_scores)]
 )
@@ -758,9 +758,9 @@ table(eexp_data$HasTabletComputer)
 table(eexp_data$HasOtherDevice)
 table(eexp_data$NumberOfDevices)
 eexp_data$NumberOfDevices <- as.factor(eexp_data$NumberOfDevices)
-(Devices <- ggplot(eexp_data) +
-    geom_bar(aes(x = NumberOfDevices)) +
-    theme_classic())
+# (Devices <- ggplot(eexp_data) +
+#     geom_bar(aes(x = NumberOfDevices)) +
+#     theme_classic())
 ```
 
 The bar graph shows that most of the participants have 2 different digital devices, followed by 3 and then 1 device(s). Most frequently, participants own laptops (`r round((sum(eexp_data$HasLaptop)/nrow(eexp_data))*100, 2)`%) and smartphones (`r round((sum(eexp_data$HasSmartphone)/nrow(eexp_data))*100, 2)`%). `r round((sum(eexp_data$HasTabletComputer)/nrow(eexp_data))*100, 2)`% of the participants have tablet computers, and `r round((sum(eexp_data$HasDesktopComputer)/nrow(eexp_data))*100, 2)`% of the participants own a desktop computer.
@@ -786,7 +786,7 @@ eexp_data <- eexp_data %>%
 
 Inspect participants' variation in the eexp measures. First we look at the frequence of reading long-form fictional texts electronically:
 
-```{r 'visualise-eexp-measure-1'}
+```{r 'visualise-eexp-measure-1', eval=FALSE}
 # frequency of reading fictional, long-form texts electronically
 # possible score range: min - 2, max - 10
 mean(eexp_data$Eexp1LongformEFreq)
@@ -802,7 +802,7 @@ Most of the participants rarely read fiction books or short stories electronical
 
 Secondly, we inspect variation in the second measure, frequency of using task-relevant digital devices for recreational reading:
 
-```{r 'visualise-eexp-measure-2'}
+```{r 'visualise-eexp-measure-2', eval=FALSE}
 # frequency of using task-relevant digital devices for recreational reading
 # possible score range: min - 4, max - 20
 mean(eexp_data$Eexp2DeviceRecFreq)
@@ -818,7 +818,7 @@ Most participants also score low in the second electronic experience measure (ta
 
 We then inspect correlations between the two eexp measures:
 
-```{r 'correlation-between-eexp-measures'}
+```{r 'correlation-between-eexp-measures', eval=FALSE}
 cor(eexp_data[, c("Eexp1LongformEFreq", "Eexp2DeviceRecFreq")])
 ```
 
@@ -826,7 +826,7 @@ The two electronic reading experience measures are moderately, positively correl
 
 We then inspect associations between the two measures and ownership of digital devices:
 
-```{r 'inspect-access-to-digital-devices-and-eexp-measures'}
+```{r 'inspect-access-to-digital-devices-and-eexp-measures', eval=FALSE}
 # access to digital devices
 ## eexp1: longform fictional texts electronically
 (Eexp1Devices <- ggplot(

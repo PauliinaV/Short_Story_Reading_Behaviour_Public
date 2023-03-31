@@ -1411,6 +1411,9 @@ None of the new slopes significantly add to the model, and so our final additive
 Refit the additive model with REML:
 
 ```{r 'refit-additive-model-with-REML', warning='hide'}
+AdditiveStructure_EP_nested_slope4 <- (
+    "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + ReadingSessionNumber.sc | StoryId / UserId)"
+)
 Speed_EP_AdditiveModel_nested_slopes <- lmer(
     AdditiveStructure_EP_nested_slope4,
     data = reading_speed_measure_data,

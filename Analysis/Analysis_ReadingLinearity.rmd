@@ -1708,7 +1708,7 @@ anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_5)
 
 Observation_lag2 contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, LOC and Obs lag2
 
-```{r 'select-slopes-adjusted4, eval=FALSE, echo=FALSE}
+```{r 'select-slopes-adjusted4', eval=FALSE, echo=FALSE}
 # adjusted model slope test 4
 ## Compare to model with a random slope of TRS, LOC and OBS lag2
     ## 4b_1 WW
@@ -1968,7 +1968,7 @@ The plot indicates that the dataset may include some highly influential observat
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 set.seed(1234) # for reproducibility
 simulated_model_output <- DHARMa::simulateResiduals(Linearity_EP_InteractiveModel_Adjusted)
 testOutliers(simulated_model_output)
