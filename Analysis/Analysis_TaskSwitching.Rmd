@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingFrequency"
 author: "Pauliina Vuorinen"
-date: "08/10/2022-08/03/2023"
+date: "08/10/2022-31/03/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -37,6 +37,7 @@ library(effects)
 library(interactions)
 library(jtools)
 ```
+
 Save working directory so that this script can be used elsewhere, if required. The working directory should be "~/Short-Story-Reading-Behaviour-Public/". If the working directory is not correct, we save the correct path and use that in loading files.
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts. If using remotely, define 'AnalysisFilePath'. AnalysisFilePath refers to this exact file location, and so path to the main folder "Short_Story_Reading_Behaviour_Public" is two folders lower.
@@ -254,7 +255,9 @@ The reader characteristics model aims to address the following hypotheses:
 * H2b: Contextual autonomous motivation is connected to lower task-switching frequency
 * H2c: Task-relevant electronic reading experience (TR-EEXP) is connected to lower task-switching frequency
 
-The reader characteristics model takes the following structure:
+The reader characteristics model was pre-specified to best address our hypotheses. We use a maximal interactive model structure, which includes random intercepts for story and participant indicator. Random slopes were included for all key variables in the model which are used to address our hypotheses. These random slopes could only be included in the random effect of story indicator, considering that all key variables had only one observation from each participant.
+
+The maximal interactive model takes the following structure:
 
 $Y_{i} = 
     \beta_{0} +
@@ -268,7 +271,8 @@ $Y_{i} =
     TR-EExp1 +
     TR-EExp2 +
     TR-EExp1 x TR-EExp2 +
-    u_{Story / Subject} +
+    (1  + Cond + CMot + TR-EEXP1 x TR-EEXP2 | Story indicator) +
+    (1 | Participant indicator) +
     \varepsilon_{i}$ 
 
 where
@@ -283,10 +287,13 @@ where
 **CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
 **TR-EExp1** is frequency of using any electronic devices for long-form text reading purposes
 **TR-EExp2** is frequency of using task-relevant devices for any reading purpose
-**$u_{Story / Subject}$** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
+**(1  + Cond + CMot + TR-EEXP1 * TR-EEXP2 | Story indicator)** indicates a random effect of story indicator. The random effect includes an intercept for each story indicator, and a random slope for all key variables used to address our hypotheses.
+**(1 | Participant indicator)** indicates a random effect of participant indicator. The random effect only includes the random intercept for each participant considering that key variables of interest only had one observation for each participant, and so usage of random slopes was not meaningful. Note that participant indicator is explicitly nested within story indicator as participants only read one of 9 stories during the study. Due to the explicit nesting, notation as nested vs crossed does not make a difference in the model specification. To allow us to use different random slopes, we use crossed random effect notation here.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
 In addition to these predictors, models of linearity and speed of reading are also modelled with 'Cond x SComp', 'CMot x SComp', and 'TR-EExp1 x TR-EExp2 x SComp'. These additional interactions are needed to address all hypotheses, but they are not necessary in the model of task-switching frequency.
+
+In case of nonconvergence or singularity, the model is selected backward stepwise. This is done by first removing random slopes from the model starting with the slope that accounts for the least variance. If the model remains nonconvergent or singular, fixed effects are removed one-by-one starting with the predictors that account for the least variance according to p-values. Significant fixed effects are not removed.
 
 ## Visualise task-switching
 
@@ -296,9 +303,9 @@ We create graphs to inspect task-switching and its connection to other variables
 
 The task-switching measure, ContinuousEngagementMinutes, is skewed towards lower values and the distribution may be improved by log-transformation.
 
-```{r, include=FALSE}
-# hist(task_switching_data$ContinuousEngagementMinutes, breaks = 50)
-# hist(log(task_switching_data$ContinuousEngagementMinutes + 1), breaks = 50)
+```{r, eval=FALSE, include=FALSE}
+hist(task_switching_data$ContinuousEngagementMinutes, breaks = 50)
+hist(log(task_switching_data$ContinuousEngagementMinutes + 1), breaks = 50)
 ```
 
 Variation between participants:
@@ -352,7 +359,7 @@ ggplot(
 
 Create a formatted plot which shows variation between participants and books read. This plot is saved in Fig folder as Fig_TaskSwitchingVariance.png
 
-```{r}
+```{r, echo=FALSE}
 TaskSwitchingVariance <-
     ggplot(
         task_switching_data,
@@ -386,7 +393,7 @@ TaskSwitchingVariance <-
 
 The dataset includes three different measures of 'Days until deadline' (which reflects how close to the participant is to the end of the reading phase). These measures are the first and the last value of DaysUntilDeadline in a continuous engagement block, and the mean value of DaysUntilDeadline. The three measures are nearly perfectly correlated:
 
-```{r}
+```{r, include=FALSE}
 cor(task_switching_data[, c(
     "LastDaysUntilDeadline",
     "FirstDaysUntilDeadline",
@@ -410,7 +417,7 @@ ggplot(task_switching_data, aes(x = FirstDaysUntilDeadline, y = ContinuousEngage
 
 Similarly to DaysUntilDeadline, the dataset includes three different values for WindowWidth to account for the possibility that participants' browser window size changes during a continuous engagement block. Note that while it is possible that the reader resizes a window during a continuous engagement block (which would result in a change in the value of WindowWidth), it isn't possible that the reader changes their reading device within a continuous engagement block. Unsurprisingly, window width measurements are also very highly correlated:
 
-```{r}
+```{r, include=FALSE}
 cor(task_switching_data[, c(
     "LastWindowWidth",
     "FirstWindowWidth",
@@ -563,7 +570,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Contrasts for categorical variables:
 
-```{r 'categorical-contrasts'}
+```{r 'categorical-contrasts', echo=FALSE}
 # whether native language is English or not
 task_switching_data$NativeEnglish <- as.factor(task_switching_data$NativeEnglish)
 contrasts(task_switching_data$NativeEnglish) <- contr.helmert.unweighted(task_switching_data$NativeEnglish)
@@ -583,7 +590,7 @@ contrasts(task_switching_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
 
-```{r 'scale-continuous-variables'}
+```{r 'scale-continuous-variables', echo=FALSE}
 # Situational competence
 task_switching_data$SCompetence.sc <-
     scale(task_switching_data$SCompetence,
@@ -636,7 +643,7 @@ Structure_nested_maximal <- (
 )
 ```
 
-```{r 'fit-maximal-model'}
+```{r 'fit-maximal-model', echo=FALSE, warning="hide"}
 TaskSwitching_nested_maximal <- lmer(
     Structure_nested_maximal,
     data = task_switching_data,
@@ -647,7 +654,7 @@ TaskSwitching_nested_maximal <- lmer(
 
 The maximal model is singular, and so it is selected backward stepwise. We remove each random slope at a time until the model reaches convergence and is no longer singular.
 
-```{r 'select-RC-model'}
+```{r 'select-RC-model', echo=FALSE, warning='hide'}
 # Identify random slope that accounts for the least variance in the model
 summary(TaskSwitching_nested_maximal) # CInterest accounts for the least variance
 # Remove random slope of CINT:
@@ -687,7 +694,7 @@ TaskSwitching_nested_selected3 <- lmer(
 The model converges and is no longer singular after removal of all random slopes in the model.
 Inspect model:
 
-```{r}
+```{r, include=FALSE, echo=FALSE}
 summary(TaskSwitching_nested_selected3)
 plot(TaskSwitching_nested_selected3)
 fixef(TaskSwitching_nested_selected3)
@@ -701,7 +708,7 @@ All models were tested for (1) multicollinearity, (2) heteroscedasticity, (3) in
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r}
+```{r, eval=FALSE, include=FALSE}
 # corrplot(cor(task_switching_data[, c(
 #     "WindowWidth.sc",
 #     "DaysUntilDeadline.sc",
@@ -717,7 +724,7 @@ Some of the variables show high correlations. For example, contextual reading co
 
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 check_collinearity(TaskSwitching_nested_selected3)
 # plot(check_collinearity(TaskSwitching_nested_selected3))
 ```
@@ -728,20 +735,20 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
-```{r, include=FALSE}
-check_heteroscedasticity(TaskSwitching_FullModel_nested)
-# plot(check_heteroscedasticity(TaskSwitching_FullModel_nested))
+```{r, eval=FALSE, include=FALSE}
+check_heteroscedasticity(TaskSwitching_nested_selected3)
+# plot(check_heteroscedasticity(TaskSwitching_nested_selected3))
 ```
 
 The p-value is not significant, which indicates that the residuals are homoscedastic. Also, the plot line seems to be fairly flat and horizontal, indicating of homoscedasticity.
 
 We check categorical predictors separately with a Levene's test:
 
-```{r}
+```{r, eval=FALSE}
 leveneTest(residuals(TaskSwitching_nested_selected3) ~ task_switching_data$Condition)
 ```
 
-```{r}
+```{r, eval=FALSE}
 leveneTest(residuals(TaskSwitching_nested_selected3) ~ task_switching_data$NativeEnglish)
 ```
 
@@ -751,7 +758,7 @@ The assumption of equal variables is met for both Condition and NativeEnglish.
 
 We test influential observations with Cook's Distance:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 # cooksd <-
 #      cooks.distance(TaskSwitching_nested_selected3)
 # plot(cooksd,
@@ -772,7 +779,7 @@ The plot indicates that some observations may be influential. However, the Cook'
 
 We further inspect Cook's Distance with a different plot:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 check_outliers(TaskSwitching_nested_selected3)
 plot(check_outliers(TaskSwitching_nested_selected3))
 ```
@@ -783,7 +790,7 @@ Usage of a less conservative limit (Cook's Distance > .5 for influential observa
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 random_intercept_UserId <- ranef(TaskSwitching_nested_selected3)$UserId$`(Intercept)`
 # qqnorm(random_intercept_UserId)
 # qqline(random_intercept_UserId)
@@ -792,7 +799,7 @@ shapiro.test(random_intercept_UserId)
 
 The qqplot slightly varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 random_intercept_StoryId <- ranef(TaskSwitching_nested_selected3)$StoryId$`(Intercept)`
 # qqnorm(random_intercept_StoryId)
 # qqline(random_intercept_StoryId)
@@ -809,7 +816,7 @@ The model aligns with all assumptions.
 
 We then interpret model effects to study the results.
 
-```{r}
+```{r, include=FALSE}
 summary(TaskSwitching_nested_selected3)
 ```
 
@@ -896,7 +903,7 @@ Participants with more autonomous contextual motivation engaged for longer conti
 
 This hypothesis was not supported as neither of the electronic experience measures was a significant predictor of task-switching frequency in the model.
 
-```{r}
+```{r, warning='hide'}
 taskswitching_effectplot_electronicexperience <-
     interact_plot(
         TaskSwitching_nested_selected3,

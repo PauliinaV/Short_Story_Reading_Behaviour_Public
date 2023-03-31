@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingLinearity"
 author: "Pauliina Vuorinen"
-date: "27/06/2022-15/03/2023"
+date: "27/06/2022-31/03/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -254,7 +254,9 @@ The reader characteristics model of linearity aims to address the following hypo
 * H4b: Contextual autonomous motivation is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
 * H4c: Task-relevant electronic experience is connected to frequent nonlinearity when task competence is low, and less frequent nonlinearity when task competence is high.
 
-The reader characteristics model for linearity of reading takes the following structure:
+The reader characteristics model was pre-specified to best address our hypotheses. We use a maximal interactive model structure, which includes random intercepts for story and participant indicator. Random slopes were included for all key variables in the model which are used to address our hypotheses. These random slopes could only be included in the random effect of story indicator, considering that all key variables had only one observation from each participant.
+
+The maximal interactive model takes the following structure:
 
 $Y_{i} = 
     \beta_{0} +
@@ -271,7 +273,8 @@ $Y_{i} =
     CMot x SComp +
     TR-EExp1 x TR-EExp2 +
     TR-EExp1 x TR-EExp2 x SComp +
-    (1 + WindowWidth + DUD | Story indicator / Participant indicator) +
+    (1  + Cond x SComp + CMot x SComp + TR-EEXP1 x TR-EEXP2 | Story indicator) +
+    (1 | Participant indicator) +
     \varepsilon_{i}$ 
 
 where
@@ -286,7 +289,8 @@ where
 **CComp** is participants' contextual competence (perception of general reading ability), measured by the subcomponent of 'competence' from the IMI-R questionnaire (see Prep_Questionnaires.Rmd in Prep folder)
 **TR-EExp1** is frequency of using any electronic devices for long-form text reading purposes
 **TR-EExp2** is frequency of using task-relevant devices for any reading purpose
-**(1 + WindowWidth + DUD | Story indicator / Participant indicator)** indicates a nested random intercept of story and subject indicator with random slopes for Window width and DUD. Note that only these random slopes are included as other fixed effects in the model only have one observation for each participant. The random effects are nested because each participant only read one short story during the study. The nesting is done explicitly, and therefore, each participant indicator is unique, which makes the model identical regardless if a nested (e.g., (1|Story/Participant)) or crossed (e.g., (1|Story) + (1|Participant)) notation is used. We prefer the notation of (1|Story/Participant) to make it clear that the random effects are nested, however, in backward selection of the slopes, the model may occasionally be specified with the crossed notation instead.
+**(1  + Cond x SComp + CMot x SComp + TR-EEXP1 x TR-EEXP2 | Story indicator)** indicates a random effect of story indicator. The random effect includes an intercept for each story indicator, and a random slope for all key variables used to address our hypotheses.
+**(1 | Participant indicator)** indicates a random effect of participant indicator. The random effect only includes the random intercept for each participant considering that key variables of interest only had one observation for each participant, and so usage of random slopes was not meaningful. Note that participant indicator is explicitly nested within story indicator as participants only read one of 9 stories during the study. Due to the explicit nesting, notation as nested vs crossed does not make a difference in the model specification. To allow us to use different random slopes, we use crossed random effect notation here.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
 Whereas linearity of reading and reading speed are analysed with this reader characteristics structure, the remaining models (task switching and reading persistence) are modelled without 'Cond x SComp', 'CMot x SComp', and 'TR-EExp1 x TR-EExp2 x SComp'. This is because linearity and speed are expected to be connected to motivation and electronic experience via interaction with situational competence, whereas task switching and reading persistence are expected to be connected to motivation and electronic experience directly (main effects).
@@ -301,7 +305,7 @@ We create graphs to inspect linearity of reading and its connection to other var
 
 The linearity measure, StartsNonlinearity, is a binary variable (whether each event initiates nonlinearity or not, TRUE/FALSE). To visualise it, we create counts:
 
-```{r 'count-summary-df'}
+```{r 'count-summary-df', echo=FALSE}
 linearity_measure_count <- linearity_measure_data %>%
     group_by(
         UserId,
@@ -495,7 +499,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Contrasts for categorical variables:
 
-```{r 'categorical-contrasts-rc'}
+```{r 'categorical-contrasts-rc', echo=FALSE}
 # whether native language is English or not
 linearity_measure_data$NativeEnglish <- as.factor(linearity_measure_data$NativeEnglish)
 contrasts(linearity_measure_data$NativeEnglish) <- contr.helmert.unweighted(linearity_measure_data$NativeEnglish)
@@ -515,7 +519,7 @@ contrasts(linearity_measure_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered.
 
-```{r 'scale-continuous-variables-rc'}
+```{r 'scale-continuous-variables-rc', echo=FALSE}
 # Situational competence
 linearity_measure_data$SCompetence.sc <-
     scale(linearity_measure_data$SCompetence,
@@ -570,7 +574,7 @@ Structure_RC_nested_maximal <- (
 )
 ```
 
-```{r 'fit-model'}
+```{r 'fit-model', warning='hide'}
 Linearity_RC_nested_maximal <- glmer(
     Structure_RC_nested_maximal,
     data = linearity_measure_data,
@@ -582,7 +586,7 @@ Linearity_RC_nested_maximal <- glmer(
 The maximal model is singular.
 In an attempt to resolve this, we use backward selection of the random slopes by removing the slope that accounts for the lowest amount of variance in the model.
 
-```{r 'backward-select-slopes-in-model'}
+```{r 'backward-select-slopes-in-model', warning='hide'}
 # Identify slope that accounts for the lowest amount of variance
 summary(Linearity_RC_nested_maximal)
 # CInterest.sc:SCompetence.sc accounts for the lowest amount of variance
@@ -625,7 +629,7 @@ Linearity_RC_nested_slopes2c <- glmer( # remains singular
 
 The full model is singular, even after removal of all random slopes. Off-script, we also noted that the singularity is not resolved by backward selection of fixed effects.
 
-```{r}
+```{r, include=FALSE}
 summary(Linearity_RC_nested_slopes2c)
 ```
 
@@ -641,7 +645,7 @@ Including StoryId as a fixed effect rather than a random effect increases the am
 
 Add contrasts to StoryId:
 
-```{r 'add-contrasts-to-storyid'}
+```{r 'add-contrasts-to-storyid', include=FALSE}
 contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(
     linearity_measure_data$StoryId
 )
@@ -650,7 +654,7 @@ contrasts(linearity_measure_data$StoryId)
 
 Re-fit the model:
 
-```{r 'fit-adjusted-model'}
+```{r 'fit-adjusted-model', warning='hide'}
 Linearity_RC_AdjustedModel <- glmer(
     Structure_RC_AdjustedStoryId,
     data = linearity_measure_data,
@@ -661,7 +665,7 @@ Linearity_RC_AdjustedModel <- glmer(
 
 The model is no longer singular. However, it is possible that StoryId is collinear with other predictors in the model, and thus we assess multicollinearity before proceeding:
 
-```{r}
+```{r, include=FALSE}
 car::vif(Linearity_RC_AdjustedModel)
 ```
 
@@ -675,7 +679,7 @@ Structure_RC_RemovedStoryId <- (
 
 Re-fit the model:
 
-```{r 'fit-adjusted-model-2'}
+```{r 'fit-adjusted-model-2', warning='hide'}
 Linearity_RC_RemovedStoryId <- glmer(
     Structure_RC_RemovedStoryId,
     data = linearity_measure_data,
@@ -686,7 +690,7 @@ Linearity_RC_RemovedStoryId <- glmer(
 
 The model converges and it is not singular. We re-assess multicollinearity:
 
-```{r}
+```{r, include=FALSE}
 car::vif(Linearity_RC_RemovedStoryId)
 ```
 
@@ -702,7 +706,7 @@ Under- and overdispersion were not tested considering that the observations cann
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 # corrplot(cor(linearity_measure_data[, c(30:36)]), method = "number")
 ```
 
@@ -710,7 +714,7 @@ Some of the predictors are highly correlated. For example, the two electronic ex
 
 To check if these correlations are problematic, we assess Variance Inflation Factors (VIF) with check_collinearity from the performance package:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 check_collinearity(Linearity_RC_RemovedStoryId)
 plot(check_collinearity(Linearity_RC_RemovedStoryId))
 ```
@@ -721,7 +725,7 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 
 We use the same simulated_model_output created in step 2 to test heteroscedasticity
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 # testQuantiles(simulated_model_output)
 ```
 
@@ -731,7 +735,7 @@ The p-value is not significant, and the lines lie flat and horizontal in the plo
 
 We test influential observations with Cook's Distance:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 # cooksd <-
 #     cooks.distance(Linearity_RC_RemovedStoryId)
 # plot(cooksd,
@@ -752,7 +756,7 @@ The plot indicates that some observations may be influential. However, the Cook'
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 set.seed(1234) # for reproducibility
 simulated_model_output <- DHARMa::simulateResiduals(Linearity_RC_RemovedStoryId)
 # testOutliers(simulated_model_output)
@@ -764,7 +768,7 @@ The test and the plot indicate that none of the observations are influential. We
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId'. The random intercept of 'StoryId' was removed from the selected model.
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 random_intercept_UserId <- ranef(Linearity_RC_RemovedStoryId)$UserId$`(Intercept)`
 # qqnorm(random_intercept_UserId)
 # qqline(random_intercept_UserId)
@@ -783,7 +787,7 @@ The final, adjusted model aligns with all assumptions.
 
 We then interpret model effects to interpret the results.
 
-```{r}
+```{r, include=FALSE}
 summary(Linearity_RC_RemovedStoryId)
 ```
 
@@ -795,7 +799,7 @@ Only an interaction effect between the two task-relevant electronic experience m
 
 This hypothesis was not supported as the interaction effect between Condition and situational competence was not a significant predictor of linearity.
 
-```{r}
+```{r, warning='hide'}
 linearity_rc_condscomp <- interact_plot(
     Linearity_RC_RemovedStoryId,
     pred = SCompetence.sc,
@@ -816,7 +820,7 @@ As the interaction effect was not significant, the combination of situational co
 
 This hypothesis was not supported as the interaction between contextual motivation ('CInterest') and situational competence (SCompetence) was not a significant predictor of nonlinear navigation.
 
-```{r}
+```{r, warning='hide'}
 linearity_rc_cmotscomp <- interact_plot(
     Linearity_RC_RemovedStoryId,
     pred = "SCompetence.sc",
@@ -840,7 +844,7 @@ Although the hypothesis was not supported, the trend of the results is in the sa
 
 This hypothesis was not supported as an interaction between the two electronic experience measures and situational competence was not a significant predictor of linearity of reading.
 
-```{r}
+```{r, warning='hide'}
 linearity_rc_eexpscomp <- interact_plot(
     Linearity_RC_RemovedStoryId,
     pred = "Eexp1LongformEFreq.sc",
@@ -863,7 +867,7 @@ Indeed, the effect of electronic experience was the same, despite of situational
 
 Although the three-way interaction between electronic experience measures and situational competence did not significantly predict linearity of reading, a two-way interaction between the electronic experience measures was a significant predictor in the model.
 
-```{r}
+```{r, warning='hide'}
 linearity_effectplot_eexp <- interact_plot(
     Linearity_RC_RemovedStoryId,
     pred = "Eexp1LongformEFreq.sc",
@@ -883,22 +887,30 @@ The finding indicated that a combination of high scores in the two task-relevant
 
 ## Event properties model
 
-The event properties model of linearity is used for explorative purposes, to study how frequency of nonlinear navigation varied during the study.
+The event properties model of linearity is used for explorative purposes, to study how frequency of nonlinear navigation varied during the study. As a result, the model specification is done differently from the reader characteristics model.
 
-The model takes the following structure:
+To explore meaningful random slope variables and interactions, we use data-driven selection. 
+
+1. Additive intercepts-only model
+2. Selection of random slopes with best-path algorithm
+3. Backward selection if necessary
+4. Interactive model structure with two-way interactions
+5. Backward selection if necessary
+
+1. We first specify an additive intercepts-only model with the following structure:
 
 $Y_{i} = 
     \beta_{0} +
     # control variables
     WindowWidth +
     DUD +
-    # predictors
+    # predictors of interest
     Event~k-1~ +
     Event~k-2~ +
     ReadingSessionNumber +
     TimeInReadingSession +
     LocationInText +
-    u_{Story / Subject} +
+    (1 | Story indicator / Participant indicator) +
     \varepsilon_{i}$ 
 
 where
@@ -911,10 +923,14 @@ where
 **ReadingSessionNumber** reflects the reading session number at event~k~ (outcome variable)
 **TimeInReadingSession** indicates time passed since the beginning of the reading session at event~k~
 **LocationInText** indicates location in text (in percentages) at event~k~
-**$u_{Story / Subject}$** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
+**(1 | Story indicator / Participant indicator)** indicates a nested random intercept of story and subject indicator. Each participant only read one short story during the study, and participant indicator is explicitly nested.
 **$\varepsilon_{i}$** indicates the residual variance of $Y_{i}$
 
-First, we select the fixed effects in the model backward stepwise until the model converges. We then add two-way interactions in the model, and select them backward stepwise until the model converges. Two-way interactions could be added between predictors measuring previous navigation events (Event~k-1~ and Event~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous navigation events and the other predictors in the model (e.g. Event~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text).
+2. After specifying the additive intercepts-only model, we test inclusion of random slopes using the 'best-path' algorithm recommended by @barrRandomEffectsStructure2013a. With this method, we test inclusion of each predictor of interest as a random slope variable against the intercepts-only model. A liberal alpha-level of .20 is used. If multiple predictors contribute to the model with p < .2, we first accept the random slope with the lowest p-value. The testing is then resumed by comparing the inclusion of each of the remaining predictors as a random slope variable against the model with the previously accepted slope. This is continued until none of the predictors contribute to the model, and so all p > .2.
+
+3. If the model does not converge or if it is singular after random slope selection, the model is simplified by backward stepwise selection. This is done by first removing random slopes from the model starting with the slope that accounts for the least variance. If the model remains nonconvergent or singular, fixed effects are removed one-by-one starting with the predictors that account for the least variance according to p-values. Significant fixed effects are not removed.
+
+4-5. Once the additive model converges, we add two-way interactions in the model. Two-way interactions could be added between predictors measuring previous navigation events (Event~k-1~ and Event~k-2~) and between reading session number, time in reading session, and location in text. To avoid multicollinearity, interactions were not included between between previous navigation events and the other predictors in the model (e.g. Event~k-1~ was not allowed to interact with reading session number, time in reading session, or location in text). If the interactive model structure does not converge, it is simplified with backward stepwise selection.
 
 This model selection is used to explore possible interactions that are meaningful to add without overfitting the model.
 
@@ -1015,7 +1031,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Contrasts for categorical variables:
 
-```{r 'categorical-contrasts-ep'}
+```{r 'categorical-contrasts-ep', echo=FALSE}
 # previous event (lag of 1)
 linearity_measure_data$Observation_lag1 <- as.factor(linearity_measure_data$Observation_lag1)
 contrasts(linearity_measure_data$Observation_lag1) <- contr.helmert.unweighted(linearity_measure_data$Observation_lag1)
@@ -1028,7 +1044,7 @@ contrasts(linearity_measure_data$Observation_lag2)
 
 Next, we scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-```{r 'scale-continuous-variables-ep'}
+```{r 'scale-continuous-variables-ep', echo=FALSE}
 # Days until reading deadline (control variable)
 linearity_measure_data$DaysUntilDeadline.sc <-
     scale(linearity_measure_data$FirstTimeUntilDeadlineDays,
@@ -1077,7 +1093,7 @@ AdditiveStructure_EP <- (
 
 Fit the intercept-only additive model:
 
-```{r 'fit-the-intercept-only-additive-model'}
+```{r 'fit-the-intercept-only-additive-model', warning='hide'}
 Linearity_EP_AdditiveModel <- glmer(
     AdditiveStructure_EP,
     data = linearity_measure_data,
@@ -1090,7 +1106,7 @@ Next, we add random slopes to the additive model. Slopes are selected in a data-
 
 In the best path algorithm, we test inclusion of each random slope against the intercept-only model. A liberal alpha-level is used, in accordance with @barrRandomEffectsStructure2013a recommendations, and so, any random slope which differs from the intercepts-only model with p < .2 is considered for inclusion. If multiple slopes cross this threshold, we include the slope with the lowest p-value in the model. Then, we re-test the remaining slopes in the model against this model. This is continued until none of the random slopes contribute to the model, and so all remaining slope p > .2.
 
-```{r 'select-slopes1'}
+```{r 'select-slopes1', eval=FALSE, echo=FALSE}
 # slope test 1
     ## 1_1 WW
     ## 1_2 DUD
@@ -1181,7 +1197,7 @@ anova(Linearity_EP_AdditiveModel_nested1_7, Linearity_EP_AdditiveModel) # contri
 
 A random slope of TimeInReadingSession contributes the most to the model. We continue testing slopes by comparing their addition to a model with TRS.
 
-```{r 'select-slopes2'}
+```{r 'select-slopes2', eval=FALSE, echo=FALSE}
 # slope test 2
 ## Start adding all slopes to a model with TRS
     ## 2_1: WW
@@ -1270,7 +1286,7 @@ anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_6) 
 
 A random slope of PercentageLocation contributes most to the model. We continue testing possible random slopes by comparing to a model with a random slope for TimeInReadingSession and PercentageLocation
 
-```{r 'select-slopes2'}
+```{r 'select-slopes2', eval=FALSE, echo=FALSE}
 # slope test 3
 ## Start adding all slopes to a model with TRS + LOC
     ## 3_1: WW
@@ -1347,9 +1363,21 @@ anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_5) 
 
 None of the remaining random slopes contributes to the model, and so the additive model has slopes for time in a reading session and percentage location only.
 
+```{r, echo=FALSE}
+AdditiveStructure_EP_nested_slope3 <- (
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc | StoryId / UserId)"
+)
+Linearity_EP_AdditiveModel_nested3 <- glmer( # sing
+    AdditiveStructure_EP_nested_slope3,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+```
+
 Inspect the model:
 
-```{r 'additive-model-with-slopes'}
+```{r 'additive-model-with-slopes', eval=FALSE}
 summary(Linearity_EP_AdditiveModel_nested3)
 ```
 
@@ -1358,7 +1386,7 @@ Similarly to the reader chatacteristics model, we first attempt to make the mode
 
 Inspection of the model shows that TimeInReadingSession contributes less to the model, and so it is removed first.
 
-```{r 'backward-select-slopes'}
+```{r 'backward-select-slopes', eval=FALSE, echo=FALSE}
 # Model without slope for TRS
 AdditiveStructure_EP_nested_slope_selection1 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc | StoryId / UserId)"
@@ -1385,7 +1413,7 @@ Linearity_EP_AdditiveModel_nested_selection2 <- glmer( # remains singular
 The additive model remains singular after removal of all slopes in the model.
 Similarly to the reader characteristics model, we attempted to remove fixed effects in the model without being able to resolve the singularity.
 
-```{r}
+```{r, eval=FALSE}
 summary(Linearity_EP_AdditiveModel_nested_selection2)
 ```
 
@@ -1401,7 +1429,7 @@ contrasts(linearity_measure_data$StoryId)
 
 Re-fit the intercepts-only additive model with StoryId as a fixed effect:
 
-```{r 'adjusted-additive-model'}
+```{r 'adjusted-additive-model', warning='hide'}
 AdditiveStructure_Adjusted_EP <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | UserId)"
 )
@@ -1415,7 +1443,7 @@ Linearity_EP_AdditiveModel_Adjusted <- glmer(
 
 When the StoryId is fit as a fixed effect rather than a random effect, the model converges and is no longer singular. We inspect if this significantly inflates covariances in the model:
 
-```{r}
+```{r, echo=FALSE}
 car::vif(Linearity_EP_AdditiveModel_Adjusted)
 ```
 
@@ -1423,7 +1451,7 @@ All VIF values are < 2, indicating that including StoryId as a fixed effect does
 
 We then attempt to select random slopes a new in the model, this time only for the random effect of UserId. A random slope of StoryId is not tested considering that the number of groups in this variable would inflate the number of parameters in the model and result in overfitting.
 
-```{r 'select-slopes-adjusted1'}
+```{r 'select-slopes-adjusted1', eval=FALSE, echo=FALSE}
 # adjusted model slope test 1
     ## 1b_1 WW
     ## 1b_2 DUD
@@ -1514,7 +1542,7 @@ anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_7
 
 TimeInReadingSession contributes most to the model, and so it is added as a random slope. We test other options against a model with TRS
 
-```{r 'select-slopes-adjusted2'}
+```{r 'select-slopes-adjusted2', eval=FALSE, echo=FALSE}
 # adjusted model slope test 2
 ## Compare to model with a random slope of TRS
     ## 2b_1 WW
@@ -1603,7 +1631,7 @@ anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_6)
 
 PercentageLocation contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS and LOC
 
-```{r 'select-slopes-adjusted3'}
+```{r 'select-slopes-adjusted3', eval=FALSE, echo=FALSE}
 # adjusted model slope test 3
 ## Compare to model with a random slope of TRS and LOC
     ## 3b_1 WW
@@ -1680,7 +1708,7 @@ anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_5)
 
 Observation_lag2 contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, LOC and Obs lag2
 
-```{r 'select-slopes-adjusted4'}
+```{r 'select-slopes-adjusted4, eval=FALSE, echo=FALSE}
 # adjusted model slope test 4
 ## Compare to model with a random slope of TRS, LOC and OBS lag2
     ## 4b_1 WW
@@ -1745,7 +1773,7 @@ anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_4)
 
 WindowWidth contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, LOC, Obs lag2, and WW
 
-```{r 'select-slopes-adjusted5'}
+```{r 'select-slopes-adjusted5', eval=FALSE, echo=FALSE}
 # adjusted model slope test 5
 ## Compare to model with a random slope of TRS, LOC, OBS lag2, and WW
     ## 5b_1 DUD
@@ -1799,13 +1827,22 @@ anova(Linearity_EP_AdditiveModel_nested5, Linearity_EP_AdditiveModel_nested5b_3)
 None of the remaining variables contribute to the model as random effects.
 Inspect the adjusted additive model with random slopes:
 
-```{r}
+```{r, warning='hide'}
+AdditiveStructure_EP_nested_slope5 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc | UserId)"
+)
+Linearity_EP_AdditiveModel_nested5 <- glmer( # sing
+    AdditiveStructure_EP_nested_slope5,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
 summary(Linearity_EP_AdditiveModel_nested5)
 ```
 
 The model is singular, and so we attempt to resolve it by simplifying the structure backward stepwise, starting with the random slopes. PercentageLocation accounts for the least variance in the model, and so it is removed first.
 
-```{r 'adjusted-model-backward-select-slopes'}
+```{r 'adjusted-model-backward-select-slopes', eval=FALSE, echo=FALSE}
 # fit the model without PercentageLocation
 AdditiveStructure_EP_Adjusted_slope_selected1 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 + WindowWidth.sc | UserId)"
@@ -1833,7 +1870,16 @@ After removal of two random slopes, PercentageLocation and WindowWidth, the mode
 
 Inspect the model:
 
-```{r}
+```{r, warning='hide', echo=FALSE}
+AdditiveStructure_EP_Adjusted_slope_selected2 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 | UserId)"
+)
+Linearity_EP_AdditiveModel_Adjusted_slope_selected2 <- glmer( # no longer singular
+    AdditiveStructure_EP_Adjusted_slope_selected2,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
 summary(Linearity_EP_AdditiveModel_Adjusted_slope_selected2)
 plot(Linearity_EP_AdditiveModel_Adjusted_slope_selected2)
 fixef(Linearity_EP_AdditiveModel_Adjusted_slope_selected2)
@@ -1851,7 +1897,7 @@ InteractiveStructure_EP_Adjusted <- (
 )
 ```
 
-```{r 'fit-interactive-model'}
+```{r 'fit-interactive-model', warning='hide'}
 Linearity_EP_InteractiveModel_Adjusted <- glmer(
     InteractiveStructure_EP_Adjusted,
     data = linearity_measure_data,
@@ -1882,7 +1928,7 @@ Any VIF > 5 is considered to be a strong indication of multicollinearity, and th
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 # corrplot(cor(linearity_measure_data[, c("WindowWidth.sc", "DaysUntilDeadline.sc", "ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
 ```
 
@@ -1890,7 +1936,7 @@ Location in text and time in a reading session are positively correlated, *r* = 
 
 To check if these correlations are problematic, we calculate VIF:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 check_collinearity(Linearity_EP_InteractiveModel_Adjusted)
 plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted))
 ```
@@ -1901,7 +1947,7 @@ The model predictors do not seem to be multicollinear. All VIF < 4, and usually 
 
 We test influential observations with Cook's Distance:
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 cooksd <-
      cooks.distance(Linearity_EP_InteractiveModel_Adjusted)
 plot(cooksd,
@@ -1932,11 +1978,11 @@ Although Cook's Distance indicates that the model has influential observations, 
 
 **Fit the model without observation #3462:**
 
-```{r}
+```{r, eval=FALSE}
 subset_without_observation3462 <- linearity_measure_data[c(1:3461, 3463:nrow(linearity_measure_data)), ]
 ```
 
-```{r 'fit-model-wo-obs-3462'}
+```{r 'fit-model-wo-obs-3462', eval=FALSE}
 Linearity_EP_InteractiveModel_Adjusted_influential3462 <- glmer(
     InteractiveStructure_EP_Adjusted,
     data = subset_without_observation3462,
@@ -1947,7 +1993,7 @@ Linearity_EP_InteractiveModel_Adjusted_influential3462 <- glmer(
 
 Inspect if model results are affected:
 
-```{r}
+```{r, eval=FALSE}
 summary(Linearity_EP_InteractiveModel_Adjusted_influential3462)
 summary(Linearity_EP_InteractiveModel_Adjusted)
 ```
@@ -1958,7 +2004,7 @@ The results are not influenced by removing observation #3462, and so we retain i
 
 Test for heteroscedasticity with DHARMa::testQuantiles() using simulated_model_output created earlier
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 testQuantiles(simulated_model_output)
 ```
 
@@ -1968,7 +2014,7 @@ The p-value is not significant, and the lines lie flat and horizontal in the plo
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting the normality of 'UserId'. 'StoryId' was fit in the model as a fixed effect and so it is not inspected.
 
-```{r, include=FALSE}
+```{r, eval=FALSE, include=FALSE}
 random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_Adjusted)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
@@ -1986,7 +2032,7 @@ The adjusted model aligns will assumptions.
 
 We then interpret model effects to interpret the results.
 
-```{r}
+```{r, include=FALSE}
 summary(Linearity_EP_InteractiveModel_Adjusted)
 ```
 
