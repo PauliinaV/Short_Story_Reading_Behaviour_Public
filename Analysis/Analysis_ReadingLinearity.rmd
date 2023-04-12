@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingLinearity"
 author: "Pauliina Vuorinen"
-date: "27/06/2022-31/03/2023"
+date: "27/06/2022-14/04/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -936,9 +936,40 @@ This model selection is used to explore possible interactions that are meaningfu
 
 ### Create missing predictor variables
 
-```{r 'create-preceeding-event-variables'}
+```{r 'create-preceeding-event-variables', eval=FALSE}
+# order by User, reading session number and time since the beginning of a reading session
+linearity_measure_data <-
+    linearity_measure_data[
+        with(
+            linearity_measure_data,
+            order(UserId, ReadingSessionNumber, FirstCumulativeRSTime)
+        ),
+    ]
+# find previous events
 linearity_measure_data$Observation_lag1 <- lag(linearity_measure_data$StartsNonlinearity, 1)
 linearity_measure_data$Observation_lag2 <- lag(linearity_measure_data$StartsNonlinearity, 2)
+#  create 'IsNewUser' test
+linearity_measure_data$IsNewUser <- (linearity_measure_data$UserId != lag(linearity_measure_data$UserId, 1))
+# confirm ordering
+linearity_measure_data <-
+    linearity_measure_data[
+        with(
+            linearity_measure_data,
+            order(UserId, ReadingSessionNumber, FirstCumulativeRSTime)
+        ),
+    ]
+# remove across participants comparisons
+linearity_measure_data$Observation_lag1 <- ifelse(
+    linearity_measure_data$IsNewUser, # current row is new user, cannot compare to previous
+    NA,
+    linearity_measure_data$Observation_lag1
+)
+linearity_measure_data$Observation_lag2 <- ifelse(
+    lag(linearity_measure_data$IsNewUser, 1) |
+    linearity_measure_data$IsNewUser, # current or previous row is new user, cannot compare to event k-2
+    NA,
+    linearity_measure_data$Observation_lag2
+)
 ```
 
 ```{r 'create-location-in-%'}
@@ -1118,7 +1149,7 @@ In the best path algorithm, we test inclusion of each random slope against the i
 ###################
 # 1_1
 AdditiveStructure_EP_nested_slope1_1 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1  + WindowWidth.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + WindowWidth.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested1_1 <- glmer( #sing
     AdditiveStructure_EP_nested_slope1_1,
@@ -1126,7 +1157,7 @@ Linearity_EP_AdditiveModel_nested1_1 <- glmer( #sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel, Linearity_EP_AdditiveModel_nested1_1) # does not contribute, p > .2
+anova(Linearity_EP_AdditiveModel, Linearity_EP_AdditiveModel_nested1_1) # contributes, p = .119
 # 1_2
 AdditiveStructure_EP_nested_slope1_2 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + DaysUntilDeadline.sc | StoryId / UserId)"
@@ -1148,7 +1179,7 @@ Linearity_EP_AdditiveModel_nested1_3 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested1_3, Linearity_EP_AdditiveModel) # contributes, p = .101
+anova(Linearity_EP_AdditiveModel_nested1_3, Linearity_EP_AdditiveModel) # contributes, p = .0051
 # 1_4
 AdditiveStructure_EP_nested_slope1_4 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + Observation_lag2 | StoryId / UserId)"
@@ -1159,7 +1190,7 @@ Linearity_EP_AdditiveModel_nested1_4 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested1_4, Linearity_EP_AdditiveModel) # contributes, p = .178
+anova(Linearity_EP_AdditiveModel_nested1_4, Linearity_EP_AdditiveModel) # contributes, p = .047
 # 1_5
 AdditiveStructure_EP_nested_slope1_5 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + ReadingSessionNumber.sc | StoryId / UserId)"
@@ -1170,7 +1201,7 @@ Linearity_EP_AdditiveModel_nested1_5 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested1_5, Linearity_EP_AdditiveModel) # contributes, p = .169
+anova(Linearity_EP_AdditiveModel_nested1_5, Linearity_EP_AdditiveModel) # contributes, p = .139
 # 1_6
 AdditiveStructure_EP_nested_slope1_6 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc | StoryId / UserId)"
@@ -1192,7 +1223,7 @@ Linearity_EP_AdditiveModel_nested1_7 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested1_7, Linearity_EP_AdditiveModel) # contributes, p = .145
+anova(Linearity_EP_AdditiveModel_nested1_7, Linearity_EP_AdditiveModel) # contributes, p = .292
 ```
 
 A random slope of TimeInReadingSession contributes the most to the model. We continue testing slopes by comparing their addition to a model with TRS.
@@ -1226,7 +1257,7 @@ Linearity_EP_AdditiveModel_nested2_1 <- glmer( # sing, nc
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_1) # does not contribute, p > .2
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_1) # contributes, p = .128
 # 2_2
 AdditiveStructure_EP_nested_slope2_2 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + DaysUntilDeadline.sc | StoryId / UserId)"
@@ -1270,7 +1301,7 @@ Linearity_EP_AdditiveModel_nested2_5 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_5) # contributes, p = .172
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_5) # contributes, p = .087
 # 2_6
 AdditiveStructure_EP_nested_slope2_6 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc | StoryId / UserId)"
@@ -1281,10 +1312,10 @@ Linearity_EP_AdditiveModel_nested2_6 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_6) # contributes, p = .142
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_6) # does not contribute, p > .20
 ```
 
-A random slope of PercentageLocation contributes most to the model. We continue testing possible random slopes by comparing to a model with a random slope for TimeInReadingSession and PercentageLocation
+A random slope of ReadingSessionNumber contributes most to the model. We continue testing possible random slopes by comparing to a model with a random slope for TimeInReadingSession and ReadingSessionNumber
 
 ```{r 'select-slopes2', eval=FALSE, echo=FALSE}
 # slope test 3
@@ -1293,10 +1324,10 @@ A random slope of PercentageLocation contributes most to the model. We continue 
     ## 3_2: DUD
     ## 3_3: Event k-1
     ## 3_4: Event k-2
-    ## 3_5: RSN
+    ## 3_5: Loc
 ###################
 AdditiveStructure_EP_nested_slope3 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3,
@@ -1306,7 +1337,7 @@ Linearity_EP_AdditiveModel_nested3 <- glmer( # sing
 )
 # 3_1
 AdditiveStructure_EP_nested_slope3_1 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + WindowWidth.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc + WindowWidth.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3_1 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3_1,
@@ -1317,7 +1348,7 @@ Linearity_EP_AdditiveModel_nested3_1 <- glmer( # sing
 anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_1) # does not contribute, p > .2
 # 3_2
 AdditiveStructure_EP_nested_slope3_2 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + DaysUntilDeadline.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc + DaysUntilDeadline.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3_2 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3_2,
@@ -1328,7 +1359,7 @@ Linearity_EP_AdditiveModel_nested3_2 <- glmer( # sing
 anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_2) # does not contribute, p > .2
 # 3_3
 AdditiveStructure_EP_nested_slope3_3 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1 | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc + Observation_lag1 | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3_3 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3_3,
@@ -1339,7 +1370,7 @@ Linearity_EP_AdditiveModel_nested3_3 <- glmer( # sing
 anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_3) # does not contribute, p > .2
 # 3_4
 AdditiveStructure_EP_nested_slope3_4 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc + Observation_lag2 | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3_4 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3_4,
@@ -1350,7 +1381,7 @@ Linearity_EP_AdditiveModel_nested3_4 <- glmer( # sing
 anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_4) # does not contribute, p > .2
 # 3_5
 AdditiveStructure_EP_nested_slope3_5 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + ReadingSessionNumber.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc + PercentageLocation.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3_5 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3_5,
@@ -1361,11 +1392,11 @@ Linearity_EP_AdditiveModel_nested3_5 <- glmer( # sing
 anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_5) # does not contribute, p > .2
 ```
 
-None of the remaining random slopes contributes to the model, and so the additive model has slopes for time in a reading session and percentage location only.
+None of the remaining random slopes contributes to the model, and so the additive model has slopes for time in a reading session and reading session number only.
 
 ```{r, echo=FALSE}
 AdditiveStructure_EP_nested_slope3 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested3 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3,
@@ -1382,14 +1413,14 @@ summary(Linearity_EP_AdditiveModel_nested3)
 ```
 
 The additive model is singular, and so it is necessary to select it backward stepwise.
-Similarly to the reader chatacteristics model, we first attempt to make the model non-singular by removing random slopes that least contribute to the model.
+Similarly to the reader characteristics model, we first attempt to make the model non-singular by removing random slopes that least contribute to the model.
 
 Inspection of the model shows that TimeInReadingSession contributes less to the model, and so it is removed first.
 
 ```{r 'backward-select-slopes', eval=FALSE, echo=FALSE}
 # Model without slope for TRS
 AdditiveStructure_EP_nested_slope_selection1 <- (
-    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + PercentageLocation.sc | StoryId / UserId)"
+    "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + ReadingSessionNumber.sc | StoryId / UserId)"
 )
 Linearity_EP_AdditiveModel_nested_selection1 <- glmer( # remains singular
     AdditiveStructure_EP_nested_slope_selection1,
@@ -1398,7 +1429,7 @@ Linearity_EP_AdditiveModel_nested_selection1 <- glmer( # remains singular
     control = glmerControl(optimizer = "bobyqa")
 )
 summary(Linearity_EP_AdditiveModel_nested_selection1)
-# Model without slope for location
+# Model without slope for readomg session number
 AdditiveStructure_EP_nested_slope_selection2 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId / UserId)"
 )
@@ -1471,7 +1502,7 @@ Linearity_EP_AdditiveModel_nested1b_1 <- glmer( #sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_1) # contributes, p = .139
+anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_1) # contributes, p = .0076
 # 1b_2
 AdditiveStructure_EP_nested_slope1b_2 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + DaysUntilDeadline.sc | UserId)"
@@ -1493,7 +1524,7 @@ Linearity_EP_AdditiveModel_nested1b_3 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_3) # contributes, p = .0071
+anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_3) # contributes, p = .00038
 # 1b_4
 AdditiveStructure_EP_nested_slope1b_4 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + Observation_lag2 | UserId)"
@@ -1504,7 +1535,7 @@ Linearity_EP_AdditiveModel_nested1b_4 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_4) # contributes, p = .072
+anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_4) # contributes, p = .017
 # 1b_5
 AdditiveStructure_EP_nested_slope1b_5 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + ReadingSessionNumber.sc | UserId)"
@@ -1515,7 +1546,7 @@ Linearity_EP_AdditiveModel_nested1b_5 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_5) # contributes, p = .112
+anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_5) # contributes, p = .074
 # 1b_6
 AdditiveStructure_EP_nested_slope1b_6 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc | UserId)"
@@ -1537,7 +1568,7 @@ Linearity_EP_AdditiveModel_nested1b_7 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_7) # contributes, p = .034
+anova(Linearity_EP_AdditiveModel_Adjusted, Linearity_EP_AdditiveModel_nested1b_7) # contributes, p = .065
 ```
 
 TimeInReadingSession contributes most to the model, and so it is added as a random slope. We test other options against a model with TRS
@@ -1571,7 +1602,7 @@ Linearity_EP_AdditiveModel_nested2b_1 <- glmer( #sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_1) # contributes, p = .033
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_1) # contributes, p = .017
 # 2b_2
 AdditiveStructure_EP_nested_slope2b_2 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + DaysUntilDeadline.sc | UserId)"
@@ -1593,7 +1624,7 @@ Linearity_EP_AdditiveModel_nested2b_3 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_3) # contributes, p = .083
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_3) # contributes, p = .047
 # 2b_4
 AdditiveStructure_EP_nested_slope2b_4 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 | UserId)"
@@ -1604,7 +1635,7 @@ Linearity_EP_AdditiveModel_nested2b_4 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_4) # contributes, p = .194
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_4) # does not contribute, p > .2
 # 2b_5
 AdditiveStructure_EP_nested_slope2b_5 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc | UserId)"
@@ -1615,7 +1646,7 @@ Linearity_EP_AdditiveModel_nested2b_5 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_5) # contributes, p = .065
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_5) # contributes, p = .018
 # 2b_6
 AdditiveStructure_EP_nested_slope2b_6 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc | UserId)"
@@ -1626,22 +1657,22 @@ Linearity_EP_AdditiveModel_nested2b_6 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_6) # contributes, p = .027
+anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2b_6) # contributes, p = .031
 ```
 
-PercentageLocation contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS and LOC
+WindowWidth contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS and WW
 
 ```{r 'select-slopes-adjusted3', eval=FALSE, echo=FALSE}
 # adjusted model slope test 3
 ## Compare to model with a random slope of TRS and LOC
-    ## 3b_1 WW
-    ## 3b_2 DUD
-    ## 3b_3 Event k-1
-    ## 3b_4 Event k-2
-    ## 3b_5 RSN
+    ## 3b_1 DUD
+    ## 3b_2 Event k-1
+    ## 3b_3 Event k-2
+    ## 3b_4 RSN
+    ## 3b_5 Loc
 ###################
 AdditiveStructure_EP_nested_slope3 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc | UserId)"
 )
 Linearity_EP_AdditiveModel_nested3 <- glmer(
     AdditiveStructure_EP_nested_slope3,
@@ -1651,18 +1682,18 @@ Linearity_EP_AdditiveModel_nested3 <- glmer(
 )
 # 3b_1
 AdditiveStructure_EP_nested_slope3b_1 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + WindowWidth.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + DaysUntilDeadline.sc | UserId)"
 )
-Linearity_EP_AdditiveModel_nested3b_1 <- glmer( #sing
+Linearity_EP_AdditiveModel_nested3b_1 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3b_1,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_1) # contributes, p = .077
+anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_1) # does not contribute, p > .2
 # 3b_2
 AdditiveStructure_EP_nested_slope3b_2 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + DaysUntilDeadline.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + Observation_lag1 | UserId)"
 )
 Linearity_EP_AdditiveModel_nested3b_2 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3b_2,
@@ -1670,13 +1701,13 @@ Linearity_EP_AdditiveModel_nested3b_2 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_2) # does not contribute, p > .2
+anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_2) # contributes, p = .114
 # 3b_3
 AdditiveStructure_EP_nested_slope3b_3 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + Observation_lag2 | UserId)"
 )
-Linearity_EP_AdditiveModel_nested3b_3 <- glmer( # sing
-    AdditiveStructure_EP_nested_slope3b_3,
+Linearity_EP_AdditiveModel_nested3b_3 <- glmer(
+    AdditiveStructure_EP_nested_slope3b_3, # sing
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1684,18 +1715,18 @@ Linearity_EP_AdditiveModel_nested3b_3 <- glmer( # sing
 anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_3) # does not contribute, p > .2
 # 3b_4
 AdditiveStructure_EP_nested_slope3b_4 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + ReadingSessionNumber.sc | UserId)"
 )
-Linearity_EP_AdditiveModel_nested3b_4 <- glmer(
-    AdditiveStructure_EP_nested_slope3b_4, # sing
+Linearity_EP_AdditiveModel_nested3b_4 <- glmer( # sing
+    AdditiveStructure_EP_nested_slope3b_4,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_4) # contributes, p = .051
+anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_4) # does not contribute, p > .2
 # 3b_5
 AdditiveStructure_EP_nested_slope3b_5 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + ReadingSessionNumber.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc | UserId)"
 )
 Linearity_EP_AdditiveModel_nested3b_5 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3b_5,
@@ -1703,21 +1734,21 @@ Linearity_EP_AdditiveModel_nested3b_5 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_5) # contributes, p = .125
+anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3b_5) # contributes, p = .05
 ```
 
-Observation_lag2 contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, LOC and Obs lag2
+PercentageLocation contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, WW and Loc
 
 ```{r 'select-slopes-adjusted4', eval=FALSE, echo=FALSE}
 # adjusted model slope test 4
-## Compare to model with a random slope of TRS, LOC and OBS lag2
-    ## 4b_1 WW
-    ## 4b_2 DUD
-    ## 4b_3 Event k-1
+## Compare to model with a random slope of TRS, WW and Loc
+    ## 4b_1 DUD
+    ## 4b_2 Event k-1
+    ## 4b_3 Event k-2
     ## 4b_4 RSN
 ###################
 AdditiveStructure_EP_nested_slope4 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation | UserId)"
 )
 Linearity_EP_AdditiveModel_nested4 <- glmer( # sing
     AdditiveStructure_EP_nested_slope4,
@@ -1727,7 +1758,7 @@ Linearity_EP_AdditiveModel_nested4 <- glmer( # sing
 )
 # 4b_1
 AdditiveStructure_EP_nested_slope4b_1 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation + DaysUntilDeadline.sc | UserId)"
 )
 Linearity_EP_AdditiveModel_nested4b_1 <- glmer( #sing
     AdditiveStructure_EP_nested_slope4b_1,
@@ -1735,10 +1766,10 @@ Linearity_EP_AdditiveModel_nested4b_1 <- glmer( #sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_1) # contributes, p = .073
+anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_1) # does not contribute, p > .2
 # 4b_2
 AdditiveStructure_EP_nested_slope4b_2 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + DaysUntilDeadline.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation + Observation_lag1 | UserId)"
 )
 Linearity_EP_AdditiveModel_nested4b_2 <- glmer( # sing
     AdditiveStructure_EP_nested_slope4b_2,
@@ -1746,10 +1777,10 @@ Linearity_EP_AdditiveModel_nested4b_2 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_2) # does not contribute, p > .2
+anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_2) # contributes, p = .169
 # 4b_3
 AdditiveStructure_EP_nested_slope4b_3 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + Observation_lag1 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + Observation_lag2 | UserId)"
 )
 Linearity_EP_AdditiveModel_nested4b_3 <- glmer( # sing
     AdditiveStructure_EP_nested_slope4b_3,
@@ -1757,10 +1788,10 @@ Linearity_EP_AdditiveModel_nested4b_3 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_3) # contributes, p = .099
+anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_3) # does not contribute, p > .2
 # 4b_4
 AdditiveStructure_EP_nested_slope4b_4 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + ReadingSessionNumber.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc | UserId)"
 )
 Linearity_EP_AdditiveModel_nested4b_4 <- glmer(
     AdditiveStructure_EP_nested_slope4b_4, # sing
@@ -1768,20 +1799,20 @@ Linearity_EP_AdditiveModel_nested4b_4 <- glmer(
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_4) # does not contribute, p > .2
+anova(Linearity_EP_AdditiveModel_nested4, Linearity_EP_AdditiveModel_nested4b_4) # contributes, p = .069
 ```
 
-WindowWidth contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, LOC, Obs lag2, and WW
+ReadingSessionNumber contributes the most, and so it is added as a random slope in the model. Next, we test the remaining variables as slopes against a model with TRS, WW, Loc, and RSN
 
 ```{r 'select-slopes-adjusted5', eval=FALSE, echo=FALSE}
 # adjusted model slope test 5
-## Compare to model with a random slope of TRS, LOC, OBS lag2, and WW
+## Compare to model with a random slope of TRS, WW, Loc, and RSN
     ## 5b_1 DUD
     ## 5b_2 Event k-1
-    ## 5b_3 RSN
+    ## 5b_3 Event k-2
 ###################
 AdditiveStructure_EP_nested_slope5 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc | UserId)"
 )
 Linearity_EP_AdditiveModel_nested5 <- glmer( # sing
     AdditiveStructure_EP_nested_slope5,
@@ -1791,7 +1822,7 @@ Linearity_EP_AdditiveModel_nested5 <- glmer( # sing
 )
 # 5b_1
 AdditiveStructure_EP_nested_slope5b_1 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc + DaysUntilDeadline.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1  + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + DaysUntilDeadline.sc | UserId)"
 )
 Linearity_EP_AdditiveModel_nested5b_1 <- glmer( #sing, nc
     AdditiveStructure_EP_nested_slope5b_1,
@@ -1802,7 +1833,7 @@ Linearity_EP_AdditiveModel_nested5b_1 <- glmer( #sing, nc
 anova(Linearity_EP_AdditiveModel_nested5, Linearity_EP_AdditiveModel_nested5b_1) # does not contribute, p > .2
 # 5b_2
 AdditiveStructure_EP_nested_slope5b_2 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc + Observation_lag1 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 | UserId)"
 )
 Linearity_EP_AdditiveModel_nested5b_2 <- glmer( # sing, nc
     AdditiveStructure_EP_nested_slope5b_2,
@@ -1810,10 +1841,10 @@ Linearity_EP_AdditiveModel_nested5b_2 <- glmer( # sing, nc
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested5, Linearity_EP_AdditiveModel_nested5b_2) # does not contribute, p > .2
+anova(Linearity_EP_AdditiveModel_nested5, Linearity_EP_AdditiveModel_nested5b_2) # contributes, p = .194
 # 5b_3
 AdditiveStructure_EP_nested_slope5b_3 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc + ReadingSessionNumber.sc | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag2 | UserId)"
 )
 Linearity_EP_AdditiveModel_nested5b_3 <- glmer( # sing, nc
     AdditiveStructure_EP_nested_slope5b_3,
@@ -1824,15 +1855,56 @@ Linearity_EP_AdditiveModel_nested5b_3 <- glmer( # sing, nc
 anova(Linearity_EP_AdditiveModel_nested5, Linearity_EP_AdditiveModel_nested5b_3) # does not contribute, p > 2
 ```
 
+Observation_lag1 contributes to the model, and so it is added as a random slope. The model includes slopes for TRS, WW, Loc, RSN and Event~k-1~. We then resume slope testing.
+
+```{r}
+# adjusted model slope test 6
+## Compare to model with a random slope of TRS, WW, Loc, and RSN
+    ## 6b_1 DUD
+    ## 6b_2 Event k-2
+###################
+AdditiveStructure_EP_nested_slope6 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 | UserId)"
+)
+Linearity_EP_AdditiveModel_nested6 <- glmer( # sing
+    AdditiveStructure_EP_nested_slope6,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+# 6b_1
+AdditiveStructure_EP_nested_slope6b_1 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 + DaysUntilDeadline.sc | UserId)"
+)
+Linearity_EP_AdditiveModel_nested6b_1 <- glmer( #sing, nc
+    AdditiveStructure_EP_nested_slope6b_1,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+anova(Linearity_EP_AdditiveModel_nested6, Linearity_EP_AdditiveModel_nested6b_1) # does not contribute, p > .2
+# 5b_2
+AdditiveStructure_EP_nested_slope6b_2 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 + Observation_lag2 | UserId)"
+)
+Linearity_EP_AdditiveModel_nested6b_2 <- glmer( # sing, nc
+    AdditiveStructure_EP_nested_slope5b_2,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+anova(Linearity_EP_AdditiveModel_nested6, Linearity_EP_AdditiveModel_nested6b_2) # does not contribute
+```
+
 None of the remaining variables contribute to the model as random effects.
-Inspect the adjusted additive model with random slopes:
+Inspect the adjusted additive model with random slopes: CONTINUE HERE
 
 ```{r, warning='hide'}
-AdditiveStructure_EP_nested_slope5 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag2 + WindowWidth.sc | UserId)"
+AdditiveStructure_EP_nested_slope6 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 | UserId)"
 )
-Linearity_EP_AdditiveModel_nested5 <- glmer( # sing
-    AdditiveStructure_EP_nested_slope5,
+Linearity_EP_AdditiveModel_nested6 <- glmer( # sing
+    AdditiveStructure_EP_nested_slope6,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1840,7 +1912,7 @@ Linearity_EP_AdditiveModel_nested5 <- glmer( # sing
 summary(Linearity_EP_AdditiveModel_nested5)
 ```
 
-The model is singular, and so we attempt to resolve it by simplifying the structure backward stepwise, starting with the random slopes. PercentageLocation accounts for the least variance in the model, and so it is removed first.
+The model is nonconvergent and singular, and so we attempt to resolve it by simplifying the structure backward-stepwise, starting with the random slopes. PercentageLocation accounts for the least variance in the model, and so it is removed first.
 
 ```{r 'adjusted-model-backward-select-slopes', eval=FALSE, echo=FALSE}
 # fit the model without PercentageLocation
