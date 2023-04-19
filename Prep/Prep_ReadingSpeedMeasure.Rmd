@@ -12,19 +12,21 @@ The purpose of this script is to compute a measure of reading speed.
 
 Participants' reading speed was measured in words per minute by comparing the time they spent on a page-view to the amount of words on each page. Reading speeds were then categorised by comparing the speed to participants' result in a baseline reading speed test. We were interested in 'deep reading' speeds, which reflect a natural reading speed at which the text can be comprehended. These speeds were assumed to vary between 100wpm and 2.4*baseline speed (see more information in the manuscript).
 
-To compare participants' variance in reading speed, we normalise reading speeds by deducting the baseline speed result from it. We are interested in whether participants use their natural reading speeds, or speeds higher or lower than the baseline, and therefore, we aim to measure absolute variance from baseline reading speed.
+To compare participants' variance in reading speed, we normalise reading speeds by dividing it by baseline speed result. This measure is called 'ReadingRate'.
 
 **Information on hypotheses:**
 
+H3a: Situational autonomous motivation is connected to baseline-level and slower reading speed when situational competence is low.
 
+H3b: Contextual autonomous motivation is connected to baseline-level and slower reading speed when situational competence is low.
 
-
+H3d: Task-relevant electronic reading experience (TR-EEXP) is connected to baseline-level and slower reading speed when situational competence is low.
 
 This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd.
 
 ## Setup
 
-```{r, setup}
+```{r 'setup'}
 library(tidyverse)
 library(tidyr)
 library(dplyr)
@@ -33,7 +35,7 @@ getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 
 ## Load data and check variable types
 
-```{r 'load data'}
+```{r 'load-data'}
 tracking_data <-
     read.csv(
         "Data/wrangled_tracking_data.csv",
@@ -44,7 +46,7 @@ tracking_data <-
 tracking_data <- select(tracking_data, -X)
 ```
 
-```{r 'change variable types'}
+```{r 'change-variable-types'}
 str(tracking_data)
 source("Functions/Functions_VariableTypeConversion.R")
 
@@ -222,7 +224,7 @@ speed_measure_data <- speed_measure_data %>%
         UserId,
         StoryId,
         ReadingSessionNumber,
-        ReadingBlockNumber,
+        ReadingBlockNumber, # used to identify each page-view
         Condition,
         ReadingSpeedDifference,
         AbsReadingSpeedDifference,
