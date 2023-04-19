@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingSpeed"
 author: "Pauliina Vuorinen"
-date: "14/10/2022-14/04/2023"
+date: "14/10/2022-19/04/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -1177,7 +1177,7 @@ Speed_EP_AdditiveModel_nested1_4 <- lmer( # sing
     control = lmerControl(optimizer = "bobyqa"),
     REML = FALSE
 )
-anova(Speed_EP_AdditiveModel_nested1_4, Speed_EP_AdditiveModel_nested_interceptsonly) # does not contribute, p > .2
+anova(Speed_EP_AdditiveModel_nested1_4, Speed_EP_AdditiveModel_nested_interceptsonly) # contributes, p = .187
 # 5
 AdditiveStructure_EP_nested_slope1_5 <- (
     "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + ReadingSessionNumber.sc | StoryId / UserId)"
@@ -1212,6 +1212,8 @@ Speed_EP_AdditiveModel_nested1_7 <- lmer(
 )
 anova(Speed_EP_AdditiveModel_nested1_7, Speed_EP_AdditiveModel_nested_interceptsonly) # sig contributes, p = .0012
 ```
+
+Location in text contributes the most to the model, and so it is added as the first random slope.
 
 ```{r 'test-slopes2', eval=FALSE, echo=FALSE}
 # slope test 2
@@ -1299,6 +1301,8 @@ Speed_EP_AdditiveModel_nested2_6 <- lmer( # sing
 )
 anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_6) # contributes, p = .125
 ```
+
+Days until deadline contributes the most to the model in slope test round 2. It is added in the model in addition to location in text.
 
 ```{r 'test-slopes3', eval=FALSE, echo=FALSE}
 # slope test 3
@@ -1474,7 +1478,15 @@ All linear mixed models were tested for (1) multicollinearity, (2) influential o
 We check for multicollinearity first with a correlation matrix:
 
 ```{r, eval=FALSE, include=FALSE}
-corrplot(cor(remove_missing(reading_speed_measure_data[, c(36:37, 41:45)])), method = "number")
+corrplot(cor(remove_missing(reading_speed_measure_data[, c(
+    "Observation_lag1.sc",
+    "Observation_lag2.sc",
+    "WindowWidth.sc",
+    "DaysUntilDeadline.sc",
+    "ReadingSessionNumber.sc",
+    "TimeInReadingSession.sc",
+    "PercentageLocation.sc"
+    )])), method = "number")
 ```
 
 None of the predictors show high correlations.

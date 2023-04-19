@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingLinearity"
 author: "Pauliina Vuorinen"
-date: "27/06/2022-14/04/2023"
+date: "27/06/2022-19/04/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -1137,7 +1137,7 @@ Next, we add random slopes to the additive model. Slopes are selected in a data-
 
 In the best path algorithm, we test inclusion of each random slope against the intercept-only model. A liberal alpha-level is used, in accordance with @barrRandomEffectsStructure2013a recommendations, and so, any random slope which differs from the intercepts-only model with p < .2 is considered for inclusion. If multiple slopes cross this threshold, we include the slope with the lowest p-value in the model. Then, we re-test the remaining slopes in the model against this model. This is continued until none of the random slopes contribute to the model, and so all remaining slope p > .2.
 
-```{r 'select-slopes1', eval=FALSE, echo=FALSE}
+```{r 'select-slopes1EP', eval=FALSE, echo=FALSE}
 # slope test 1
     ## 1_1 WW
     ## 1_2 DUD
@@ -1223,12 +1223,12 @@ Linearity_EP_AdditiveModel_nested1_7 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested1_7, Linearity_EP_AdditiveModel) # contributes, p = .292
+anova(Linearity_EP_AdditiveModel_nested1_7, Linearity_EP_AdditiveModel) # does not contribute, p > .20
 ```
 
 A random slope of TimeInReadingSession contributes the most to the model. We continue testing slopes by comparing their addition to a model with TRS.
 
-```{r 'select-slopes2', eval=FALSE, echo=FALSE}
+```{r 'select-slopes2EP', eval=FALSE, echo=FALSE}
 # slope test 2
 ## Start adding all slopes to a model with TRS
     ## 2_1: WW
@@ -1251,7 +1251,7 @@ Linearity_EP_AdditiveModel_nested2 <- glmer( # sing
 AdditiveStructure_EP_nested_slope2_1 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc | StoryId / UserId)"
 )
-Linearity_EP_AdditiveModel_nested2_1 <- glmer( # sing, nc
+Linearity_EP_AdditiveModel_nested2_1 <- glmer( # sing
     AdditiveStructure_EP_nested_slope2_1,
     data = linearity_measure_data,
     family = binomial(),
@@ -1317,9 +1317,9 @@ anova(Linearity_EP_AdditiveModel_nested2, Linearity_EP_AdditiveModel_nested2_6) 
 
 A random slope of ReadingSessionNumber contributes most to the model. We continue testing possible random slopes by comparing to a model with a random slope for TimeInReadingSession and ReadingSessionNumber
 
-```{r 'select-slopes2', eval=FALSE, echo=FALSE}
+```{r 'select-slopes3EP', eval=FALSE, echo=FALSE}
 # slope test 3
-## Start adding all slopes to a model with TRS + LOC
+## Start adding all slopes to a model with TRS + RSN
     ## 3_1: WW
     ## 3_2: DUD
     ## 3_3: Event k-1
@@ -1394,7 +1394,9 @@ anova(Linearity_EP_AdditiveModel_nested3, Linearity_EP_AdditiveModel_nested3_5) 
 
 None of the remaining random slopes contributes to the model, and so the additive model has slopes for time in a reading session and reading session number only.
 
-```{r, echo=FALSE}
+Inspect the model:
+
+```{r 'additive-model-with-slopesEP', eval=FALSE}
 AdditiveStructure_EP_nested_slope3 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc | StoryId / UserId)"
 )
@@ -1404,11 +1406,6 @@ Linearity_EP_AdditiveModel_nested3 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-```
-
-Inspect the model:
-
-```{r 'additive-model-with-slopes', eval=FALSE}
 summary(Linearity_EP_AdditiveModel_nested3)
 ```
 
@@ -1429,7 +1426,7 @@ Linearity_EP_AdditiveModel_nested_selection1 <- glmer( # remains singular
     control = glmerControl(optimizer = "bobyqa")
 )
 summary(Linearity_EP_AdditiveModel_nested_selection1)
-# Model without slope for readomg session number
+# Model without slope for reading session number
 AdditiveStructure_EP_nested_slope_selection2 <- (
     "StartsNonlinearity ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId / UserId)"
 )
@@ -1482,7 +1479,7 @@ All VIF values are < 2, indicating that including StoryId as a fixed effect does
 
 We then attempt to select random slopes a new in the model, this time only for the random effect of UserId. A random slope of StoryId is not tested considering that the number of groups in this variable would inflate the number of parameters in the model and result in overfitting.
 
-```{r 'select-slopes-adjusted1', eval=FALSE, echo=FALSE}
+```{r 'select-slopes-adjusted1EP', eval=FALSE, echo=FALSE}
 # adjusted model slope test 1
     ## 1b_1 WW
     ## 1b_2 DUD
@@ -1664,7 +1661,7 @@ WindowWidth contributes the most, and so it is added as a random slope in the mo
 
 ```{r 'select-slopes-adjusted3', eval=FALSE, echo=FALSE}
 # adjusted model slope test 3
-## Compare to model with a random slope of TRS and LOC
+## Compare to model with a random slope of TRS and WW
     ## 3b_1 DUD
     ## 3b_2 Event k-1
     ## 3b_3 Event k-2
@@ -1674,7 +1671,7 @@ WindowWidth contributes the most, and so it is added as a random slope in the mo
 AdditiveStructure_EP_nested_slope3 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc | UserId)"
 )
-Linearity_EP_AdditiveModel_nested3 <- glmer(
+Linearity_EP_AdditiveModel_nested3 <- glmer( # sing
     AdditiveStructure_EP_nested_slope3,
     data = linearity_measure_data,
     family = binomial(),
@@ -1859,7 +1856,7 @@ Observation_lag1 contributes to the model, and so it is added as a random slope.
 
 ```{r}
 # adjusted model slope test 6
-## Compare to model with a random slope of TRS, WW, Loc, and RSN
+## Compare to model with a random slope of TRS, WW, Loc, RSN, and OBS-1
     ## 6b_1 DUD
     ## 6b_2 Event k-2
 ###################
@@ -1887,17 +1884,16 @@ anova(Linearity_EP_AdditiveModel_nested6, Linearity_EP_AdditiveModel_nested6b_1)
 AdditiveStructure_EP_nested_slope6b_2 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 + Observation_lag2 | UserId)"
 )
-Linearity_EP_AdditiveModel_nested6b_2 <- glmer( # sing, nc
+Linearity_EP_AdditiveModel_nested6b_2 <- glmer( #unidentifiable
     AdditiveStructure_EP_nested_slope5b_2,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-anova(Linearity_EP_AdditiveModel_nested6, Linearity_EP_AdditiveModel_nested6b_2) # does not contribute
 ```
 
 None of the remaining variables contribute to the model as random effects.
-Inspect the adjusted additive model with random slopes: CONTINUE HERE
+We then inspect the adjusted additive model with random slopes:
 
 ```{r, warning='hide'}
 AdditiveStructure_EP_nested_slope6 <- (
@@ -1909,52 +1905,63 @@ Linearity_EP_AdditiveModel_nested6 <- glmer( # sing
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-summary(Linearity_EP_AdditiveModel_nested5)
+summary(Linearity_EP_AdditiveModel_nested6)
 ```
 
-The model is nonconvergent and singular, and so we attempt to resolve it by simplifying the structure backward-stepwise, starting with the random slopes. PercentageLocation accounts for the least variance in the model, and so it is removed first.
+The model is nonconvergent and singular. To address this, we simplify the model backward-stepwise, starting with the random slopes.
+The model summary shows that the random slope of PercentageLocation accounts for the least variance in the model, and so it is removed first. 
 
 ```{r 'adjusted-model-backward-select-slopes', eval=FALSE, echo=FALSE}
 # fit the model without PercentageLocation
-AdditiveStructure_EP_Adjusted_slope_selected1 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 + WindowWidth.sc | UserId)"
+AdditiveStructure_EP_slope_selected1 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + ReadingSessionNumber.sc + Observation_lag1 | UserId)"
 )
-Linearity_EP_AdditiveModel_Adjusted_slope_selected1 <- glmer( # remains singular
-    AdditiveStructure_EP_Adjusted_slope_selected1,
+Linearity_EP_AdditiveModel_slope_selected1 <- glmer( # remains singular
+    AdditiveStructure_EP_slope_selected1,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-summary(Linearity_EP_AdditiveModel_Adjusted_slope_selected1) # WindowWidth accounts for the least variance
+summary(Linearity_EP_AdditiveModel_slope_selected1) # WindowWidth accounts for the least variance
 # fit the model without WindowWidth
 AdditiveStructure_EP_Adjusted_slope_selected2 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 | UserId)"
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + ReadingSessionNumber.sc + Observation_lag1 | UserId)"
 )
-Linearity_EP_AdditiveModel_Adjusted_slope_selected2 <- glmer( # no longer singular
+Linearity_EP_AdditiveModel_slope_selected2 <- glmer( # remains singular
     AdditiveStructure_EP_Adjusted_slope_selected2,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+summary(Linearity_EP_AdditiveModel_slope_selected2) # Reading session number accounts for the least variance
+# fit the model without ReadingSessionNumber
+AdditiveStructure_EP_Adjusted_slope_selected3 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag1 | UserId)"
+)
+Linearity_EP_AdditiveModel_slope_selected3 <- glmer(
+    AdditiveStructure_EP_Adjusted_slope_selected3,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
 ```
 
-After removal of two random slopes, PercentageLocation and WindowWidth, the model converges and is no longer singular.
-
+After removal of three random slopes, PercentageLocation, WindowWidth and ReadingSessionNumber, the model converges and is no longer singular.
 Inspect the model:
 
 ```{r, warning='hide', echo=FALSE}
-AdditiveStructure_EP_Adjusted_slope_selected2 <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 | UserId)"
+AdditiveStructure_EP_Adjusted_slope_selected3 <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag1 | UserId)"
 )
-Linearity_EP_AdditiveModel_Adjusted_slope_selected2 <- glmer( # no longer singular
-    AdditiveStructure_EP_Adjusted_slope_selected2,
+Linearity_EP_AdditiveModel_slope_selected3 <- glmer(
+    AdditiveStructure_EP_Adjusted_slope_selected3,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
-summary(Linearity_EP_AdditiveModel_Adjusted_slope_selected2)
-plot(Linearity_EP_AdditiveModel_Adjusted_slope_selected2)
-fixef(Linearity_EP_AdditiveModel_Adjusted_slope_selected2)
+summary(Linearity_EP_AdditiveModel_slope_selected3)
+plot(Linearity_EP_AdditiveModel_slope_selected3)
+fixef(Linearity_EP_AdditiveModel_slope_selected3)
 ```
 
 Now that the model converges, we can add two-way interactions.
@@ -1964,14 +1971,14 @@ Now that the model converges, we can add two-way interactions.
 We create a new model structure with interactions between all predictors of interest (see information at the beginning of the event properties section for an explanation of model selection). Only two-way interactions are included to avoid overfitting the model. Note that StoryId is fit as a fixed rather than a random effect due to singularity in the additive model structure. The interactive model includes XX parameters. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(linearity_measure_data)`/21 = `r round(nrow(linearity_measure_data)/21, 2)`.
 
 ```{r 'define-interactive-structure'}
-InteractiveStructure_EP_Adjusted <- (
-    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1 : Observation_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag2 | UserId)"
+InteractiveStructure_EP <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + Observation_lag1 : Observation_lag2 + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag1 | UserId)"
 )
 ```
 
 ```{r 'fit-interactive-model', warning='hide'}
-Linearity_EP_InteractiveModel_Adjusted <- glmer(
-    InteractiveStructure_EP_Adjusted,
+Linearity_EP_InteractiveModel <- glmer(
+    InteractiveStructure_EP,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1982,9 +1989,9 @@ The full interactive model structure converges and is not singular.
 Inspect model values:
 
 ```{r, include=FALSE}
-summary(Linearity_EP_InteractiveModel_Adjusted)
-plot(Linearity_EP_InteractiveModel_Adjusted)
-fixef(Linearity_EP_InteractiveModel_Adjusted)
+summary(Linearity_EP_InteractiveModel)
+plot(Linearity_EP_InteractiveModel)
+fixef(Linearity_EP_InteractiveModel)
 ```
 
 ### Model Assumptions
@@ -2001,7 +2008,7 @@ Any VIF > 5 is considered to be a strong indication of multicollinearity, and th
 We check for multicollinearity first with a correlation matrix:
 
 ```{r, eval=FALSE, include=FALSE}
-# corrplot(cor(linearity_measure_data[, c("WindowWidth.sc", "DaysUntilDeadline.sc", "ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
+corrplot(cor(linearity_measure_data[, c("WindowWidth.sc", "DaysUntilDeadline.sc", "ReadingSessionNumber.sc", "TimeInReadingSession.sc", "PercentageLocation.sc")]), method = "number")
 ```
 
 Location in text and time in a reading session are positively correlated, *r* = `r round(cor(linearity_measure_data$PercentageLocation.sc, linearity_measure_data$TimeInReadingSession.sc), 2)`.
@@ -2009,19 +2016,48 @@ Location in text and time in a reading session are positively correlated, *r* = 
 To check if these correlations are problematic, we calculate VIF:
 
 ```{r, eval=FALSE, include=FALSE}
-check_collinearity(Linearity_EP_InteractiveModel_Adjusted)
-plot(check_collinearity(Linearity_EP_InteractiveModel_Adjusted))
+check_collinearity(Linearity_EP_InteractiveModel)
+plot(check_collinearity(Linearity_EP_InteractiveModel))
 ```
 
-The model predictors do not seem to be multicollinear. All VIF < 4, and usually VIF > 5 is used as an indicator of potential multicollinearity.
+An interaction effect between the previous events (Event k-1 and k-2) have a moderately high VIF score. We further assess whether the multicollinearity influences results by re-fitting the model without it.
+
+```{r}
+# Specify model without an interaction between previous events
+InteractiveStructure_EP_adjusted <- (
+    "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + ReadingSessionNumber.sc : TimeInReadingSession.sc + ReadingSessionNumber.sc : PercentageLocation.sc + TimeInReadingSession.sc : PercentageLocation.sc + (1 + TimeInReadingSession.sc + Observation_lag1 | UserId)"
+)
+# Re-fit the model
+Linearity_EP_InteractiveModel_adjusted <- glmer(
+    InteractiveStructure_EP_adjusted,
+    data = linearity_measure_data,
+    family = binomial(),
+    control = glmerControl(optimizer = "bobyqa")
+)
+anova(Linearity_EP_InteractiveModel_adjusted, Linearity_EP_InteractiveModel)
+summary(Linearity_EP_InteractiveModel)
+summary(Linearity_EP_InteractiveModel_adjusted)
+```
+
+Inspection of the model without the interaction shows that the adjusted model is marginally different from the originally selected interactive model. Furthermore, summary of the model result shows that removal of the interaction has an impact on result interpretation. We assess whether the adjusted model adequately addresses the multicollinearity:
+
+```{r}
+check_collinearity(Linearity_EP_InteractiveModel_adjusted)
+plot(check_collinearity(Linearity_EP_InteractiveModel_adjusted))
+```
+
+After removal of the interaction, the model multicollinearity reduces to acceptable levels. Accordingly, we decide to proceed with the adjusted model.
 
 #### 2. Influential Observations
 
 We test influential observations with Cook's Distance:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 cooksd <-
-     cooks.distance(Linearity_EP_InteractiveModel_Adjusted)
+     cooks.distance(Linearity_EP_InteractiveModel_adjusted)
+```
+
+```{r, eval=FALSE, include=FALSE}
 plot(cooksd,
     pch = "*",
      cex = 2,
@@ -2036,28 +2072,28 @@ text(
 )
 ```
 
-The plot indicates that the dataset may include some highly influential observations. In particular, the plot highlights observation #3462.
+The plot indicates that the dataset may include some highly influential observations. In particular, the plot highlights observations #9 and #24.
 
 We further inspect outliers using the simulated_model_output and DHARMa's outlier test:
 
 ```{r, eval=FALSE, include=FALSE}
 set.seed(1234) # for reproducibility
-simulated_model_output <- DHARMa::simulateResiduals(Linearity_EP_InteractiveModel_Adjusted)
+simulated_model_output <- DHARMa::simulateResiduals(Linearity_EP_InteractiveModel_adjusted)
 testOutliers(simulated_model_output)
 ```
 
-Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. To assess the impact of observation #3462, we attempt to fit the model without it to see if its inclusion has an impact on model interpreations:
+Although Cook's Distance indicates that the model has influential observations, the outlier test does not produce the same results. We resolve this contradiction by testing the removal of the most influential observation (#9) from the model to see if its inclusion has an impact on model interpretations.
 
-**Fit the model without observation #3462:**
+**Fit the model without observation #9:**
 
 ```{r, eval=FALSE}
-subset_without_observation3462 <- linearity_measure_data[c(1:3461, 3463:nrow(linearity_measure_data)), ]
+subset_without_observation9 <- linearity_measure_data[c(1:8, 10:nrow(linearity_measure_data)), ]
 ```
 
 ```{r 'fit-model-wo-obs-3462', eval=FALSE}
-Linearity_EP_InteractiveModel_Adjusted_influential3462 <- glmer(
-    InteractiveStructure_EP_Adjusted,
-    data = subset_without_observation3462,
+Linearity_EP_InteractiveModel_adjusted_influential <- glmer(
+    InteractiveStructure_EP_adjusted,
+    data = subset_without_observation9,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
 )
@@ -2066,11 +2102,11 @@ Linearity_EP_InteractiveModel_Adjusted_influential3462 <- glmer(
 Inspect if model results are affected:
 
 ```{r, eval=FALSE}
-summary(Linearity_EP_InteractiveModel_Adjusted_influential3462)
-summary(Linearity_EP_InteractiveModel_Adjusted)
+summary(Linearity_EP_InteractiveModel_adjusted_influential)
+summary(Linearity_EP_InteractiveModel_adjusted)
 ```
 
-The results are not influenced by removing observation #3462, and so we retain it in the sample. Considering that the most influential observation does not appear to affect model results, we believe that the sample does not have any influential observations.
+The results are not influenced by removing observation #9, and so we retain it in the sample. Considering that the most influential observation does not appear to affect model results, we believe that the sample does not have any influential observations, in accordance with results from DHARMa::testOutliers().
 
 #### 3. Heteroscedasticity
 
@@ -2080,72 +2116,53 @@ Test for heteroscedasticity with DHARMa::testQuantiles() using simulated_model_o
 testQuantiles(simulated_model_output)
 ```
 
-The p-value is not significant, and the lines lie flat and horizontal in the plot, close to the reference lines. This indicates that the assumption of heteroscedasticity is fulfilled.
+The p-value is not significant, and the lines lie fairly flat and horizontal in the plot, close to the reference lines. This indicates that the assumption of homoscedasticity is fulfilled.
 
 #### 4. Normality of Random Effects
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting the normality of 'UserId'. 'StoryId' was fit in the model as a fixed effect and so it is not inspected.
 
 ```{r, eval=FALSE, include=FALSE}
-random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_Adjusted)$UserId$`(Intercept)`
+random_intercept_UserId <- ranef(Linearity_EP_InteractiveModel_adjusted)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
-The qqplot varies from the reference line, but considering that the variance is not extensive and the Shapiro Test is not significant, we assume that UserId random intercept is normally distributed.
+The qqplot and the Shapiro Wilk test show that the random effect of UserId significantly deviates from a normal distribution. The plot shows that the random effect variances have long tails, and thus higher and lower values are skewed.
+This nonnormality is likely to bias variance estimations from the random effect of UserId. However, it does not influence interpretation of the fixed effect coefficients [@Shielzeth2020]. Considering that our main aim is to interpret the results from the model rather than estimate UserId variance, we accept this limitation and interpret results with caution.
 
 **Assumptions conclusion**
 
-The model was fit with StoryId as a fixed rather than a random effect to resolve singularity in the model that was due to zero variance accounted for by the StoryId random intercept.
-The adjusted model aligns will assumptions.
+The model was fit with StoryId as a fixed rather than a random effect to resolve singularity in the model that was due to zero variance accounted for by the StoryId random intercept. The model also showed an elevated VIF score for a two-way interaction between previous events (Event~k-1~ and Event~k-2~), indicative of multicollinearity. This was resolved by re-fitting the model without this interaction after inspection of the model showed that the potential multicollinearity may have an impact on the model results.
+
+Finally, inspection of the normality of the random effect of UserId showed that the distribution significantly deviates from normal. It is not possible to exclude or transform the variable without significantly altering the model. Instead, we accept this limitation to the model considering that it does not bias interpretation of fixed effect coefficients, according to a simulation study by @Shielzeth2020.
 
 ### Interpret reader characteristics model
 
 We then interpret model effects to interpret the results.
 
 ```{r, include=FALSE}
-summary(Linearity_EP_InteractiveModel_Adjusted)
+summary(Linearity_EP_InteractiveModel_adjusted)
 ```
 
 Linearity of reading is significantly predicted by
-1. A main effect of screensize (WindowWidth)
-2. A main effect of previous event (navigation event k-1, 'Observation_lag1')
-3. A main effect of time since the beginning of a reading session ('TimeInReadingSession')
-4. An interaction effect between time in a reading session and location in text
+1. A main effect of previous event (navigation event k-1, 'Observation_lag1')
+2. A main effect of time since the beginning of a reading session ('TimeInReadingSession')
+3. An interaction effect between time in a reading session and location in text
 
 These findings are explored below by visualisations.
-First, we discuss the effect of screen size (1). Second, we discuss the effect of previous events (2). Third, we discuss the influence of reading session and location (3 and 4)
+First, we discuss the effect of previous event (1). Second, we discuss the influence of reading session and location (2 and 3)
 
 Note that no hypotheses were set for the event properties models and they are used for explorative purposes only.
 
-#### Effect of Screen Size
-
-WindowWidth represents the width of a browser screen, and thus it is used as an indication of the participants' device (e.g. smartphones have smaller window widths than laptops with the browser window maximised to fit the screen), and text amount (larger windows have more text). WindowWidth was used only as a control variable in the model to account for the impact of device size and text layout, however, the main effect was a significant predictor of nonlinear navigation.
-
-```{r, warning='hide'}
-linearity_ep_windowwidth <- effect_plot(
-    Linearity_EP_InteractiveModel_Adjusted,
-    pred = "WindowWidth.sc",
-    data =  linearity_measure_data,
-    interval = TRUE
-) +
-    figure_theme_without_legend +
-    labs(
-        y = "Odds of initiating nonlinear navigation",
-        x = addline_format("Window width in pixels,(centered and scaled)")
-    )
-```
-
-Window width and nonlinearity are positively connected, indicating that the odds of initiating nonlinearity increase when the e-reader is used on a larger device.
-
-#### Connection between subsequent events
+#### Connection between the outcome variable and previous events
 
 The results of the model indicated that previous event (lag 1) was a significant predictor of nonlinear navigation.
 
 ```{r, warning='hide'}
 linearity_ep_previousevent <- effect_plot(
-    Linearity_EP_InteractiveModel_Adjusted,
+    Linearity_EP_InteractiveModel_adjusted,
     pred = "Observation_lag1",
     data =  linearity_measure_data,
     interval = TRUE
@@ -2165,7 +2182,7 @@ In contrast, event~k-2~ was not a significant predictor of nonlinearity:
 
 ```{r, warning='hide'}
 linearity_ep_lag2 <- effect_plot(
-    Linearity_EP_InteractiveModel_Adjusted,
+    Linearity_EP_InteractiveModel_adjusted,
     pred = "Observation_lag2",
     interval = TRUE,
 ) +
@@ -2178,13 +2195,15 @@ linearity_ep_lag2 <- effect_plot(
     scale_y_continuous(breaks = c(0, 0.1, 0.2, 0.3))
 ```
 
+Therefore, nonlinear navigation could not be predicted on the basis of the event preceeding the previous.
+
 #### Effect of Time in a Reading session and Location in Text
 
 Linearity of reading was significant predicted by the time since the beginning of a reading session.
 
 ```{r, warning='hide'}
 linearity_ep_time <- effect_plot(
-    Linearity_EP_InteractiveModel_Adjusted,
+    Linearity_EP_InteractiveModel_adjusted,
     pred = "TimeInReadingSession.sc",
     interval = TRUE
 ) +
@@ -2201,7 +2220,7 @@ The main effect was qualified by a significant interaction between time in a rea
 
 ```{r, warning='hide'}
 linearity_ep_timelocation <- interact_plot(
-    Linearity_EP_InteractiveModel_Adjusted,
+    Linearity_EP_InteractiveModel_adjusted,
     pred = "TimeInReadingSession.sc",
     modx = "PercentageLocation.sc",
     legend.main = addline_format("Location in text,(centered and scaled)"),
@@ -2214,4 +2233,4 @@ linearity_ep_timelocation <- interact_plot(
     )
 ```
 
-The interaction effect indicates that the odds of nonlinear navigation are the highest if the participant is at the beginning of the story at the beginning of a reading session. However, the odds of nonlinear navigation decrease if the participant is reading the end of a text at the beginning of a reading session. In contrast, the odds of nonlinear navigation stay constant across time since the beginning of a reading session if a participant is viewing the end of the story.
+The interaction effect indicates that the odds of nonlinear navigation are the highest if the participant is at the beginning of the story at the beginning of a reading session. The odds of nonlinear navigation decrease towards the end of the reading session.
