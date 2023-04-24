@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingSpeed"
 author: "Pauliina Vuorinen"
-date: "14/10/2022-19/04/2023"
+date: "14/10/2022-24/04/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -60,6 +60,7 @@ if (exists("AnalysisFilePath")) {
     print("mypath_SSRBP should be defined manually")
     # mypath_SSRBP <- XX
 }
+print(mypath_SSRBP)
 ```
 
 ```{r 'load-figure-theme-for-consistency', echo=FALSE, warning="hide"}
@@ -617,9 +618,12 @@ Despite of the correlations, the model predictors do not seem to be multicolline
 
 We test influential observations with Cook's Distance:
 
+```{r}
+cooksd <-
+    cooks.distance(Speed_RC_nested_selected3)
+```
+
 ```{r, eval=FALSE, include=FALSE}
-# cooksd <-
-#     cooks.distance(Speed_RC_nested_selected3)
 # plot(cooksd,
 #     pch = "*",
 #     cex = 2,
@@ -931,7 +935,7 @@ This model selection is used to explore possible interactions that are meaningfu
 
 ### Create missing predictor variables
 
-```{r 'create-preceeding-event-variables', eval=FALSE}
+```{r 'create-preceeding-event-variables'}
 # order by User, reading session number and time since the beginning of a reading session
 reading_speed_measure_data <-
     reading_speed_measure_data[

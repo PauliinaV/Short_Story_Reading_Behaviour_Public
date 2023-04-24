@@ -1,7 +1,7 @@
 ---
 title: "Analysis_ReadingLinearity"
 author: "Pauliina Vuorinen"
-date: "27/06/2022-19/04/2023"
+date: "27/06/2022-24/04/2023"
 output: html_document
 library: ["~/Extra/RPackages.bib", "~/Extra/InCodeCitations.bib"]
 csl : ~/Extra/apa-7th-ed.csl
@@ -645,7 +645,7 @@ Including StoryId as a fixed effect rather than a random effect increases the am
 
 Add contrasts to StoryId:
 
-```{r 'add-contrasts-to-storyid', include=FALSE}
+```{r 'add-contrasts-to-storyidRC', include=FALSE}
 contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(
     linearity_measure_data$StoryId
 )
@@ -936,7 +936,7 @@ This model selection is used to explore possible interactions that are meaningfu
 
 ### Create missing predictor variables
 
-```{r 'create-preceeding-event-variables', eval=FALSE}
+```{r 'create-preceeding-event-variables'}
 # order by User, reading session number and time since the beginning of a reading session
 linearity_measure_data <-
     linearity_measure_data[
@@ -993,7 +993,6 @@ We visualise connection to previous events to see if initiating nonlinearity on 
 Previous page-view:
 
 ```{r, include=FALSE}
-table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$Observation_lag1)
 ggplot(
     linearity_measure_data,
     aes(StartsNonlinearity, after_stat(count))
@@ -1005,7 +1004,6 @@ ggplot(
 Two pages before the current page-view:
 
 ```{r, include=FALSE}
-table(linearity_measure_data$StartsNonlinearity, linearity_measure_data$Observation_lag1)
 ggplot(linearity_measure_data, aes(StartsNonlinearity, after_stat(count))) +
     geom_bar(aes(fill = Observation_lag2), position = "dodge") +
     theme_classic()
@@ -1449,7 +1447,7 @@ Again, inspection of model values shows that StoryId is accounting for zero vari
 
 Add contrasts to StoryId:
 
-```{r 'add-contrasts-to-storyid'}
+```{r 'add-contrasts-to-storyidEP'}
 linearity_measure_data$StoryId <- as.factor(linearity_measure_data$StoryId)
 contrasts(linearity_measure_data$StoryId) <- contr.helmert.unweighted(linearity_measure_data$StoryId)
 contrasts(linearity_measure_data$StoryId)
@@ -1854,7 +1852,7 @@ anova(Linearity_EP_AdditiveModel_nested5, Linearity_EP_AdditiveModel_nested5b_3)
 
 Observation_lag1 contributes to the model, and so it is added as a random slope. The model includes slopes for TRS, WW, Loc, RSN and Event~k-1~. We then resume slope testing.
 
-```{r}
+```{r, eval=FALSE, echo=FALSE}
 # adjusted model slope test 6
 ## Compare to model with a random slope of TRS, WW, Loc, RSN, and OBS-1
     ## 6b_1 DUD
@@ -1885,7 +1883,7 @@ AdditiveStructure_EP_nested_slope6b_2 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 + Observation_lag2 | UserId)"
 )
 Linearity_EP_AdditiveModel_nested6b_2 <- glmer( #unidentifiable
-    AdditiveStructure_EP_nested_slope5b_2,
+    AdditiveStructure_EP_nested_slope6b_2,
     data = linearity_measure_data,
     family = binomial(),
     control = glmerControl(optimizer = "bobyqa")
@@ -1895,7 +1893,7 @@ Linearity_EP_AdditiveModel_nested6b_2 <- glmer( #unidentifiable
 None of the remaining variables contribute to the model as random effects.
 We then inspect the adjusted additive model with random slopes:
 
-```{r, warning='hide'}
+```{r}
 AdditiveStructure_EP_nested_slope6 <- (
     "StartsNonlinearity ~ StoryId + WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1 + Observation_lag2 + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 + TimeInReadingSession.sc + WindowWidth.sc + PercentageLocation.sc + ReadingSessionNumber.sc + Observation_lag1 | UserId)"
 )
