@@ -515,7 +515,7 @@ reading_speed_measure_data$WindowWidth.sc <-
 
 ### Modelling by Reader Characteristics
 
-First, we build the maximal interactive model structure. The maximal model includes XX parameters, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/16 = `r round(nrow(reading_speed_measure_data)/16, 2)`
+First, we build the maximal interactive model structure.
 
 ```{r 'define-maximal-model-structure'}
 Structure_RC_nested_maximal <- (
@@ -531,6 +531,22 @@ Speed_RC_nested_maximal <- lmer(
     REML = TRUE
 )
 ```
+
+Check the number of parameters against the number of observations in the model
+
+```{r}
+fepar <- lme4::getME(Speed_RC_nested_maximal, name = "p") # number of fixed effect parameters
+repar <- lme4::getME(Speed_RC_nested_maximal, name = "m") # number of random effect parameters inc covariances
+par <- fepar + repar
+n <- lme4::getME(Speed_RC_nested_maximal, name = "n")
+# top limits of analysis
+## avoid overfitting with n/k => 15
+n/par > 15
+## limit computational requirements with 100 000 > 10*par^2
+100000 > 10*par^2
+```
+
+The maximal model includes `r par` parameters, and `r n` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r n`/`r par` = `r round(n/par, 2)`
 
 The maximal model is singular. We attempt to resolve this by backward stepwise selection of the random slopes.
 
@@ -600,7 +616,7 @@ All lmer models were tested for (1) multicollinearity, (2) influential observati
 We check for multicollinearity first with a correlation matrix:
 
 ```{r, eval=FALSE, include=FALSE}
-# corrplot(cor(reading_speed_measure_data[, c(31:37)]), method = "number")
+corrplot(cor(reading_speed_measure_data[, c(31:37)]), method = "number")
 ```
 
 Some of the variables show high correlations. For example, contextual reading competence is correlated with situational competence (*r* = `r round(cor(reading_speed_measure_data$SCompetence, reading_speed_measure_data$CCompetence), 2)`) and contextual motivation (*r* = `r round(cor(reading_speed_measure_data$CCompetence, reading_speed_measure_data$CInterest), 2)`).
@@ -624,18 +640,18 @@ cooksd <-
 ```
 
 ```{r, eval=FALSE, include=FALSE}
-# plot(cooksd,
-#     pch = "*",
-#     cex = 2,
-#     main = "Influential Obs by Cooks Distance"
-# )
-# abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
-# text(
-#     x = 1:length(cooksd) + 1,
-#     y = cooksd,
-#     labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
-#     col = "red"
-# )
+plot(cooksd,
+    pch = "*",
+     cex = 2,
+     main = "Influential Obs by Cooks Distance"
+)
+abline(h = 4 * mean(cooksd, na.rm = TRUE), col = "red")
+text(
+    x = 1:length(cooksd) + 1,
+    y = cooksd,
+    labels = ifelse(cooksd > 4 * mean(cooksd, na.rm = TRUE), names(cooksd), ""),
+    col = "red"
+)
 ```
 
 The plot indicates that the dataset may include some influential observations. However, the cook's distances are very conservative as the threshold is set at `r 4 * mean(cooksd, na.rm = TRUE)`. Therefore, it is unlikely that these observations influence the model.
@@ -680,8 +696,8 @@ Random effects should be normally distributed in multilevel models. We test this
 
 ```{r, eval=FALSE, include=FALSE}
 random_intercept_UserId <- ranef(Speed_RC_nested_selected3)$UserId$`(Intercept)`
-# qqnorm(random_intercept_UserId)
-# qqline(random_intercept_UserId)
+qqnorm(random_intercept_UserId)
+qqline(random_intercept_UserId)
 shapiro.test(random_intercept_UserId)
 ```
 
@@ -689,8 +705,8 @@ The qqplot varies slightly from the reference line, however, the Shapiro Test is
 
 ```{r, eval=FALSE, include=FALSE}
 random_intercept_StoryId <- ranef(Speed_RC_nested_selected3)$StoryId$`(Intercept)`
-# qqnorm(random_intercept_StoryId)
-# qqline(random_intercept_StoryId)
+qqnorm(random_intercept_StoryId)
+qqline(random_intercept_StoryId)
 shapiro.test(random_intercept_StoryId)
 ```
 
@@ -701,7 +717,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 We first check normality of residuals by plotting model residuals and fitted values
 
 ```{r, eval=FALSE, include=FALSE}
-# plot(resid(Speed_RC_nested_selected3), fitted(Speed_RC_nested_selected3))
+plot(resid(Speed_RC_nested_selected3), fitted(Speed_RC_nested_selected3))
 ```
 
 The model residuals are not symmetrically scattered in the plot, as the model observations seem to cluster around specific values.
@@ -709,13 +725,13 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 To further check non-normality, we use a qqplot:
 
 ```{r, eval=FALSE, include=FALSE}
-# qqnorm(residuals(Speed_RC_nested_selected3))
+qqnorm(residuals(Speed_RC_nested_selected3))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
 ```{r, eval=FALSE, include=FALSE}
-# hist(resid(Speed_RC_nested_selected3), breaks = 100)
+hist(resid(Speed_RC_nested_selected3), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
@@ -1107,8 +1123,6 @@ reading_speed_measure_data$PercentageLocation.sc <-
 
 First, we build the additive intercepts-only model structure.
 
-The model includes XX parameters before adding interactions, and `r nrow(reading_speed_measure_data)` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/10 = `r round(nrow(reading_speed_measure_data)/10, 2)`
-
 ```{r 'define-additive-model-structure'}
 AdditiveStructure_EP_nested_interceptsonly <- (
     "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + Observation_lag1.sc + Observation_lag2.sc + ReadingSessionNumber.sc + TimeInReadingSession.sc + PercentageLocation.sc + (1 | StoryId / UserId)"
@@ -1124,6 +1138,22 @@ Speed_EP_AdditiveModel_nested_interceptsonly <- lmer(
     control = lmerControl(optimizer = "bobyqa")
 )
 ```
+
+Check number of parameters against the number of observations in the additive, intercepts-only model:
+
+```{r}
+fepar_EP <- lme4::getME(Speed_EP_AdditiveModel_nested_interceptsonly, name = "p") # number of fixed effect parameters
+repar_EP <- lme4::getME(Speed_EP_AdditiveModel_nested_interceptsonly, name = "m") # number of random effect parameters inc covariances
+par_EP <- fepar_EP + repar_EP
+n_EP <- lme4::getME(Speed_EP_AdditiveModel_nested_interceptsonly, name = "n")
+# top limits of analysis
+## avoid overfitting with n/k >= 15
+n_EP/par_EP >= 15
+## limit computational requirements with 100 000 > 10*par^2
+100000 > 10*par_EP^2
+```
+
+The model includes `r par_EP` parameters before adding interactions, and `r n_EP` observations. Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r n_EP`/`r par_EP` = `r round(n_EP/par_EP, 2)`
 
 We then add random slopes in the additive model by the 'best-path' algorithm described by @barrRandomEffectsStructure2013a.
 With this method, we test addition of each fixed effect variable as a random slope using a liberal alpha-level (a = .20) against the intercepts-only model. If multiple variables contribute to the model with p < .20, we accept the variable with lowest p-value as slope, and resume testing by adding each fixed effect variable at a time as a random slope and compare to model with the previously accepted slope. This method allows us to explore meaningful random slopes with a data-driven approach.
@@ -1424,6 +1454,7 @@ AdditiveStructure_EP_nested_slope5_1 <- lmer(
 ```
 
 The additive model converges after removal of the random slope of location in text. The final additive model includes a random slope of days until reading deadline only.
+
 Inspect model values:
 
 ```{r, warning='hide'}
@@ -1440,14 +1471,26 @@ plot(AdditiveStructure_EP_nested_slope5_1)
 fixef(AdditiveStructure_EP_nested_slope5_1)
 ```
 
+Check amount of parameters against the number of observations:
+
+```{r}
+fepar_EP_slopes <- lme4::getME(AdditiveStructure_EP_nested_slope5_1, name = "p") # number of fixed effect parameters
+repar_EP_slopes <- lme4::getME(AdditiveStructure_EP_nested_slope5_1, name = "m") # number of random effect parameters inc covariances
+par_EP_slopes <- fepar_EP_slopes + repar_EP_slopes
+n_EP_slopes <- lme4::getME(AdditiveStructure_EP_nested_slope5_1, name = "n")
+# top limits of analysis
+## avoid overfitting with n/k >= 15
+n_EP_slopes/par_EP_slopes >= 15
+## limit computational requirements with 100 000 > 10*par^2
+100000 > 10*par_EP_slopes^2
+```
+
 We then add interactions to the additive model.
 
 #### Interactive model
 
 We create a new model structure with interactions between predictors of interest (all main effects apart from DaysUntilDeadline and WindowWidth which are used as control variables only).
 Only two-way interactions are included to avoid overfitting the model. No interactions are included between previous events (Observation_lag1 and Observation_lag2) and other predictors in the model (e.g. ReadingSessionNumber) to avoid multicollinearity.
-
-To start, the interactive model includes XX parameters (including the intercept, random effects, main effects, interactions). Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r nrow(reading_speed_measure_data)`/14 = `r round(nrow(reading_speed_measure_data)/14, 2)`.
 
 ```{r 'define-interactive-structure'}
 InteractiveStructure_EP_nested_slopes <- (
@@ -1465,6 +1508,23 @@ Speed_EP_InteractiveModel_nested_slopes <- lmer(
 ```
 
 The full interactive model structure converges.
+
+Check number of parameters against the number of observations:
+
+```{r}
+fepar_EP_int <- lme4::getME(Speed_EP_InteractiveModel_nested_slopes, name = "p") # number of fixed effect parameters
+repar_EP_int <- lme4::getME(Speed_EP_InteractiveModel_nested_slopes, name = "m") # number of random effect parameters inc covariances
+par_EP_int <- fepar_EP_int + repar_EP_int
+n_EP_int <- lme4::getME(Speed_EP_InteractiveModel_nested_slopes, name = "n")
+# top limits of analysis
+## avoid overfitting with n/k >= 15
+n_EP_int/par_EP_int >= 15
+## limit computational requirements with 100 000 > 10*par^2
+100000 > 10*par_EP_int^2
+```
+
+The interactive model includes `r par_EP_int` parameters (including the intercept, random effects, main effects, interactions, and random effect covariances). Previous research has suggested that each parameter in a model has at least 15 observations. Our sample exceeds this threshold considering that `r n_EP_int`/`r par_EP_int` = `r round(n_EP_int/par_EP_int, 2)`.
+
 Inspect model values:
 
 ```{r, include=FALSE}
