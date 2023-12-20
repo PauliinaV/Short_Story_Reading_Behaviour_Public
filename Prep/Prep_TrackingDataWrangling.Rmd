@@ -24,9 +24,29 @@ library(dplyr)
 The path should point to the main folder in this repository ('Short_Story_Reading_Behaviour_Public'). Make sure that is the case by configuring the path here:
 
 ```{r 'configure-path'}
-getwd() # this should be ~Short_Story_Reading_Behaviour_Public
-# if the path is incorrect, configure it here:
-# setwd()
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Prep", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
+} else {
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+}
+```
+
+```{r}
+source(
+    paste0(
+        mypath_SSRB,
+        "/Fig/Fig_FigureTheme.R"
+    )
+)
 ```
 
 ## Load data and check variable types
@@ -38,7 +58,10 @@ The raw tracking dataset has 10,390 tracking events from 62 participants (before
 ```{r 'load-data'}
 raw_tracking_data <-
     read.csv(
-        "Data/preprocessed_raw_tracking_data.csv",
+        paste0(
+            mypath_SSRB,
+            "/Data/preprocessed_raw_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -51,7 +74,12 @@ length(unique(raw_tracking_data$UserId))
 ```{r 'change-variable-types'}
 str(raw_tracking_data)
 names(raw_tracking_data)[names(raw_tracking_data) == "BookId"] <- "StoryId"
-source("Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 
 ## turn columns into factors that should be factors
 raw_tracking_data[, c(
@@ -617,12 +645,6 @@ raw_tracking_data$Time <-
     gsub(
         x = raw_tracking_data$Time, ",", "."
     )
-op <-
-    options(digits.secs = 3)
-raw_tracking_data$SessionStartTime2 <-
-    strptime(
-        reading_session_details$SessionStartTime
-    )
 ```
 
 ```{r}
@@ -680,7 +702,11 @@ We then remove the reading session artefacts from the tracking data:
 # merge dfs
 adjusted_durations_data <- merge(
     adjusted_durations_data,
-    reading_session_details[, c(1, 2, 10)],
+    reading_session_details[, c(
+        "UserId",
+        "ReadingSessionNumber",
+        "PotentialReadingSessionArtefact"
+    )],
     by = c("UserId", "ReadingSessionNumber")
 )
 # create new df without artefacts
@@ -751,7 +777,10 @@ Add information about the different books in the dataset:
 ```{r 'add-book-information'}
 story_information_data <-
     read.csv(
-        "Data/story_information_data.csv",
+        paste0(
+            mypath_SSRB,
+            "/Data/story_information_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -842,7 +871,7 @@ namevector <-
         "NBSpeedLabel",
         "NBAnyProgressBarUsage",
         "NBFirstTimeBeforeDeadline",
-        "NBLastTimeBeforeDeadline",
+        "NBLastTimeBeforeDeadline"
     )
 grouped_navigation_blocks_data[0, namevector] <- NA
 grouped_navigation_blocks_data <- grouped_navigation_blocks_data[0, ]
@@ -985,7 +1014,7 @@ for (i in levels(artefacts_removed_tracking_data$UserId)) {
 The wrangled tracking data is saved for usage in other scripts to compute reading behaviour measures and to eventually analyse the results.
 The dataset has already been saved, and so the below r code chunks are not run.
 
-```{r 'save-wrangled-data', eval=FALSE, echo=TRUE, save wrangled data}
+```{r 'save-wrangled-data', eval=FALSE, echo=TRUE}
 # write.csv2(
 #     artefacts_removed_tracking_data,
 #     "wrangled_tracking_data.csv"
