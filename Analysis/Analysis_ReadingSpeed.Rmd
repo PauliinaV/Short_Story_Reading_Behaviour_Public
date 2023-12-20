@@ -15,7 +15,7 @@ We aim to assess how variance in reading speed fluctuated during the study, in w
 
 To answer these research questions, we use 'ReadingRate' (saved in Data as reading_speed_measure_data.csv) as a measure of variance in reading speed. This measure was computed in Prep_ReadingSpeedMeasure.rmd. The measure indicates the variation in deep reading relative to participants' baseline speed (speed / baseline speed). We focus on 'deep reading' that reflects natural reading speeds with which participants can fully comprehend the story, and thus the dataset only includes observations on deep reading.
 
-In this analysis script, ReadingRate is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict ReadingRate. In the second model, the independent variables include information on the timing and location of ReadingRate. With the latter model our intention is to study in which situation reading speed varies. Both model structures are based on selection outlined in the full article. The models are constructed using lmer() in the lme4-package by @bates_fitting_2015.
+In this analysis script, ReadingRate is used as an outcome variable in **two different multilevel models**. In the first model, we study whether reader charactersistics such as condition, contextual motivation, and electronic reading experience predict ReadingRate. In the second model, the independent variables include information on the timing and location of ReadingRate. With the latter model our intention is to study in which situation reading speed varies. Both model structures are based on selection outlined in the full article. The models are constructed using lmer() in the lme4-package by @bates_fitting_2015
 
 **Information on the hypotheses**
 
@@ -25,7 +25,7 @@ In this analysis script, ReadingRate is used as an outcome variable in **two dif
 
 ## Setup
 
-```{r 'setup', include=FALSE}
+```{r 'setup'}
 library(tidyverse)
 library(dplyr)
 library(psych)
@@ -46,27 +46,27 @@ Save working directory so that this script can be used elsewhere, if required. T
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts. If using remotely, define 'AnalysisFilePath'. AnalysisFilePath refers to this exact file location, and so path to the main folder "Short_Story_Reading_Behaviour_Public" is two folders lower.
 
-```{r 'setwd'}
-getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
-# If AnalysisFilePath is not defined, use setwd() to refer to the main folder
-# setwd()
-if (exists("AnalysisFilePath")) {
-    mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
-} else if (grepl("Short_Story_Reading_Behaviour_Public/Analysis", getwd())) {
-    mypath_SSRBP <- dirname(getwd())
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Analysis", getwd())) {
+    mypath_SSRB <- dirname(getwd())
 } else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
-    mypath_SSRBP <- getwd()
+    mypath_SSRB <- getwd()
 } else {
-    print("mypath_SSRBP should be defined manually")
-    # mypath_SSRBP <- XX
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
 }
-print(mypath_SSRBP)
 ```
 
 ```{r 'load-figure-theme-for-consistency', echo=FALSE, warning="hide"}
 source(
     paste0(
-        mypath_SSRBP,
+        mypath_SSRB,
         "/Fig/Fig_FigureTheme.R"
     )
 )
@@ -75,13 +75,13 @@ source(
 ```{r 'load-helmert-contrasts-functions'}
 source(
     paste0(
-        mypath_SSRBP,
+        mypath_SSRB,
         "/Functions/Functions_contr.helmert.weighted.R"
     )
 )
 source(
     paste0(
-        mypath_SSRBP,
+        mypath_SSRB,
         "/Functions/Functions_contr.helmert.unweighted.R"
     )
 )
@@ -90,7 +90,7 @@ source(
 ```{r 'source-functions-for-line-adding'}
 source(
     paste0(
-        mypath_SSRBP,
+        mypath_SSRB,
         "/Functions/Functions_AddLine.R"
     )
 )
@@ -99,7 +99,7 @@ source(
 ```{r 'source-function-for-variabletype-conversion'}
 source(
     paste0(
-        mypath_SSRBP,
+        mypath_SSRB,
         "/Functions/Functions_VariableTypeConversion.R"
     )
 )
@@ -112,7 +112,7 @@ source(
 reading_speed_measure_data <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/reading_speed_measure_data.csv"
         ),
         header = TRUE,
@@ -129,7 +129,7 @@ We then load in data from questionnaires:
 IMI_scores <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/IMI_scores.csv"
         ),
         header = TRUE,
@@ -141,7 +141,7 @@ IMI_scores <- dplyr::select(IMI_scores, -X) # remove row numbers
 IMIR_scores <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/IMIR_scores.csv"
         ),
         header = TRUE,
@@ -153,7 +153,7 @@ IMIR_scores <- dplyr::select(IMIR_scores, -X) # remove row numbers
 eexp_scores <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/eexp_scores.csv"
         ),
         header = TRUE,
@@ -165,7 +165,7 @@ eexp_scores <- dplyr::select(eexp_scores, -X) # remove row numbers
 demographics_data <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/demographics_data.csv"
         ),
         header = TRUE,
@@ -181,7 +181,7 @@ Load in information about the stories that participants read:
 story_information_data <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/story_information_data.csv"
         ),
         header = TRUE,
@@ -308,14 +308,14 @@ We create graphs to inspect speed of reading and its connection to other variabl
 
 ReadingRate is slightly skewed towards lower values, and so it could benefit from a log-transformation:
 
-```{r, eval=FALSE, include=FALSE}
-# hist(reading_speed_measure_data$ReadingRate)
-# hist(log(reading_speed_measure_data$ReadingRate + 1))
+```{r}
+hist(reading_speed_measure_data$ReadingRate)
+hist(log(reading_speed_measure_data$ReadingRate + 1))
 ```
 
 Variance between participants:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = UserId, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
@@ -323,7 +323,7 @@ ggplot(reading_speed_measure_data, aes(x = UserId, y = ReadingRate)) +
 
 Variance between different stories:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
@@ -331,7 +331,7 @@ ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate)) +
 
 We correct for story length to see if there are differences between different books read:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate / CharacterLength)) +
     geom_boxplot() +
     theme_classic()
@@ -339,7 +339,7 @@ ggplot(reading_speed_measure_data, aes(x = StoryId, y = ReadingRate / CharacterL
 
 Variance across window widths (size of device and amount of text visible):
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -347,7 +347,7 @@ ggplot(reading_speed_measure_data, aes(x = WindowWidth, y = ReadingRate)) +
 
 We then visualise the effect of DaysUntilDeadline:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -357,7 +357,7 @@ ggplot(reading_speed_measure_data, aes(x = FirstTimeUntilDeadlineDays, y = Readi
 
 Gender:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = Gender, y = ReadingRate)) +
     geom_violin() +
     geom_jitter() +
@@ -366,7 +366,7 @@ ggplot(reading_speed_measure_data, aes(x = Gender, y = ReadingRate)) +
 
 Age:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = Age, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -374,7 +374,7 @@ ggplot(reading_speed_measure_data, aes(x = Age, y = ReadingRate)) +
 
 Whether participants' native language is English or not:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = ReadingRate)) +
     geom_violin() +
     geom_jitter() +
@@ -383,7 +383,7 @@ ggplot(reading_speed_measure_data, aes(x = NativeEnglish, y = ReadingRate)) +
 
 ### Condition
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = Condition, y = ReadingRate)) +
     geom_boxplot() +
     theme_classic()
@@ -395,7 +395,7 @@ Only situational competence is included in the model from the IMI variables, con
 
 Situational competence:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = SCompetence, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -406,7 +406,7 @@ We then create visualisations for contextual measures of motivation: interest, a
 
 Contextual interest:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = CInterest, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -415,7 +415,7 @@ ggplot(reading_speed_measure_data, aes(x = CInterest, y = ReadingRate)) +
 
 Contextual competence:
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = CCompetence, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -429,7 +429,7 @@ Electronic experience was measured by two variables: Eexp1LongFormEFreq - the fr
 
 Eexp1LongformEFreq (longfrom reading electronically):
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = ReadingRate)) +
     geom_point() +
     theme_classic()
@@ -437,7 +437,7 @@ ggplot(reading_speed_measure_data, aes(x = Eexp1LongformEFreq, y = ReadingRate))
 
 Eexp2DeviceRecFreq (task-relevant digital devices for recreational reading):
 
-```{r, include=FALSE}
+```{r}
 ggplot(reading_speed_measure_data, aes(x = Eexp2DeviceRecFreq, y = ReadingRate)) +
     geom_smooth() +
     geom_point() +
@@ -450,7 +450,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 Contrasts for categorical variables:
 
-```{r 'categorical-contrasts', echo=FALSE}
+```{r 'categorical-contrasts'}
 # whether native language is English or not
 reading_speed_measure_data$NativeEnglish <- as.factor(reading_speed_measure_data$NativeEnglish)
 contrasts(reading_speed_measure_data$NativeEnglish) <- contr.helmert.unweighted(reading_speed_measure_data$NativeEnglish)
@@ -470,7 +470,7 @@ contrasts(reading_speed_measure_data$Condition)
 
 Next, we scale and center continuous variables. These variables names are appended with ".sc" as a reminder that the variable is scaled and centered.
 
-```{r 'scale-continuous-variables-1', echo=FALSE}
+```{r 'scale-continuous-variables-1'}
 # Situational competence
 reading_speed_measure_data$SCompetence.sc <-
     scale(reading_speed_measure_data$SCompetence,
@@ -590,7 +590,7 @@ Speed_RC_nested_selected3 <- lmer(
 The model converges and is no longer singular after removal of all random slopes.
 Inspect the model:
 
-```{r, include=FALSE, warning='hide'}
+```{r, warning='hide'}
 Structure_RC_nested_selected3 <- (
     "ReadingRate ~ WindowWidth.sc + DaysUntilDeadline.sc + NativeEnglish + Condition + SCompetence.sc + CInterest.sc + CCompetence.sc + Eexp1LongformEFreq.sc + Eexp2DeviceRecFreq.sc +  Condition : SCompetence.sc + CInterest.sc : SCompetence.sc + Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc +  Eexp1LongformEFreq.sc : Eexp2DeviceRecFreq.sc : SCompetence.sc + (1 | StoryId) + (1  | UserId)"
 )
@@ -615,7 +615,7 @@ All lmer models were tested for (1) multicollinearity, (2) influential observati
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 corrplot(cor(reading_speed_measure_data[, c(31:37)]), method = "number")
 ```
 
@@ -623,7 +623,7 @@ Some of the variables show high correlations. For example, contextual reading co
 
 To check if these correlations are problematic, we calculate Variance Inflation Factors (VIF):
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 check_collinearity(Speed_RC_nested_selected3)
 plot(check_collinearity(Speed_RC_nested_selected3))
 ```
@@ -639,7 +639,7 @@ cooksd <-
     cooks.distance(Speed_RC_nested_selected3)
 ```
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 plot(cooksd,
     pch = "*",
      cex = 2,
@@ -658,7 +658,7 @@ The plot indicates that the dataset may include some influential observations. H
 
 To further test influential observations we use performance::check_outliers:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 check_outliers(Speed_RC_nested_selected3)
 plot(check_outliers(Speed_RC_nested_selected3))
 ```
@@ -669,7 +669,7 @@ Although Cook's Distance indicates that the model has influential observations, 
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 check_heteroscedasticity(Speed_RC_nested_selected3)
 plot(check_heteroscedasticity(Speed_RC_nested_selected3))
 ```
@@ -678,11 +678,11 @@ The test is not significant, indicating that the variances are homoscedastic in 
 
 We check categorical predictors separately with a Levene's test:
 
-```{r, eval=FALSE}
+```{r}
 leveneTest(residuals(Speed_RC_nested_selected3) ~ reading_speed_measure_data$Condition)
 ```
 
-```{r, eval=FALSE}
+```{r}
 leveneTest(residuals(Speed_RC_nested_selected3) ~ reading_speed_measure_data$NativeEnglish)
 ```
 
@@ -694,7 +694,7 @@ The model aligns with the assumption of homoscedasticity.
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 random_intercept_UserId <- ranef(Speed_RC_nested_selected3)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
@@ -703,7 +703,7 @@ shapiro.test(random_intercept_UserId)
 
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 random_intercept_StoryId <- ranef(Speed_RC_nested_selected3)$StoryId$`(Intercept)`
 qqnorm(random_intercept_StoryId)
 qqline(random_intercept_StoryId)
@@ -716,7 +716,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 
 We first check normality of residuals by plotting model residuals and fitted values
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 plot(resid(Speed_RC_nested_selected3), fitted(Speed_RC_nested_selected3))
 ```
 
@@ -724,19 +724,19 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 
 To further check non-normality, we use a qqplot:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 qqnorm(residuals(Speed_RC_nested_selected3))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 hist(resid(Speed_RC_nested_selected3), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 # 0 - normal, neg - left skew, pos - right skew
 skewness(resid(Speed_RC_nested_selected3))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
@@ -746,7 +746,7 @@ kurtosis(resid(Speed_RC_nested_selected3))
 The residuals are slightly skewed to the right, and the distribution is slightly leptokurtic.
 Finally, we test normality with a Shapiro Wilkins test:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 # Shapiro Wilk Test
 check_normality(Speed_RC_nested_selected3)
 ```
@@ -765,7 +765,7 @@ The model aligns with all assumptions.
 
 We then interpret model effects to study the results.
 
-```{r, include=FALSE}
+```{r}
 summary(Speed_RC_nested_selected3)
 ```
 
@@ -781,7 +781,7 @@ Significant predictors of reading rate:
 
 This hypothesis was not supported as an interaction effect between Condition and situational competence was not a significant predictor of reading speed in the model.
 
-```{r, include=FALSE}
+```{r}
 speed_effect_conditionscomp <- effect(
     "Condition:SCompetence.sc",
     Speed_RC_nested_selected3
@@ -813,6 +813,7 @@ speed_effectplot_condition <- cat_plot(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Condition,")
     )
+speed_effectplot_condition
 ```
 
 Therefore, unlike we expected participants' condition assignment and situational competence did not predict reading speed. Instead, a trend in the main effect of condition indicates that participants in the high autonomy condition were slightly more likely to use higher reading speeds than participants in the low-autonomy condition.
@@ -839,6 +840,7 @@ speed_effectplot_cmotscomp <- interact_plot(
         y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
         x = addline_format("Situational competence score,(centered and scaled)")
     )
+speed_effectplot_cmotscomp
 ```
 
 A high contextual motivation score was associated with a baseline-level reading speed regardless of situational competence. However, low situational competence paired with low contextual motivation was connected to faster than usual reading speeds, whereas a high situational competence and low contextual motivation was associated with baseline-level reading speeds.
@@ -869,6 +871,7 @@ speed_effectplot_electronicexperiencescomp <-
         y = addline_format("Reading Speed as Proportion,of Baseline Speed"),
         x = "Situational competence score (centered and scaled)"
     )
+speed_effectplot_electronicexperiencescomp
 ```
 
 The result indicates that when situational competence is low, a combination of both task-relevant electronic reading experience is associated with a baseline-level reading speed. When situational competence is high, on the other hand, this task-relevant electronic experience is associated with a higher than baseline reading speed. Therefore, task-relevant electronic experience may support participants engagement with the text when competence is low. This finding supports our hypotheses.
@@ -896,6 +899,7 @@ speed_effectplot_contextualcompetence <- effect_plot(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Contextual perceived competence, score (centered and scaled)")
     )
+speed_effectplot_contextualcompetence
 ```
 
 Contextual competence is positively linked to reading rate, indicating that a higher perceived reading ability is associated with the tendency to use speeds that are higher than baseline. In contrast, a lower reading ability is connected to baseline-level reading speed.
@@ -987,7 +991,7 @@ reading_speed_measure_data$Observation_lag2 <- ifelse(
 )
 ```
 
-```{r 'create-location-in-%'}
+```{r 'create-location-in-per'}
 reading_speed_measure_data$PercentageLocation <- (
     (reading_speed_measure_data$StartLocation
         / reading_speed_measure_data$CharacterLength)
@@ -1007,7 +1011,7 @@ We visualise connection to previous events to see if reading speed on the previo
 
 Previous page-view:
 
-```{r, include=FALSE}
+```{r}
 ggplot(
     reading_speed_measure_data,
     aes(x = Observation_lag1, y = ReadingRate)
@@ -1018,7 +1022,7 @@ ggplot(
 
 Two pages before the current page-view:
 
-```{r, include=FALSE}
+```{r}
 ggplot(
     reading_speed_measure_data,
     aes(x = Observation_lag2, y = ReadingRate)
@@ -1031,7 +1035,7 @@ ggplot(
 
 Reading session number:
 
-```{r, include=FALSE}
+```{r}
 ggplot(
     reading_speed_measure_data,
     aes(x = ReadingSessionNumber, y = ReadingRate)
@@ -1042,7 +1046,7 @@ ggplot(
 
 Time in a reading session:
 
-```{r, include=FALSE}
+```{r}
 ggplot(
     reading_speed_measure_data,
     aes(x = FirstCumulativeRSTime, y = ReadingRate)
@@ -1054,7 +1058,7 @@ ggplot(
 
 ### Location in text
 
-```{r, include=FALSE}
+```{r}
 ggplot(
     reading_speed_measure_data,
     aes(x = PercentageLocation * 100, y = ReadingRate)
@@ -1072,7 +1076,7 @@ Predictors in the model are given contrasts. Continuous variables are scaled and
 
 We scale and center continuous variables. These variables names are appended with ".cs" as a reminder that the variable is scaled and centered. Note that ReadingSessionNumber is treated as a continuous variable because we do not expect to see categorical differences between reading sessions, on the basis of the visualisations.
 
-```{r 'scale-continuous-variables-2', echo=FALSE}
+```{r 'scale-continuous-variables-2'}
 # Event k-1
 reading_speed_measure_data$Observation_lag1.sc <-
     scale(reading_speed_measure_data$Observation_lag1,
@@ -1158,7 +1162,7 @@ The model includes `r par_EP` parameters before adding interactions, and `r n_EP
 We then add random slopes in the additive model by the 'best-path' algorithm described by @barrRandomEffectsStructure2013a.
 With this method, we test addition of each fixed effect variable as a random slope using a liberal alpha-level (a = .20) against the intercepts-only model. If multiple variables contribute to the model with p < .20, we accept the variable with lowest p-value as slope, and resume testing by adding each fixed effect variable at a time as a random slope and compare to model with the previously accepted slope. This method allows us to explore meaningful random slopes with a data-driven approach.
 
-```{r 'test-slopes1', eval=FALSE, echo=FALSE}
+```{r 'test-slopes1', eval=FALSE}
 # slope test 1
     ## 1.1 WW
     ## 1.2 DUD
@@ -1249,7 +1253,7 @@ anova(Speed_EP_AdditiveModel_nested1_7, Speed_EP_AdditiveModel_nested_intercepts
 
 Location in text contributes the most to the model, and so it is added as the first random slope.
 
-```{r 'test-slopes2', eval=FALSE, echo=FALSE}
+```{r 'test-slopes2', eval=FALSE}
 # slope test 2
 ## Start adding all slopes again to the most sig slope: Loc
     ## 2.1: WW
@@ -1338,7 +1342,7 @@ anova(Speed_EP_AdditiveModel_nested2, Speed_EP_AdditiveModel_nested2_6) # contri
 
 Days until deadline contributes the most to the model in slope test round 2. It is added in the model in addition to location in text.
 
-```{r 'test-slopes3', eval=FALSE, echo=FALSE}
+```{r 'test-slopes3', eval=FALSE}
 # slope test 3
 ## Start adding all slopes again to the most sig slopes: LOC + DUD
     ## 3_1: WW
@@ -1436,7 +1440,7 @@ Selection is done according to the following priority:
 
 Selection is done manually, removing a single variable at a time. Selection is only done until the additive model converges and is no longer singular.
 
-```{r 'ep-backward-stepwise-selection-slopes', eval=FALSE, echo=FALSE}
+```{r 'ep-backward-stepwise-selection-slopes', eval=FALSE}
 # backward-selection of slopes
 ## 1: remove the slope that accounts for the least variance, until convergence
 ##########
@@ -1527,7 +1531,7 @@ The interactive model includes `r par_EP_int` parameters (including the intercep
 
 Inspect model values:
 
-```{r, include=FALSE}
+```{r}
 summary(Speed_EP_InteractiveModel_nested_slopes)
 plot(Speed_EP_InteractiveModel_nested_slopes)
 fixef(Speed_EP_InteractiveModel_nested_slopes)
@@ -1541,7 +1545,7 @@ All linear mixed models were tested for (1) multicollinearity, (2) influential o
 
 We check for multicollinearity first with a correlation matrix:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 corrplot(cor(remove_missing(reading_speed_measure_data[, c(
     "Observation_lag1.sc",
     "Observation_lag2.sc",
@@ -1557,7 +1561,7 @@ None of the predictors show high correlations.
 
 We then calculate Variance Inflation Factors (VIF):
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 check_collinearity(Speed_EP_InteractiveModel_nested_slopes)
 plot(check_collinearity(Speed_EP_InteractiveModel_nested_slopes))
 ```
@@ -1573,7 +1577,7 @@ cooksd <-
      cooks.distance(Speed_EP_InteractiveModel_nested_slopes)
 ```
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 plot(cooksd,
      pch = "*",
      cex = 2,
@@ -1592,7 +1596,7 @@ The plot indicates that the dataset may include some influential observations. H
 
 To further test influential observations we use performance::check_outliers:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 check_outliers(Speed_EP_InteractiveModel_nested_slopes)
 plot(check_outliers(Speed_EP_InteractiveModel_nested_slopes))
 ```
@@ -1603,7 +1607,7 @@ Although Cook's Distance indicates that the model has influential observations, 
 
 We use the Breusch-Pagan test to check whether the variances of residuals in the model vary systematically:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 check_heteroscedasticity(Speed_EP_InteractiveModel_nested_slopes)
 plot(check_heteroscedasticity(Speed_EP_InteractiveModel_nested_slopes))
 ```
@@ -1615,7 +1619,7 @@ The model aligns with the assumption of homoscedasticity.
 
 Random effects should be normally distributed in multilevel models. We test this assumption by inspecting first the normality of 'UserId' and then 'StoryId' random intercepts.
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 random_intercept_UserId <- ranef(Speed_EP_InteractiveModel_nested_slopes)$UserId$`(Intercept)`
 qqnorm(random_intercept_UserId)
 qqline(random_intercept_UserId)
@@ -1624,7 +1628,7 @@ shapiro.test(random_intercept_UserId)
 
 The qqplot varies slightly from the reference line, however, the Shapiro Test is not significant, and so we assume normality of UserId.
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 random_intercept_StoryId <- ranef(Speed_EP_InteractiveModel_nested_slopes)$StoryId$`(Intercept)`
 qqnorm(random_intercept_StoryId)
 qqline(random_intercept_StoryId)
@@ -1637,7 +1641,7 @@ StoryId aligns much worse with the reference line, however, this is expected con
 
 We first check normality of residuals by plotting model residuals and fitted values
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 plot(resid(Speed_EP_InteractiveModel_nested_slopes), fitted(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
@@ -1645,19 +1649,19 @@ The model residuals are not symmetrically scattered in the plot, as the model ob
 
 To further check non-normality, we use a qqplot:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 qqnorm(residuals(Speed_EP_InteractiveModel_nested_slopes))
 ```
 
 The qqplot shows slight variation from normality. However, the variation is not very extensive. Assess normality with a histogram of residuals:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 hist(resid(Speed_EP_InteractiveModel_nested_slopes), breaks = 100)
 ```
 
 The histogram shows a roughly normal distribution. We then inspect skewness and kurtosis in residuals:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 # 0 - normal, neg - left skew, pos - right skew
 skewness(resid(Speed_EP_InteractiveModel_nested_slopes))
 # 3 - normal, <3 playkurtic, >3 leptokurtic
@@ -1667,7 +1671,7 @@ kurtosis(resid(Speed_EP_InteractiveModel_nested_slopes))
 The residuals are slightly skewed to the right, and the distribution is leptokurtic.
 Finally, we test normality with a Shapiro Wilkins test:
 
-```{r, eval=FALSE, include=FALSE}
+```{r}
 # Shapiro Wilk Test
 check_normality(Speed_EP_InteractiveModel_nested_slopes)
 ```
@@ -1686,7 +1690,7 @@ The model aligns with all assumptions.
 
 We then inspect model effects to interpret the results.
 
-```{r, include=FALSE}
+```{r}
 summary(Speed_EP_InteractiveModel_nested_slopes)
 ```
 
@@ -1714,7 +1718,7 @@ speed_ep_previouslag1 <- effect_plot(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Event~k-1~:,Reading speed on previous page,(centered and scaled)")
     )
-(summary(Speed_EP_InteractiveModel_nested_slopes)$varcor[1])
+speed_ep_previouslag1
 ```
 
 There is a slight positive trend which indicates that a high reading speed on previous page-view (event k-1) predicts a high reading speed on the following page (event k).
@@ -1734,6 +1738,7 @@ speed_ep_previouslag2 <- effect_plot(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = addline_format("Event~k-2~:,Reading speed on the page before previous page,(centered and scaled)")
     )
+speed_ep_previouslag2
 ```
 
 This indicates that consecutive pages were often navigated at the same speed.
@@ -1755,6 +1760,7 @@ speed_ep_location <- effect_plot(
         y = "Reading Speed as Proportion of Baseline Speed",
         x = "Location in Text (%, centered and scaled)"
     )
+speed_ep_location
 ```
 
 Location and reading speed were positively correlated, indicating that participants had a tendency to increase their reading speed towards the end of the document.
