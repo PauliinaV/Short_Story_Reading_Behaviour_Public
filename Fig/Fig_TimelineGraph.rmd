@@ -1,7 +1,7 @@
 ---
 title: "Fig_TimelineGraph"
 author: "Pauliina Vuorinen"
-date: "26/09/2022-"
+date: "26/09/2022-20/12/2023"
 output: html_document
 library: "~/Extra/RPackages.bib"
 ---
@@ -18,58 +18,30 @@ library(dplyr)
 library(timelineS)
 ```
 
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Fig", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
+} else {
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+}
+```
+
 ```{r 'figure theme for consistency', echo=FALSE}
-figure_theme_with_top_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Fig/Fig_FigureTheme.R"
     )
-figure_theme_without_legend_position <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 8),
-        legend.title = element_text(size = 10),
-        legend.key = element_blank(),
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    )
-figure_theme_without_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 10, vjust = 0.5),
-        axis.title.y = element_text(size = 10, angle = 90, vjust = 0.5),
-        legend.key = element_blank(),
-        legend.position = "none",
-        plot.caption = element_text(size = 10),
-        strip.text.x = element_text(size = 10)
-    )
+)
 ```
 
 ## Load data
@@ -79,7 +51,10 @@ To create the timelines we use wrangled_tracking_data which was created in Prep_
 ```{r 'load data'}
 wrangled_tracking_data <-
     read.csv(
-        "Data/wrangled_tracking_data.csv",
+        paste0(
+            mypath_SSRB,
+            "/Data/wrangled_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -89,7 +64,12 @@ wrangled_tracking_data <- select(wrangled_tracking_data, -X)
 
 ```{r 'change variable types'}
 str(wrangled_tracking_data)
-source("Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 
 ## turn columns into factors that should be factors
 wrangled_tracking_data[, c(
@@ -389,12 +369,13 @@ TimelinePlotPartTwo
 ```
 
 ```{r, eval=FALSE}
-ggsave("Fig_TimelinePlot_Sample.png", plot = TimelinePlotPartTwo, dpi = 300, height = 20, width = 25, units = "cm")
+# ggsave("Fig_TimelinePlot_Sample.png", plot = TimelinePlotPartTwo, dpi = 300, height = 20, width = 25, units = "cm")
 ```
 
-```{r}
-# create multiple plots in a pdf
+We then create a pdf with all participants' timeline plots. The resulting pdf can be found in Fig folder as Fig_UserTimelinesWithArtefacts.pdf
 
+```{r, eval=FALSE}
+# create multiple plots in a pdf
 i = 1
 #plot_list = list()
 pdf("Fig_UserTimelines.pdf") # this also includes the basic coloured timelines - had to manually edit for now
