@@ -1,7 +1,7 @@
 ---
 title: "Prep_ReadingSpeedMeasure"
 author: "Pauliina Vuorinen"
-date: "14/10/2022-"
+date: "14/10/2022-20/12/2023"
 output: html_document
 library: "~/Extra/RPackages.bib"
 ---
@@ -30,7 +30,23 @@ This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd
 library(tidyverse)
 library(tidyr)
 library(dplyr)
-getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
+```
+
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Prep", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
+} else {
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+}
 ```
 
 ## Load data and check variable types
@@ -38,7 +54,10 @@ getwd() # working directory should be ~/Short_Story_Reading_Behaviour_Public
 ```{r 'load-data'}
 tracking_data <-
     read.csv(
-        "Data/wrangled_tracking_data.csv",
+        paste0(
+            mypath_SSRB,
+            "/Data/wrangled_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -48,7 +67,12 @@ tracking_data <- select(tracking_data, -X)
 
 ```{r 'change-variable-types'}
 str(tracking_data)
-source("Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 
 ## turn columns into factors that should be factors
 tracking_data[, c(
@@ -290,9 +314,9 @@ ggplot(reading_speed_measure_data, aes(x = StartLocation, y = RelativeSpeedDiffe
 The new df is saved for usage in analysis.
 The dataset has already been saved, and so the below sr code chunk is not run.
 
-```{r, eval=FALSE, echo=TRUE, save linearity df}
-write.csv2(
-    reading_speed_measure_data,
-    "reading_speed_measure_data.csv"
-)
+```{r, eval=FALSE, echo=TRUE}
+# write.csv2(
+#     reading_speed_measure_data,
+#     "reading_speed_measure_data.csv"
+# )
 ```
