@@ -1,0 +1,256 @@
+---
+title: "Info_Tracking"
+output:
+  html_document: default
+---
+
+# Tracking - information that the e-reader system gathers
+
+Panel: a website from where the data is downloaded. Includes lists of participant progress by participant number and book identificators.
+
+R - recorded: this information is tracked live by the e-reader.
+
+C - calculated: this information is calculated automatically by the e-reader from the tracking data.
+
+* BookId
+    + an identification number for the story that the participant is reading. Can be matched with the title and author in the panel.
+    + R
+* UserId
+    + a participant number, different from the participant code that is put into the e-reader system during registration.
+    + R
+* BaselineSpeed
+    + The participant's baseline reading speed test result from the beginning of the study. Similarly to BookId and UserId, this value is repeated on each row of a participant's data.
+    + R
+* Id
+    + a number that tells us in which order the e-reader system received each of the tracking events. Although Id often reflects the sequential timing of events, this is not true for example if a participant doesn't have internet connection.
+    + data is ordered by time and date, not Id
+    + R
+* Date and Time
+    + This information is always in UTC, even when we observations were collected in BST.
+    + see TimezoneOffset
+    + R
+* TimeBeforeDeadlineDays and TimeBeforeDeadlineMinutes
+    + how much time participant has left to read the story before the final deadline: 14 days since registration.
+    + C from Time
+* Type
+    + event type, or rather, what triggered the new event (current row)
+    + R
+    + All events with definitions:
+        - bookDialogOpen: refers to the opening of the welcome pop up after the participant has completed the short story ratings and they have been assigned to read a story.
+        - bookDialogClose: participant clicks 'close' on the welcome pop up. By this stage the page of the book is usually already open and the participant sees text as soon as the dialog closes.
+        - openBook: the book is loading and opening after a login or a refresh. In this stage the participant doesn't see any text.
+        - openPage: a page of the book loads and opens. Happens after every login, refresh, page turn or similar. Participant should be able to see text. A page can open in the background when a dialog is open and it stays open during blur events.
+        - swipeDown: participant swipes the page down in the e-reader. Other than the page bouncing a bit, nothing changes. Could be because the participant is trying to scroll the e-reader.
+        - swipeUp: same as previous but the participant swipes up.
+        - touchForward: tap on the right side of the page to turn the page, only in touchscreen devices. **On navigational events like these the participant sees the previous page until a new one opens. The page hasn't properly turned before an openPage event occurs.**
+        - clickForward: a mouse click on the right side of the page, only on devices with a mouse.
+        - swipeForward: a swipe across the page from right to left, only on devices with a touchscreen.
+        - wheelForward: a mouse wheel used to turn the page, in a usual mouse this means downwards wheeling. If the participant wheels rapidly the e-reader system can go through pages in rapid progression (but each page is still shown).
+        - keyboardForward: the participant is using the right arrow key in their keyboard to turn the page.
+        - touch, click, swipe, wheel or keyboard Backward: the same as forwards events but turns to previous page. The click, tap or touch is on the left side of the page, swipe is from left to right, keyboard uses left arrow key and wheel is usually an upwards motion on the mouse wheel.
+        - progressBarJump: the participant clicks somewhere in the progress bar and uses it to move somewhere else in the text. This event cannot distinguish if the jump is forwards/backwards or how large the jump is, these things are calculated in measures (and not tracking).
+        - openMenu: opens the menu on the right upper corner of the e-reader. openMenu automatically masks the text so that it cannot be read when the menu is open (doesn't need to trigger a 'blur' event). The visible character count stays the same, but the text isn't visible to the participant although it is still under the mask.
+        - closeMenu: menu is closed by either clicking the menu icon or outside the menu. Automatically focuses the e-reader and removes the masking without a need for a 'focus' event. The participant sees text.
+        - openInformation: participant opens the information sheet and it opens on top of the page. Text behind the information sheet is blurred, and although visible character count stays the same isBlurred should confirm that the participant can't see text. Information sheet needs to be accessed from the menu. The sheet is so lengthy that it needs to be scrolled, the scrolling is not tracked.
+        - closeInformation: participant closes the information sheet by clicking close or by clicking outside the sheet. The text is focused and it is visible to the participant. The page has stayed open behind the information sheet and so a new opening of a page isn't needed.
+        - blur: the page and the text is masked so that the text cannot be read. Usually triggered by multitasking (= unfocusing of the browser). Visible character count makes it seem like the participant can still see text but this is because the text stays the same underneath the mask. isBlurred should confirm that the text isn't visible to the participant. The screen will say 'click to activate the reader'.
+        - focus: click on the page when it is blurred causes the focus event. The mask on the text is removed and the participant can see the text.
+        - resize: the participant resizes the browser window so that the window height or width changes and text is reorganised on the e-reader. Resizing sometimes triggers a blur event if the e-reader becomes unfocused. If it doesn't, text is visible.
+        - close: an event that tells us the website is closed. Close is triggered on the moment when the website closes and so the participant doesn't see any text anymore. Close ends the reading session. This event type is not always caught if the tracking information doesn't happen to transfer data at the moment. Close indicates closing of the browser or the tab in which the e-reader is. It cannot catch a laptop being completely turned off or running out of battery.
+        - inactiveTimeout: a blur event that is triggered by inactivity; when the participant is inactive for 5mins the screen will be masked so that no text is visible. The screen will say 'click to activate the reader'.
+        - login: a login event. Not triggered when the participant first uses the e-reader and opens the book because the login on that time leads to the consent form and activity is not tracked. Login means that the participant logs in and the e-reader portion of the e-reader system opens.
+        - logout: participant logs out when in the e-reader. This event requires the usage of the menu.
+* StartLocation
+    + Indicates the number of characters in the text before this page. Character counts only include 'visible characters' - no spaces or line breaks.
+    + Used to find the participants' location in the text.
+      - After a normal page turn and an openPage event without resizing of window or anything odd: 
+        New StartLocation = Previous StartLocation + Previous VisibleCharacterCount
+    + R
+* VisibleCharacterCount
+    + The amount of characters that are currently visible to the participant.
+    + Used to find the participants' location in the text.
+        - After a normal page turn and an openPage event without resizing of window or anything odd: 
+        New StartLocation = Previous StartLocation + Previous VisibleCharacterCount
+    + R
+* VisibleWordCount
+    + The amount of words currently visible to the participant.
+    + Used to find the participants' reading speed in words per minute
+    + R
+* Device
+    + The device that the participant is currently using the e-reader on.
+    + Somewhat of an assumption that cannot always be made, possible values include iPhone, Generic Smartphone and Other
+        - see OperatingSystem and Browser for more accurate information
+    + R
+* OperatingSystem
+    + Shows the result from a parsed user agent. Relies on a specific library for the results. Expected to be accurate.
+    + Possible values include 'Chrome Mobile iOS', 'Windows', 'Mac iOS', 'Ubuntu', 'Android' etc.
+    + R
+* Browser
+    + Shows the result from a parsed user agent. Relies on a specific library for the results. Expected to be accurate.
+    + Possible values include 'Chrome', 'Chrome Mobile', 'Firefox', 'Mobile Safari', 'Safari', 'Edge' etc.
+    + R
+* DurationMinutes
+    + Shows the duration of the current event in minutes. This information is calculated by comparing the time of the current event with the next event.
+    + Current event DurationMinutes = Current event Time - Next event Time
+    + C using Time
+* ReadingSessionNumber
+    + An index number for the current reading session. The first reading session starts when a participant enters the e-reader for the first time after material selection and it ends to a close or a logout event or if the participant is inactive (blur or inactiveTimeout) for longer than 60 minutes.
+    + New activity after the end of the previous reading session starts a new session (+1 to previous reading session).
+    + C using a range of different measures
+* ReadingBlockNumber
+    + An index number for a block of text that the participant sees at once, almost like a 'page' but not quite due to the fluidity of HTML. A reading block changes (+1 to previous reading block) when the participant turns page or resizes text so that the 'block' of text somehow changes (StartLocation or VisibleCharacterCount changes)
+    + A new reading block doesn't mean that the participant hasn't seen *any* of the text before. It only means that this block of text is different from the previous block of text, even if the difference is in one character.
+    + We also track a separate dataset - Block Events that measures location of blocks within the text and how many times the participant has seen similar blocks of text.
+        - This is used in the Block Events dataset to measure first pass-last pass type of data.
+    + A navigational event like a touchForward always happens on the previous reading block. A new reading block is only triggered once the new page opens with openPage.
+    + C using a range of different measures
+* NavigationBlockNumber
+    + Shows which events can be collapsed together because they include similar navigation in the same direction (forwards/backwards), in roughly the same speed (deep reading/skimming/scanning/browsing).
+    + A navigation block usually blocks together a page turn and openPage events.
+    + If the events belong in the same navigation block they have the same number, if not, the e-reader gives the event a navigation block that adds +1 to previous block number.
+    + This is the new construct to figure out how participants can leap forwards by browsing pages.
+    + C using a range of different measures
+* IsBlurred
+    + A logical test to see if the text is blurred at any given time
+    + Sometimes participants create multiple blur or focus events in quick progression (for example by collapsing the browser on mobile and then browsing open apps), this measure helps us to figure out if the text really is visible or if it is masked and therefore cannot be read.
+    + R
+* IsDialogOpen
+    + A logical test to see if a dialog is open at any given time
+    + Dialog refers to the welcome pop up or the information sheet.
+    + R
+* IsMenuOpen
+    + A logical test to see if the menu is open at any given time
+    + Menu blurs the text automatically (and text blurred by text is computationally slightly different from a full blur event) and so it is possible for IsMenuOpen to be TRUE while IsBlurred is FALSE. This still means that the text is blurred.
+    + R
+* IsInactive
+    + A logical test to see if the window is at inactiveTimeout at any given time
+    + doesn't refer to participant not being around, only if the e-reader has timeout-ed because no actions have happened for 5 minutes.
+    + R
+* IsReading
+    + A logical test to see if the participant is reading at any given time
+    + Slightly more complicated than the other logical tests, but this one checks if the participant can be categorised as being engaged with the text. This requires that the text must be visible (not blurred) and there must be text on the page (VisibleCharacterCount cannot be 0)
+    + R
+* TimezoneOffset
+    + TimezoneOffset = Time (tracked in UTC) - Current local time for participant.
+    + All participants in BST should show -60 because: -60 = UTC - BST.
+    + R
+* WindowHeight
+    + The height of the window in pixels (?)
+    + R
+* WindowWidth
+    + The width of the window in pixels (?)
+    + R
+* IsSelectionOpen
+    + A fossil from when annotation features were in use. It was a logical test to see if a participant has a text selection open because they have highlighted text or opened an existing highlight. Should always be set to FALSE because annotation features are not in use.
+    + R
+* IsOpeningEvent
+    + A logical test to see if the current event is an opening event during which the participant doesn't see text.
+    + These events occur at the beginning of the reading sessions and they can include openBook, bookDialogOpen and similar
+    + R
+* IsClosingEvent
+    + A logical test to see if the current event is a closing event to exit the e-reader.
+    + These events include close, logout and similar
+    + R
+* IsPageOpen
+    + A logical test to see if a page is open at any given time, related to the openPage event.
+    + Will show up as TRUE even if the page is open in the background and no text is visible.
+    + Used to check that StartLocation is more accurate.
+    + R
+* IsDurationFixed
+    + the DurationMinutes variable can be inflated if it is counted for the last event in a reading session. That is because DurationMinutes is calculated in reference to the next event, and so the difference between a last event in a reading session and the first event in a reading session is likely to be a long time that will show up as an outlier in data visualisation - especially if there is no clear closing or logout event.
+    + The duration in the above situation is fixed by assuming that the participant must have exited the e-reader before inactiveTimeout occurred and thus lasted less than 5 minutes. The last event is given a duration of 4min 59secs, and it is treated as a disengagement in analysis
+    + C
+* Engagement
+    + A calculation if the participant is engaged in the text or not in this event. 
+        - Event is marked as a 'disengagement' if the text is masked, if a dialog or a menu is open or if the event type is close or logout. Also last events of which IsDurationFixed = TRUE should be set as disengagements.
+        - Event is marked as a dialog if IsDialogOpen = TRUE
+        - Event is marked as an engagement if the above are not true
+    + C
+* ReadingBlockDuration
+    + Counts the duration of reading blocks by summing together the durations of all events that belong in the reading block
+    + The amount of time spent in a reading block.
+    + C
+* EngagedReadingDuration
+    + Sums the durations of all events in a reading block that have been marked as 'engagement' in Engagement.
+    + Basically the amount of time spent reading in a reading block (in minutes).
+    + C
+* EngagedReadingSpeed
+    + Calculates reading speed in words per minute for each reading block.
+    + EngagedReadingSpeed = VisibleWordCount / EngagedReadingDuration
+    + C
+* EngagedSpeedLabel
+    + A label given according to EngagedReadingSpeed, BaselineSpeed and ReadingBlockDuration.
+        - DeepReading: EngagedReadingSpeed is slower than 2.4 * BaselineSpeed
+            DeepReading = EngagedReadingSpeed < 2.4*BaselineSpeed
+        - Skimming: EngagedReadingSpeed is faster or equal to 2.4 * BaselineSpeed but slower than 4 * BaselineSpeed
+            Skimming = BaselineSpeed * 2.4 =< EngagedReadingSpeed < BaselineSpeed * 4
+        - Scanning: EngagedReadingSpeed is faster or equal to 4 * BaselineSpeed but it is not browsing: the ReadingBlockDuration is longer than 1s (0.016667)
+            Scanning = EngagedReadingSpeed => BaselineSpeed * 4 &
+                ReadingBlockDuration > 0.016667
+        - Browsing: Participant uses less than 1s to look at the page
+            Browsing = ReadingBlockDuration =< 0.016667
+    + DeepReading, Skimming and Scanning speeds are based on previous research, browsing is just an invented measure
+    + C
+* Direction
+    + A label derived from the event Type, if the event includes a clear direction like touchForward, the direction is listed
+    + Either Backward, Forward or NA
+    + C
+* NavigationBlockDuration
+    + Sum of DurationMinutes in any given NavigationBlockNumber
+    + C
+* NavigationBlockDirection
+    + Uses Direction to find out the direction of any given NavigationBlockNumber
+    + A navigation block can only have one direction and if one of the events in a navigation block has a direction, it is shared by all events in the navigation block.
+    + In the R files I'm adding two new directions within the NavigationBlockDirection: PBBackward and PBForward because no direction is automatically captured for progress bar jumps 
+        - PBForward: Type = "progressBarJump" & lead(DiscrepancySize, 1) > 0 & !lead(isNewSession, 1) & !lead(isNewUser, 1)
+            -> The current event type is a progressBarJump, difference between the current event's and the the next event's FirstStartLocation is a positive number (lead of DiscrepancySize) and the next event isn't part of a new reading session or by another UserId.
+        - PBBackward: Type = "progressBarJump" & lead(DiscrepancySize, 1) < 0 & !lead(isNewSession, 1) & !lead(isNewUser, 1)
+        -> The current event type is a progressBarJump, difference between the current event's and the the next event's FirstStartLocation is a negative number (lead of DiscrepancySize) and the next event isn't part of a new reading session or by another UserId.
+    + C
+
+## Variables calculated for NavData - Calculated inside a nested for-loop in DataFiles.R
+
+NavData is a dataset that combines the events that belong in the same navigation block. In this dataset, it isn't useful to use StartLocation or VisibleCharacterCount as they are so these variables are transformed:
+
+* FirstStartLocation
+    + refers to the StartLocation of the event that starts a new NavigationBlockNumber
+    + Calculated to find out where the navigation block starts.
+* LastStartLocation
+    + Refers to the StartLocation of the last event that occurs in a navigation block
+    + Calculated to find out where the last page of the navigation block starts
+* FirstVisibleCharacterCount
+    + Same as FirstStartLocation but for VisibleCharacterCount - refers to the VisibleCharacterCount of the event that starts a new NavigationBlockNumber
+    + Used to find out how many characters are on the first page of the navigation block
+* LastVisibleCharacterCount
+    + Same as LastStartLocation but for VisibleCharacterCount - refers to the VisibleCharacterCount of the last event in a NavigationBlockNumber
+    + Used to find out how many characters are on the last page of the navigation block
+* FirstReadingBlock
+    + The reading block of the first event in a navigation block
+    + Used to find out how many reading blocks (or 'pages') the participant went through in the navigation block
+* LastReadingBlock
+    + The reading block of the last event in a navigation block
+    + Used to find out how many reading blocks (or 'pages') the participant went through in the navigation block
+* FirstPercentage
+    + The Percentage of the first event in a navigation block
+    + Used to find out at what percentage in the story the navigation block started (0 is start, 1 is end)
+* LastPercentage
+    + The Percentage of the last event in a navigation block
+    + Used to find out at what percentage in the story the navigation block started (0 is start, 1 is end)
+* NavBlockEndLocation
+    + The EndLocation of a navigation block
+    + NavBlockEndLocation = LastStartLocation + LastVisibleCharacterCount
+* AverageReadingSpeed
+    + An average of EngagedReadingSpeed for a navigation block
+* NavBlockStartTime
+    + Time of the first event in a navigation block
+* NavBlockEndTime
+    + Time of the last event in a navigation block
+* NavBlockDuration2
+    + A new variable for NavigationBlockDuration to account for inflated duration caused by events that occur last in a reading session (see isLastRSEvent and NavDurFix above)
+
+
+
+
+
+
+
