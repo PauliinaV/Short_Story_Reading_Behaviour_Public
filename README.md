@@ -4,8 +4,10 @@ Data and analysis files from Vuorinen, Tatler, & Keller.
 
 All of the files have been written and planned by P.T.E. Vuorinen.
 
+Please refer to the journal article and supplementary materials for more information.
+
 Please cite as:
-Vuorinen, Tatler, & Keller. (in prep). Tracking e-Reading Behaviour: Uncovering the Effects of Task Context, Electronic Experience, and Motivation.
+Vuorinen, Tatler, & Keller. (in prep). Tracking e-Reading Behaviour: Uncovering the Effects of Task Context, Electronic Experience, and Motivation. *Frontiers in Education, XX*(XX), p XX-XX. doi: 10.3389/feduc.2023.1302701
 
 ## Folder set up
 
@@ -21,32 +23,34 @@ There are seven main folders:
 File naming system: Folder_IntentedUsage.filetype, e.g., Analysis_ReadingSpeedModel.Rmd: R markdown file for analysis of reading speed by modelling.
 Data files are named in lowercase and underscores (snake case), e.g. raw_tracking_data, variables are named with Pascal Case, e.g. UserId
 
+Files are available as .Rmd and .html.
+
 ### Prep
 
 This folder includes:
-* Prep_TrackingDataWrangling.Rmd
+* Prep_TrackingDataWrangling.Rmd & .html
     * Used to wrangle the raw tracking data and create variables used in measures
-* Prep_Questionnaires.Rmd
+* Prep_Questionnaires.Rmd & .html
     * Wrangling of questionnaire data
-* Prep_StoryAnalysis.Rmd
+* Prep_StoryAnalysis.Rmd & .html
     * Wrangling of information about the stories
-* Prep_ReadingSpeedMeasure.Rmd
+* Prep_ReadingSpeedMeasure.Rmd & .html
     * Measure for reading speed
-* Prep_ReadingLinearityMeasure.Rmd
+* Prep_ReadingLinearityMeasure.Rmd & .html
     * Measure for linearity of reading
-* Prep_TaskSwitchingMeasure.Rmd
+* Prep_TaskSwitchingMeasure.Rmd & .html
     * Measure for frequency of task-switching
 
 ### Analysis
 
 This folder includes:
-* Analysis_ConditionManipulation.Rmd
+* Analysis_ConditionManipulation.Rmd & .html
     * Analysis of the condition manipulation effect on situational motivation.
-* Analysis_ReadingSpeed.Rmd
+* Analysis_ReadingSpeed.Rmd & .html
     * Analysis of reading speed using two different multilevel models.
-* Analysis_ReadingLinearity.Rmd
+* Analysis_ReadingLinearity.Rmd & .html
     * Analysis of linearity of reading using two different multilevel models.
-* Analysis_TaskSwitching.Rmd
+* Analysis_TaskSwitching.Rmd & .html
     * Analysis of task-switching frequency using a multilevel model.
 
 ### Data
@@ -84,35 +88,6 @@ This folder includes:
     * Dataset on reading speed variance. Created in Prep_ReadingSpeedMeasure.Rmd
 * linearity_measure_data.csv
     * Dataset on linearity of reading. Created in Prep_ReadingLinearityMeasure.Rmd
-
-### Functions
-
-This folder includes:
-
-*TBD*
-
-### Info
-
-This folder includes:
-
-*TBD*
-
-The following will be added:
-* Information about how the data is pre-processed
-* Information about all event types
-* Information about the e-reader
-
-### Figures
-
-This folder includes:
-
-*TBA*
-
-### Extra
-
-This folder includes:
-
-*TBD*
 
 ## Acknowledgements
 
