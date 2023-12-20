@@ -1,7 +1,7 @@
 ---
 title: "Prep_StoryAnalysis"
 author: "Pauliina Vuorinen"
-date: "22/03=9/2022-"
+date: "22/09/2022-20/12/2023"
 output: html_document
 library: "~/Extra/RPackages.bib"
 ---
@@ -15,7 +15,7 @@ Second, we add information about length of each story in words and characters.
 
 Nine short stories were included in the study, however, only eight stories are analysed in the script. The final short story was thought to have a Creative Commons licence, but after the study recruitment was finished, it was realised that the story was attributed the licence in error. As a result, this story is not shared or named in the files. Word frequency, length, and average rating were captured for this story similarly to the eight other stories, but the code is not included in this script.
 
-For more information on the short stories refer to Table 1 in the manuscript.
+For more information on the short stories refer to Tables 1 and 2 in the supplementary materials of the manuscript.
 
 ## Setup
 
@@ -26,7 +26,23 @@ library(dplyr)
 library(tidyverse)
 library(tm)
 library(gridExtra)
-getwd() # check that working directory is ~/Short_Story_Reading_Behaviour_Public
+```
+
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Prep", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
+} else {
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+}
 ```
 
 ## Load Short Story Files
@@ -37,7 +53,10 @@ Not a Day Over Twenty One by Edna Ferber
 
 ```{r}
 EdnaFerber <- read_file(
-    "./Data/Stories/Not-a-Day-over-Twenty-One-by-Edna-Ferber.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/Not-a-Day-over-Twenty-One-by-Edna-Ferber.txt"
+    )
 )
 ```
 
@@ -45,7 +64,10 @@ Preparations and Alliances by Ryk E. Spoor
 
 ```{r}
 RykESpoor <- read_file(
-    "./Data/Stories/Preparations-and-Alliances-by-Ryk-E.-Spoor.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/Preparations-and-Alliances-by-Ryk-E.-Spoor.txt"
+    )
 )
 ```
 
@@ -53,7 +75,10 @@ The Boscombe Valley Mystery by Arthur Conan Doyle
 
 ```{r}
 ArthurConanDoyle <- read_file(
-    "./Data/Stories/The-Boscombe-Valley-Mystery-by-Arthur-Conan-Doyle.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/The-Boscombe-Valley-Mystery-by-Arthur-Conan-Doyle.txt"
+    )
 )
 ```
 
@@ -61,7 +86,10 @@ The Icebreaker by Maxim Gorky
 
 ```{r}
 MaximGorky <- read_file(
-    "./Data/Stories/The-Icebreaker-by-Maxim-Gorky.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/The-Icebreaker-by-Maxim-Gorky.txt"
+    )
 )
 ```
 
@@ -69,7 +97,10 @@ The Million Pound Bank Note by Mark Twain
 
 ```{r}
 MarkTwain <- read_file(
-    "./Data/Stories/The-Million-Pound-Bank-Note-by-Mark-Twain.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/The-Million-Pound-Bank-Note-by-Mark-Twain.txt"
+    )
 )
 ```
 
@@ -77,7 +108,10 @@ The Most Dangeous Game by Richard Connell
 
 ```{r}
 RichardConnell <- read_file(
-    "./Data/Stories/The-Most-Dangerous-Game-by-Richard-Connell.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/The-Most-Dangerous-Game-by-Richard-Connell.txt"
+    )
 )
 ```
 
@@ -85,7 +119,10 @@ The Thing on the Doorstep by H.P. Lovecraft
 
 ```{r}
 HPLovecraft <- read_file(
-    "./Data/Stories/The-Thing-on-the-Doorstep-by-HP-Lovecraft.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/The-Thing-on-the-Doorstep-by-HP-Lovecraft.txt"
+    )
 )
 ```
 
@@ -93,7 +130,10 @@ The Yates Pride by Mary E. Wilkins Freeman
 
 ```{r}
 MaryEWilkinsFreeman <- read_file(
-    "./Data/Stories/The-Yates-Pride-by-Mary-E.-Wilkins-Freeman.txt"
+    paste0(
+        mypath_SSRB,
+        "/Data/Stories/The-Yates-Pride-by-Mary-E.-Wilkins-Freeman.txt"
+    )
 )
 ```
 
@@ -311,7 +351,10 @@ We want to inspect how participants varied in their book ratings and compute ave
 
 ```{r}
 story_ratings_data <- read.csv(
-    "Data/story_ratings_data.csv",
+    paste0(
+        mypath_SSRB,
+        "/Data/story_ratings_data.csv"
+    ),
     header = TRUE,
     sep = ";",
     dec = ","
@@ -333,7 +376,12 @@ story_ratings_data <-
 Fix variable types:
 
 ```{r}
-source("Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 story_ratings_data[, c(
     "UserId",
     "StoryId"
