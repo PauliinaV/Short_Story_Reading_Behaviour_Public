@@ -278,7 +278,8 @@ IMI-R is measured on a 7-point Likert scale, and so the scores are ordinal. Ther
 ```{r 'correlations-IMI-R'}
 IMIR_item_polychor_correlations <- POLYCHORIC_R(
     IMIR_data[, c(2:length(IMIR_data))],
-    verbose = FALSE
+    verbose = FALSE,
+    method = "Fox"
 )
 round(IMIR_item_polychor_correlations, 2)
 ```
@@ -493,7 +494,8 @@ Similarly to IMI-R, IMI is measured on a 7-point Likert scale, and so the scores
 ```{r}
 IMI_item_polychor_correlations <- POLYCHORIC_R(
     IMI_data[, c(2:length(IMI_data))],
-    verbose = FALSE
+    verbose = FALSE,
+    method = "Fox"
 )
 round(IMI_item_polychor_correlations, 2)
 ```
