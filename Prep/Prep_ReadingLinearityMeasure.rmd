@@ -25,11 +25,20 @@ This script uses a dataframe that was wrangled in Prep_TrackingDataWrangling.Rmd
 
 The working directory is not changed with setwd() because this script is knit remotely in other scripts.
 
-```{r}
-if (exists("AnalysisFilePath")) {
-    mypath_SSRBP <- dirname(dirname(AnalysisFilePath))
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Prep", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
 } else {
-    mypath_SSRBP <- getwd()
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
 }
 ```
 
@@ -51,7 +60,7 @@ To determine linearity, we use grouped_tracking_data that was created in Prep_Tr
 grouped_tracking_data <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/wrangled_grouped_tracking_data.csv"
         ),
         header = TRUE,
@@ -65,7 +74,7 @@ grouped_tracking_data <- dplyr::select(grouped_tracking_data, -X, -X.1)
 str(grouped_tracking_data)
 source(
     paste0(
-        mypath_SSRBP,
+        mypath_SSRB,
         "/Functions/Functions_VariableTypeConversion.R"
     )
 )
@@ -245,7 +254,7 @@ Our aim is to measure linearity on each page-view, and so we need to merge group
 tracking_data <-
     read.csv(
         paste0(
-            mypath_SSRBP,
+            mypath_SSRB,
             "/Data/wrangled_tracking_data.csv"
         ),
         header = TRUE,
@@ -563,8 +572,8 @@ The new df is saved for usage in analysis.
 The dataset has already been saved, and so the below sr code chunk is not run.
 
 ```{r, eval=FALSE, echo=TRUE}
-write.csv2(
-    linearity_measure_data,
-    "linearity_measure_data.csv"
-)
+# write.csv2(
+#     linearity_measure_data,
+#     "linearity_measure_data.csv"
+# )
 ```
