@@ -30,6 +30,23 @@ library(tidyverse)
 library(dplyr)
 ```
 
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Prep", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
+} else {
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+}
+```
+
 ## Load data and check variable types
 
 We use a dataset that was created and saved at the end of Prep_TrackingDataWrangling.rmd:
@@ -37,7 +54,10 @@ We use a dataset that was created and saved at the end of Prep_TrackingDataWrang
 ```{r 'load-data'}
 tracking_data <-
     read.csv(
-        "Data/wrangled_tracking_data.csv",
+        paste0(
+            mypath_SSRB,
+            "/Data/wrangled_tracking_data.csv"
+        ) ,
         header = TRUE,
         sep = ";",
         dec = ","
@@ -47,7 +67,12 @@ tracking_data <- select(tracking_data, -X, -X.1)
 
 ```{r 'change-variable-types'}
 str(tracking_data)
-source("Functions/Functions_VariableTypeConversion.R")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+ )
 
 ## turn columns into factors that should be factors
 tracking_data[, c(
