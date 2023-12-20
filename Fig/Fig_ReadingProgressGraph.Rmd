@@ -1,7 +1,7 @@
 ---
 title: "Fig_ReadingProgressGraph"
 author: "Pauliina Vuorinen"
-date: "26/09/2022-"
+date: "26/09/2022-20/12/2023"
 output: html_document
 library: "~/Extra/RPackages.bib"
 ---
@@ -18,58 +18,30 @@ library(tidyverse)
 library(gridExtra)
 ```
 
+```{r 'configure-path'}
+if (exists("ExternalAnalysisFilePath")) {
+    # ExternalAnalysisFilePath: ~/Short_Story_Reading_Behaviour_Public/
+    mypath_SSRB <- ExternalAnalysisFilePath
+} else if (grepl("Fig", getwd())) {
+    mypath_SSRB <- dirname(getwd())
+} else if (grepl("Short_Story_Reading_Behaviour_Public", getwd())) {
+    mypath_SSRB <- getwd()
+} else {
+    # get working directory manually
+    mypath_SSRB <- paste0(
+            dirname(getwd()),
+            "/Short_Story_Reading_Behaviour_Public"
+        )
+}
+```
+
 ```{r 'figure theme for consistency', echo=FALSE}
-figure_theme_with_top_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 12, vjust = 0.5),
-        axis.title.y = element_text(size = 12, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 10),
-        legend.title = element_text(size = 12),
-        legend.key = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        plot.caption = element_text(size = 12),
-        strip.text.x = element_text(size = 12),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Fig/Fig_FigureTheme.R"
     )
-figure_theme_without_legend_position <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 12, vjust = 0.5),
-        axis.title.y = element_text(size = 12, angle = 90, vjust = 0.5),
-        legend.text = element_text(size = 10),
-        legend.title = element_text(size = 12),
-        legend.key = element_blank(),
-        plot.caption = element_text(size = 12),
-        strip.text.x = element_text(size = 12),
-        legend.background = element_rect(color = "black", size = .5, linetype = "solid")
-    )
-figure_theme_without_legend <-
-    theme_bw() +
-    theme(
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
-        axis.ticks = element_blank(),
-        axis.title.x = element_text(size = 12, vjust = 0.5),
-        axis.title.y = element_text(size = 12, angle = 90, vjust = 0.5),
-        legend.key = element_blank(),
-        legend.position = "none",
-        plot.caption = element_text(size = 12),
-        strip.text.x = element_text(size = 12)
-    )
+)
 ```
 
 ## Load data
@@ -79,7 +51,10 @@ To create the timelines we use tracking data in which navigation blocks have bee
 ```{r 'load data'}
 grouped_navigation_blocks_data <-
     read.csv(
-        "Data/wrangled_grouped_tracking_data.csv",
+        paste0(
+            mypath_SSRB,
+            "/Data/wrangled_grouped_tracking_data.csv"
+        ),
         header = TRUE,
         sep = ";",
         dec = ","
@@ -90,8 +65,12 @@ grouped_navigation_blocks_data <- select(grouped_navigation_blocks_data, -X)
 
 ```{r 'change variable types'}
 str(grouped_navigation_blocks_data)
-source("Functions/Functions_VariableTypeConversion.R")
-
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_VariableTypeConversion.R"
+    )
+)
 ## turn columns into factors that should be factors
 grouped_navigation_blocks_data[, c(
     "UserId",
@@ -376,14 +355,14 @@ Graph1d
 We then save the progress graph grouped by participant indicator. The figure has already been saved and so the below code is not run. The figure can be found in Fig folder as Fig_ProgressGraphGroupedByParticipant.png
 
 ```{r, eval=FALSE}
-ggsave(
-    "Fig_ProgressGraphGroupedByParticipant.png",
-    plot = Graph1d,
-    width = 27,
-    height = 20,
-    units = "cm",
-    dpi = 300
-)
+# ggsave(
+#     "Fig_ProgressGraphGroupedByParticipant.png",
+#     plot = Graph1d,
+#     width = 27,
+#     height = 20,
+#     units = "cm",
+#     dpi = 300
+# )
 ```
 
 ### 2. A progress graph for participants in the high-autonomy and low-autonomy conditions
@@ -420,7 +399,7 @@ Graph2b <- Graph2a +
     scale_x_continuous(breaks = c(0, 50, 100))
 ```
 
-```{r 'formatting of graph2'}
+```{r}
 Graph2c <- Graph2b +
     theme_bw() +
     theme(
@@ -444,7 +423,7 @@ Graph2c <- Graph2b +
     )
 ```
 
-```{r 'flip coordinates and print graph2', warning=FALSE}
+```{r, warning=FALSE}
 Graph2d <- Graph2c +
     coord_flip(
         ylim = c(0, 100),
@@ -456,14 +435,14 @@ Graph2d
 We then save the progress graph grouped by condition. The figure has already been saved and so the below code is not run. The figure can be found in Fig folder as Fig_ProgressGraphGroupedByCondition.png
 
 ```{r, eval=FALSE}
-ggsave(
-    "Fig_ProgressGraphGroupedByCondition.png",
-    plot = Graph2d,
-    width = 20,
-    height = 20,
-    units = "cm",
-    dpi = 300
-)
+# ggsave(
+#     "Fig_ProgressGraphGroupedByCondition.png",
+#     plot = Graph2d,
+#     width = 20,
+#     height = 20,
+#     units = "cm",
+#     dpi = 300
+# )
 ```
 
 ### 3. Progress graphs for participants in each short story group
@@ -473,7 +452,12 @@ A progress graph is created for each short story group separately so that we can
 The following function will be needed for all story progress graphs:
 
 ```{r}
-source("Functions/Functions_AddLine.R")
+source(
+    paste0(
+        mypath_SSRB,
+        "/Functions/Functions_AddLine.R"
+    )
+)
 ```
 
 #### StoryId 1
@@ -488,7 +472,7 @@ Graph31a <- ggplot(
     aes(
         x = GraphDuration,
         y = Per * 100,
-        colour = UserId
+        color = UserId
     )
 )
 ```
@@ -530,8 +514,8 @@ Graph31c <- Graph31b +
     )
 ```
 
-```{r 'formatting of graph2'}
-Graph31d <- Graph31c +
+```{r}
+Graph31d <- Graph31b +
     theme_bw() +
     theme(
         panel.grid.major = element_line(
@@ -552,7 +536,7 @@ Graph31d <- Graph31c +
     )
 ```
 
-```{r 'flip coordinates and print graph2', warning=FALSE}
+```{r, warning=FALSE}
 Graph31e <- Graph31d +
     coord_flip(
         ylim = c(0, 100),
@@ -918,7 +902,7 @@ Graph36a <- ggplot(
 )
 ```
 
-```{r 'setup for story5'}
+```{r 'setup for story6'}
 Graph36b <- Graph36a +
     geom_line(size = .9) +
     labs(
@@ -931,7 +915,7 @@ Graph36b <- Graph36a +
     scale_x_continuous(breaks = c(0, 50, 100))
 ```
 
-```{r 'calculate abline story5'}
+```{r 'calculate abline story6'}
 ChronologicalAblineStoryId6 <- data.frame(
     "intercept" = 0,
     # slope value is (100/((character length/5)/population average speed))
@@ -1263,17 +1247,17 @@ StoryGraph <- grid.arrange(
 We then save the story progress graph. The below code has already been run and the figure can be found as in Fig folder as Fig_ProgressGraphGroupedByStory.png
 
 ```{r eval=FALSE}
-ggsave(
-    "Fig_ProgressGraphGroupedByStory.png",
-    plot = StoryGraph,
-    width = 20,
-    height = 50,
-    units = "cm",
-    dpi = 300
-)
+# ggsave(
+#     "Fig_ProgressGraphGroupedByStory.png",
+#     plot = StoryGraph,
+#     width = 20,
+#     height = 50,
+#     units = "cm",
+#     dpi = 300
+# )
 ```
 
-## 4. Progress graphs for one story with 5 random participants
+## 4. Progress graphs for one story with 4 random participants
 
 This graph is made for illustration purposes to be used in the manuscript.
 First, we find which stories have the highest number of participants:
@@ -1292,22 +1276,17 @@ StoryId 1 has 11 participants, and so we use StoryId 1.
 StoryId1 <- filter(graph_subset_data, StoryId == "1")
 ```
 
-Randomly select five participants who read StoryId 1:
+Randomly select four participants who read StoryId 1:
 
 ```{r}
-set.seed(122)
-five_participants <- sample(unique(StoryId1$UserId), 5)
+set.seed(888)
+four_participants <- sample(unique(StoryId1$UserId), 4)
 ```
 
 Re-create a figure for StoryId 1 with only these five participants:
 
 ```{r}
-StoryId1_sample <- filter(StoryId1,
-    UserId == five_participants[1] |
-    UserId == five_participants[2] |
-    UserId == five_participants[3] |
-    UserId == five_participants[4] |
-    UserId == five_participants[5])
+StoryId1_sample <- filter(StoryId1, UserId %in% four_participants)
 ```
 
 ```{r}
@@ -1316,21 +1295,22 @@ Graph4a <- ggplot(
     aes(
         x = GraphDuration,
         y = Per * 100,
-        colour = UserId
+        group = UserId
     )
 )
 ```
 
 ```{r}
 Graph4b <- Graph4a +
-    geom_line(size = .9) +
+    geom_line(size = .9,  aes(colour = UserId)) +
     labs(
         y = "Location in Story (%)",
         x = "Cumulative time spent reading (min)",
     ) +
     coord_cartesian(xlim = c(0, 100), ylim = c(0, 120), expand = FALSE) +
     scale_y_continuous(breaks = c(50, 100)) +
-    scale_x_continuous(breaks = c(0, 30, 60, 90))
+    scale_x_continuous(breaks = c(0, 30, 60, 90)) +
+    facet_wrap(~UserId)
 ```
 
 ```{r}
@@ -1359,7 +1339,8 @@ Graph4c <- Graph4b +
 
 ```{r}
 Graph4d <- Graph4c +
-    figure_theme_without_legend
+    figure_theme_without_legend +
+    theme(strip.text.x = element_blank())
 ```
 
 ```{r, warning=FALSE}
@@ -1373,13 +1354,13 @@ Graph4e
 
 
 ```{r, eval=FALSE}
-ggsave(
-    "Fig_ProgressGraphStoryId1b.png",
-    plot = Graph4e,
-    width = 5,
-    height = 5,
-    units = "in",
-    dpi = 300
-)
+# ggsave(
+#     "Fig_ProgressGraphStoryId1b_facets.png",
+#     plot = Graph4e,
+#     width = 18,
+#     height = 18,
+#     units = "cm",
+#     dpi = 300
+# )
 ```
 
