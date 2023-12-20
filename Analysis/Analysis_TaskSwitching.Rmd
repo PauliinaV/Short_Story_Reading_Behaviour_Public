@@ -32,6 +32,7 @@ library(corrplot)
 library(lme4)
 library(lmerTest)
 library(performance)
+library(moments)
 library(car)
 library(effects)
 library(interactions)
@@ -818,6 +819,45 @@ shapiro.test(random_intercept_StoryId)
 ```
 
 StoryId aligns much worse with the reference line, however, this is expected considering that StoryId only includes 9 different story groups. With the limited amount of information, achieving a visually normally distributed result is unlikely. Considering that the Shapiro Test is not significant, we can assume that StoryId random intercept is normally distributed.
+
+#### 5. Normality of residuals
+
+We check normality of residuals by plotting model residuals against fitted values
+
+```{r}
+plot(resid(TaskSwitching_nested_selected3), fitted(TaskSwitching_nested_selected3))
+```
+
+The model residuals seem to be largely symmetrically scattered in the plot.
+
+To further check non-normality, we use a qqplot:
+
+```{r}
+qqnorm(residuals(TaskSwitching_nested_selected3))
+```
+
+The qqplot shows slight variation from normality. Inspect it using a histogram:
+
+```{r}
+hist(resid(TaskSwitching_nested_selected3), breaks = 100)
+```
+
+The histogram shows some variation from a normal distribution. We then inspect skewness and kurtosis in residuals:
+
+```{r}
+# 0 - normal, neg - left skew, pos - right skew
+skewness(resid(TaskSwitching_nested_selected3)) # slight left skew
+# 3 - normal, <3 playkurtic, >3 leptokurtic
+kurtosis(resid(TaskSwitching_nested_selected3)) # playkurtic
+```
+
+Finally, we test normality with a Shapiro Wilkins test:
+
+```{r}
+check_normality(TaskSwitching_nested_selected3)
+```
+
+Shapiro Wilk test is not significant, and so we can assume normality of residuals.
 
 **Assumptions conclusion**
 
