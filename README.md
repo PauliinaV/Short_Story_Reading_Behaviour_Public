@@ -7,7 +7,7 @@ All of the files have been written and planned by P.T.E. Vuorinen.
 Please refer to the journal article and supplementary materials for more information.
 
 Please cite as:
-Vuorinen, Tatler, & Keller. (in prep). Tracking e-Reading Behaviour: Uncovering the Effects of Task Context, Electronic Experience, and Motivation. *Frontiers in Education, XX*(XX), p XX-XX. doi: 10.3389/feduc.2023.1302701
+Vuorinen, P. T. E., Tatler, B. W.,  & Keller. F. (2024). Tracking e-Reading Behaviour: Uncovering the Effects of Task Context, Electronic Experience, and Motivation. *Frontiers in Education, 8*(1302701), p. 1-17. doi: 10.3389/feduc.2023.1302701
 
 ## Folder set up
 
