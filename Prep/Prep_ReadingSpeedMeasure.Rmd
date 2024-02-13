@@ -186,6 +186,13 @@ speed_measure_data <- tracking_data %>%
 
 The dataset decreases from `r nrow(tracking_data)` rows to `r nrow(speed_measure_data)` rows.
 
+Participants' reading speed is highly variant due to some very fast reading speeds during scanning and browsing of the text:
+
+```{r}
+ggplot(speed_measure_data, aes(x = UserId, y = EngagedReadingSpeed)) +
+    geom_boxplot()
+```
+
 We then create a new column that includes participants' baseline speed if it is not adjusted, and adjusted baseline speed if adjustments were needed (see manuscript for more information on why baseline speed was adjusted):
 
 ```{r}
@@ -242,11 +249,12 @@ speed_measure_data <-
 # Select one event per each page-view:
 ## group events
 ### and summarise important variables into columns
-speed_measure_data <- speed_measure_data %>%
+speed_measure_data_alt <- speed_measure_data %>%
     filter(!(is.na(ReadingRate))) %>%
     group_by(
         UserId,
         StoryId,
+        AdjustedBaselineSpeed,
         ReadingSessionNumber,
         ReadingBlockNumber, # used to identify each page-view
         Condition,
@@ -265,16 +273,62 @@ speed_measure_data <- speed_measure_data %>%
     )
 ```
 
+Overall, average reading speed across all page-views was `r round(mean(speed_measure_data_alt$ReadingSpeedDifference + speed_measure_data_alt$AdjustedBaselineSpeed), 2)`wpm. This value is high due to the very fast reading speeds during scanning and browsing.
+
+How many pages were read in each speed category:
+
+```{r}
+speed_measure_data_dur <- speed_measure_data %>%
+    filter(!(is.na(ReadingRate))) %>%
+    group_by(
+        UserId,
+        StoryId,
+        ReadingSessionNumber,
+        ReadingBlockNumber, # used to identify each page-view
+        Condition,
+        ReadingSpeedDifference,
+        AbsReadingSpeedDifference,
+        RelativeSpeedDifference,
+        AbsRelativeSpeedDifference,
+        ReadingRate,
+        EngagedSpeedLabel) %>%
+    summarise(
+        SummedDuration = sum(DurationMinutes),
+        StartLocation = first(StartLocation),
+        EndLocation = first(EndLocation),
+        FirstTimeUntilDeadlineDays = first(TimeBeforeDeadlinesDays),
+        FirstCumulativeRSTime = first(CumulativeRSTime),
+        WindowWidth = first(WindowWidth)
+    )
+summarised_speed_time <- speed_measure_data_dur %>%
+    group_by(UserId, EngagedSpeedLabel) %>%
+    summarise(
+        TimeAtSpeed = sum(SummedDuration)
+    )
+participant_time_on_page <- speed_measure_data_dur %>%
+    group_by(UserId) %>%
+    summarise(
+        TotalEngagementTime = sum(SummedDuration)
+    )
+summarised_speed_time <- merge(summarised_speed_time, participant_time_on_page, by = "UserId")
+summarised_speed_time <- summarised_speed_time %>%
+    mutate(
+        ProportionOfTime = (TimeAtSpeed/TotalEngagementTime)
+    )
+```
+
+on average, participants spent `r mean(participant_time_on_page$TotalEngagementTime)` engaged in reading the text on the e-reader system. Of this time, they spent `r round(mean(summarised_speed_time[summarised_speed_time$EngagedSpeedLabel == "DeepReading", "ProportionOfTime"])*100, 2)`% deep reading the text,  `r round(mean(summarised_speed_time[summarised_speed_time$EngagedSpeedLabel == "SlowReading", "ProportionOfTime"])*100, 2)`% of the time reading it slower than 100wpm, and `r round((mean(summarised_speed_time[summarised_speed_time$EngagedSpeedLabel == "Skimming", "ProportionOfTime"]) + mean(summarised_speed_time[summarised_speed_time$EngagedSpeedLabel == "Scanning", "ProportionOfTime"]) + mean(summarised_speed_time[summarised_speed_time$EngagedSpeedLabel == "Browsing", "ProportionOfTime"]))*100, 2)`% of the time reading faster than 2.4* their baseline reading speed test result.
+
 Only information on 'deep reading' speeds is retained in the measure dataset:
 
 ```{r}
 reading_speed_measure_data <- filter(
-    speed_measure_data,
+    speed_measure_data_alt,
     EngagedSpeedLabel == "DeepReading"
 )
 ```
 
-The dataset decreases from `r nrow(speed_measure_data)` rows to `r nrow(reading_speed_measure_data)` rows.
+The dataset decreases from `r nrow(speed_measure_data)` rows to `r nrow(reading_speed_measure_data)` rows. The average deep reading speed in the sample is `r round(mean(reading_speed_measure_data$ReadingSpeedDifference + reading_speed_measure_data$AdjustedBaselineSpeed), 2)`wpm.
 
 ## Inspect reading speed
 
